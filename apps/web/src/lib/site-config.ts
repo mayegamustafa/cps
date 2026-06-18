@@ -30,9 +30,14 @@ function merge<T>(base: T, override: DeepPartial<T> | undefined): T {
  * always renders.
  */
 export async function getSiteConfig(): Promise<SiteConfig> {
+  // During the production build the API is not reachable; use defaults and let
+  // runtime ISR fetch live data. Avoids slow/hanging builds.
+  if (process.env.NEXT_PHASE === 'phase-production-build') return siteDefaults;
   try {
     const res = await fetch(`${API}/api/settings`, {
       next: { revalidate: 60, tags: ['site-settings'] },
+      // Fail fast so builds/SSR never hang when the API is unreachable.
+      signal: AbortSignal.timeout(4000),
     });
     if (!res.ok) return siteDefaults;
     const saved = (await res.json()) as DeepPartial<SiteConfig>;

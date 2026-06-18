@@ -24,9 +24,13 @@ function formatSize(bytes?: number | null) {
 
 // Live documents from the API, falling back to bundled defaults when offline.
 async function getDownloads(): Promise<DownloadItem[]> {
+  if (process.env.NEXT_PHASE === 'phase-production-build') return fallbackDownloads;
   const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
   try {
-    const res = await fetch(`${API}/api/downloads`, { next: { revalidate: 60 } });
+    const res = await fetch(`${API}/api/downloads`, {
+      next: { revalidate: 60 },
+      signal: AbortSignal.timeout(4000),
+    });
     if (!res.ok) return fallbackDownloads;
     const rows = (await res.json()) as Array<{
       title: string;

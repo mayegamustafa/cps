@@ -16,10 +16,14 @@ const styles: Record<string, string> = {
 
 // Server component: fetches the active announcement(s) for the site-wide banner.
 export async function AnnouncementBar() {
+  if (process.env.NEXT_PHASE === 'phase-production-build') return null;
   const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4001';
   let items: Announcement[] = [];
   try {
-    const res = await fetch(`${API}/api/announcements`, { next: { revalidate: 30 } });
+    const res = await fetch(`${API}/api/announcements`, {
+      next: { revalidate: 30 },
+      signal: AbortSignal.timeout(4000),
+    });
     if (res.ok) items = await res.json();
   } catch {
     return null;

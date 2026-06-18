@@ -24,7 +24,10 @@ function titleFromSlug(slug: string) {
 // Live article by slug, with a graceful shell when the API is unavailable.
 async function getArticle(slug: string): Promise<Article> {
   try {
-    const res = await fetch(`${API}/api/news/${slug}`, { next: { revalidate: 60 } });
+    const res = await fetch(`${API}/api/news/${slug}`, {
+      next: { revalidate: 60 },
+      signal: AbortSignal.timeout(4000),
+    });
     if (res.ok) return (await res.json()) as Article;
   } catch {
     /* fall through */
