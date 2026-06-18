@@ -16,6 +16,10 @@ RUN pnpm install --frozen-lockfile=false \
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+# Next standalone binds to process.env.HOSTNAME; force 0.0.0.0 so the platform
+# (Railway) can reach it. PORT is injected by Railway at runtime.
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
 # Standalone bundle is self-contained (its own minimal node_modules).
 COPY --from=build /app/apps/web/.next/standalone ./
 COPY --from=build /app/apps/web/.next/static ./apps/web/.next/static
