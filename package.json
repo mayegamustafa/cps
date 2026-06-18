@@ -1,0 +1,30 @@
+{
+  "name": "city-parents-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "City Parents School — Digital Experience Platform (monorepo)",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev:web": "pnpm --filter @cps/web dev",
+    "dev:api": "pnpm --filter @cps/api start:dev",
+    "build": "pnpm -r build",
+    "build:web": "pnpm --filter @cps/web build",
+    "build:api": "pnpm --filter @cps/api build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "db:generate": "pnpm --filter @cps/database generate",
+    "db:build": "pnpm --filter @cps/database build",
+    "db:migrate": "pnpm --filter @cps/database migrate",
+    "db:seed": "pnpm --filter @cps/database seed",
+    "db:studio": "pnpm --filter @cps/database studio",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down"
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2"
+  }
+}

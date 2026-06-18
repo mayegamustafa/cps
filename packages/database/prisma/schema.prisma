@@ -1,0 +1,933 @@
+// ════════════════════════════════════════════════════════════════════════
+//  City Parents School — Digital Experience Platform
+//  Prisma schema. Designed to span the full platform today and to grow into
+//  a complete school ecosystem (Parent/Student portals) without a rebuild.
+//
+//  Conventions:
+//   - cuid() primary keys, snake_case table mapping, UTC timestamps.
+//   - Soft-delete via `deletedAt` on user-generated content.
+//   - Polymorphic media via MediaAsset + join tables, not scattered columns.
+// ════════════════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+//  ENUMS
+// ─────────────────────────────────────────────────────────────
+
+enum Role {
+  SUPER_ADMIN
+  MARKETING_ADMIN
+  ADMISSIONS_ADMIN
+  HR_ADMIN
+  FINANCE_ADMIN
+  CONTENT_EDITOR
+  // Phase-2 self-service portals
+  PARENT
+  ALUMNUS
+  STUDENT
+}
+
+enum PublishStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+  AUDIO
+}
+
+enum SocialNetwork {
+  YOUTUBE
+  INSTAGRAM
+  TIKTOK
+  FACEBOOK
+  LINKEDIN
+  X
+}
+
+enum SyncMode {
+  AUTO
+  MANUAL_APPROVAL
+}
+
+enum ModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum SchoolSection {
+  PRE_PRIMARY
+  LOWER_PRIMARY
+  UPPER_PRIMARY
+}
+
+enum Residence {
+  DAY
+  BOARDING
+}
+
+enum ApplicationStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  SHORTLISTED
+  INTERVIEW_SCHEDULED
+  OFFER_MADE
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  TEMPORARY
+  VOLUNTEER
+}
+
+enum JobStatus {
+  OPEN
+  CLOSED
+  DRAFT
+}
+
+enum StreamStatus {
+  SCHEDULED
+  LIVE
+  ENDED
+  PROCESSING
+  ARCHIVED
+}
+
+enum StreamProvider {
+  YOUTUBE
+  FACEBOOK
+  ZOOM
+  RTMP
+}
+
+enum EventRegStatus {
+  REGISTERED
+  WAITLISTED
+  CANCELLED
+  ATTENDED
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum DonationStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// ─────────────────────────────────────────────────────────────
+//  IDENTITY, AUTH, RBAC, AUDIT
+// ─────────────────────────────────────────────────────────────
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String?  // null for OAuth-only accounts
+  firstName     String
+  lastName      String
+  phone         String?
+  avatarUrl     String?
+  roles         Role[]   @default([])
+  isActive      Boolean  @default(true)
+  emailVerified Boolean  @default(false)
+
+  // Two-factor authentication (TOTP)
+  twoFactorEnabled Boolean @default(false)
+  twoFactorSecret  String?
+  backupCodes      String[] @default([])
+
+  // Password reset (token hashed at rest)
+  resetTokenHash      String?
+  resetTokenExpiresAt DateTime?
+
+  lastLoginAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+
+  oauthAccounts   OAuthAccount[]
+  refreshTokens   RefreshToken[]
+  auditLogs       AuditLog[]
+  authoredNews    NewsArticle[]   @relation("NewsAuthor")
+  uploadedMedia   MediaAsset[]    @relation("MediaUploader")
+  reviewedJobApps JobApplication[] @relation("JobAppReviewer")
+  hostedStreams   LiveStream[]    @relation("StreamHost")
+
+  parentProfile  ParentProfile?
+  alumniProfile  AlumniProfile?
+  staffProfile   StaffProfile?
+
+  @@index([email])
+  @@map("users")
+}
+
+model OAuthAccount {
+  id             String   @id @default(cuid())
+  provider       String   // google | microsoft
+  providerUserId String
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+
+  @@unique([provider, providerUserId])
+  @@map("oauth_accounts")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent String?
+  ip        String?
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String   // e.g. "news.publish"
+  entityType String?
+  entityId   String?
+  metadata   Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@map("audit_logs")
+}
+
+// ─────────────────────────────────────────────────────────────
+//  MEDIA (Cloudflare R2) — polymorphic asset store
+// ─────────────────────────────────────────────────────────────
+
+model MediaAsset {
+  id         String    @id @default(cuid())
+  type       MediaType
+  storageKey String    @unique // R2 object key
+  url        String
+  fileName   String
+  mimeType   String
+  sizeBytes  Int
+  width      Int?
+  height     Int?
+  durationS  Int?      // for video/audio
+  alt        String?   // accessibility / SEO (auto-generated, editable)
+  caption    String?
+  blurhash   String?   // low-res placeholder for fast loads
+
+  uploadedById String?
+  uploadedBy   User?    @relation("MediaUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  galleryItems GalleryItem[]
+  createdAt    DateTime  @default(now())
+  deletedAt    DateTime?
+
+  @@index([type])
+  @@map("media_assets")
+}
+
+// ─────────────────────────────────────────────────────────────
+//  CMS — pages, navigation, hero/section builder, SEO
+// ─────────────────────────────────────────────────────────────
+
+model Page {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  title       String
+  status      PublishStatus @default(DRAFT)
+  blocks      Json          @default("[]") // section/block builder payload
+  seo         SeoMeta?
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
+
+  @@map("pages")
+}
+
+model NavigationItem {
+  id        String           @id @default(cuid())
+  label     String
+  href      String
+  icon      String?
+  order     Int              @default(0)
+  location  String           @default("header") // header | footer | utility
+  parentId  String?
+  parent    NavigationItem?  @relation("NavTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children  NavigationItem[] @relation("NavTree")
+  createdAt DateTime         @default(now())
+
+  @@index([location, order])
+  @@map("navigation_items")
+}
+
+model SeoMeta {
+  id              String   @id @default(cuid())
+  pageId          String?  @unique
+  page            Page?    @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  entityType      String?  // for news/event/etc when not a Page
+  entityId        String?
+  metaTitle       String?
+  metaDescription String?
+  ogImageUrl      String?
+  canonicalUrl    String?
+  jsonLd          Json?    // structured data
+  noindex         Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
+
+  @@index([entityType, entityId])
+  @@map("seo_meta")
+}
+
+// Global, admin-editable theme (dynamic brand colors/fonts/layout presets)
+model SiteSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+// ─────────────────────────────────────────────────────────────
+//  NEWS & EVENTS
+// ─────────────────────────────────────────────────────────────
+
+model NewsArticle {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  title       String
+  excerpt     String?
+  body        String        @db.Text
+  coverImage  String?
+  status      PublishStatus @default(DRAFT)
+  tags        String[]      @default([])
+  authorId    String?
+  author      User?         @relation("NewsAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  publishedAt DateTime?
+  viewCount   Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
+
+  @@index([status, publishedAt])
+  @@map("news_articles")
+}
+
+model Event {
+  id            String         @id @default(cuid())
+  slug          String         @unique
+  title         String
+  description   String         @db.Text
+  coverImage    String?
+  location      String?
+  startsAt      DateTime
+  endsAt        DateTime?
+  allDay        Boolean        @default(false)
+  category      String?        // sports | academics | graduation | trip | pta
+  capacity      Int?
+  status        PublishStatus  @default(DRAFT)
+  liveStreamId  String?        @unique
+  liveStream    LiveStream?    @relation(fields: [liveStreamId], references: [id], onDelete: SetNull)
+  registrations EventRegistration[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+
+  @@index([startsAt])
+  @@map("events")
+}
+
+model EventRegistration {
+  id        String         @id @default(cuid())
+  eventId   String
+  event     Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name      String
+  email     String
+  phone     String?
+  guests    Int            @default(0)
+  status    EventRegStatus @default(REGISTERED)
+  remindAt  DateTime?
+  createdAt DateTime       @default(now())
+
+  @@unique([eventId, email])
+  @@map("event_registrations")
+}
+
+// ─────────────────────────────────────────────────────────────
+//  GALLERY & VIDEO (Media Center)
+// ─────────────────────────────────────────────────────────────
+
+model Gallery {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  title       String
+  description String?
+  category    String?       // sports | academics | graduation | trips | events
+  coverImage  String?
+  status      PublishStatus @default(DRAFT)
+  items       GalleryItem[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
+
+  @@map("galleries")
+}
+
+model GalleryItem {
+  id        String     @id @default(cuid())
+  galleryId String
+  gallery   Gallery    @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  mediaId   String
+  media     MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  order     Int        @default(0)
+
+  @@unique([galleryId, mediaId])
+  @@map("gallery_items")
+}
+
+// ─────────────────────────────────────────────────────────────
+//  SOCIAL MEDIA AGGREGATION
+// ─────────────────────────────────────────────────────────────
+
+model SocialAccount {
+  id         String        @id @default(cuid())
+  network    SocialNetwork
+  handle     String
+  profileUrl String
+  syncMode   SyncMode      @default(MANUAL_APPROVAL)
+  isActive   Boolean       @default(true)
+  lastSyncAt DateTime?
+  posts      SocialPost[]
+  createdAt  DateTime      @default(now())
+
+  @@unique([network, handle])
+  @@map("social_accounts")
+}
+
+model SocialPost {
+  id           String           @id @default(cuid())
+  accountId    String
+  account      SocialAccount    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  externalId   String
+  network      SocialNetwork
+  permalink    String
+  caption      String?          @db.Text
+  thumbnailUrl String?
+  mediaUrl     String?
+  isVideo      Boolean          @default(false)
+  likeCount    Int?
+  postedAt     DateTime
+  moderation   ModerationStatus @default(PENDING)
+  pinned       Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+
+  @@unique([network, externalId])
+  @@index([moderation, postedAt])
+  @@map("social_posts")
+}
+
+// ─────────────────────────────────────────────────────────────
+//  CAREERS (ATS)
+// ─────────────────────────────────────────────────────────────
+
+model JobVacancy {
+  id            String           @id @default(cuid())
+  slug          String           @unique
+  title         String
+  department    String
+  type          JobType          @default(FULL_TIME)
+  location      String           @default("Kampala, Uganda")
+  description   String           @db.Text
+  requirements  String[]         @default([])
+  responsibilities String[]      @default([])
+  salaryRange   String?
+  deadline      DateTime?
+  status        JobStatus        @default(DRAFT)
+  applications  JobApplication[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  deletedAt     DateTime?
+
+  @@index([status, deadline])
+  @@map("job_vacancies")
+}
+
+model JobApplication {
+  id            String            @id @default(cuid())
+  vacancyId     String
+  vacancy       JobVacancy        @relation(fields: [vacancyId], references: [id], onDelete: Cascade)
+  firstName     String
+  lastName      String
+  email         String
+  phone         String
+  cvUrl         String
+  coverLetterUrl String?
+  documents     ApplicationDocument[]
+  status        ApplicationStatus @default(SUBMITTED)
+  score         Int?              // recruiter ranking
+  notes         String?           @db.Text
+  reviewedById  String?
+  reviewedBy    User?             @relation("JobAppReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  interviews    Interview[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([vacancyId, status])
+  @@map("job_applications")
+}
+
+model ApplicationDocument {
+  id            String         @id @default(cuid())
+  applicationId String
+  application   JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  label         String         // "National ID", "Degree Certificate"
+  url           String
+  createdAt     DateTime       @default(now())
+
+  @@map("application_documents")
+}
+
+model Interview {
+  id            String         @id @default(cuid())
+  applicationId String
+  application   JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  scheduledAt   DateTime
+  location      String?        // physical room or video link
+  panel         String[]       @default([])
+  outcome       String?
+  createdAt     DateTime       @default(now())
+
+  @@map("interviews")
+}
+
+// ─────────────────────────────────────────────────────────────
+//  ADMISSIONS PORTAL
+// ─────────────────────────────────────────────────────────────
+
+model AdmissionApplication {
+  id              String            @id @default(cuid())
+  reference       String            @unique // human-friendly tracking code
+  // Pupil
+  pupilFirstName  String
+  pupilLastName   String
+  pupilDob        DateTime
+  gender          String?
+  section         SchoolSection
+  gradeApplyingFor String
+  residence       Residence         @default(DAY)
+  // Guardian
+  guardianName    String
+  guardianEmail   String
+  guardianPhone   String
+  relationship    String?
+  // Workflow
+  status          ApplicationStatus @default(SUBMITTED)
+  decisionNote    String?           @db.Text
+  letterUrl       String?           // generated admission letter (R2)
+  documents       AdmissionDocument[]
+  updates         AdmissionUpdate[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([status])
+  @@map("admission_applications")
+}
+
+model AdmissionDocument {
+  id            String               @id @default(cuid())
+  applicationId String
+  application   AdmissionApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  label         String
+  url           String
+  createdAt     DateTime             @default(now())
+
+  @@map("admission_documents")
+}
+
+model AdmissionUpdate {
+  id            String               @id @default(cuid())
+  applicationId String
+  application   AdmissionApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  message       String
+  status        ApplicationStatus?
+  createdAt     DateTime             @default(now())
+
+  @@map("admission_updates")
+}
+
+// ─────────────────────────────────────────────────────────────
+//  LIVE STREAMING PLATFORM
+// ─────────────────────────────────────────────────────────────
+
+model LiveStream {
+  id            String        @id @default(cuid())
+  slug          String        @unique // public viewing URL segment
+  title         String
+  description   String?       @db.Text
+  status        StreamStatus  @default(SCHEDULED)
+  provider      StreamProvider @default(RTMP)
+  embedUrl      String?       // external watch/embed URL (YouTube/Facebook/Zoom)
+  scheduledAt   DateTime?
+  startedAt     DateTime?
+  endedAt       DateTime?
+  ingestKey     String        @unique // RTMP stream key (secret)
+  hlsUrl        String?       // HLS playback URL once live
+  recordingUrl  String?       // archived recording (R2) after processing
+  thumbnailUrl  String?
+  peakViewers   Int           @default(0)
+  totalViews    Int           @default(0)
+  hostId        String?
+  host          User?         @relation("StreamHost", fields: [hostId], references: [id], onDelete: SetNull)
+  event         Event?
+  chatMessages  StreamChatMessage[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([status, scheduledAt])
+  @@map("live_streams")
+}
+
+model StreamChatMessage {
+  id        String     @id @default(cuid())
+  streamId  String
+  stream    LiveStream @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  authorName String
+  message   String
+  hidden    Boolean    @default(false)
+  createdAt DateTime   @default(now())
+
+  @@index([streamId, createdAt])
+  @@map("stream_chat_messages")
+}
+
+// ─────────────────────────────────────────────────────────────
+//  STAFF / LEADERSHIP PROFILES
+// ─────────────────────────────────────────────────────────────
+
+model StaffProfile {
+  id          String   @id @default(cuid())
+  userId      String?  @unique
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  fullName    String
+  title       String   // "Head Teacher"
+  department  String?
+  bio         String?  @db.Text
+  photoUrl    String?
+  email       String?
+  isLeadership Boolean @default(false)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("staff_profiles")
+}
+
+// ─────────────────────────────────────────────────────────────
+//  DOWNLOADS CENTER
+// ─────────────────────────────────────────────────────────────
+
+model Download {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  category    String   // prospectus | forms | policies | newsletters
+  fileUrl     String
+  fileSize    Int?
+  downloadCount Int    @default(0)
+  isPublic    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@map("downloads")
+}
+
+// ─────────────────────────────────────────────────────────────
+//  TESTIMONIALS
+// ─────────────────────────────────────────────────────────────
+
+model Testimonial {
+  id        String           @id @default(cuid())
+  authorName String
+  role      String?          // "Parent", "Alumnus, Class of 2010"
+  quote     String           @db.Text
+  photoUrl  String?
+  rating    Int?
+  status    ModerationStatus @default(PENDING)
+  featured  Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@map("testimonials")
+}
+
+// ─────────────────────────────────────────────────────────────
+//  ALUMNI
+// ─────────────────────────────────────────────────────────────
+
+model AlumniProfile {
+  id            String   @id @default(cuid())
+  userId        String?  @unique
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  fullName      String
+  graduationYear Int
+  classOf       String?
+  currentRole   String?
+  organisation  String?
+  city          String?
+  country       String?  @default("Uganda")
+  bio           String?  @db.Text
+  photoUrl      String?
+  isPublic      Boolean  @default(true)
+  story         AlumniStory?
+  donations     Donation[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([graduationYear])
+  @@map("alumni_profiles")
+}
+
+model AlumniStory {
+  id        String        @id @default(cuid())
+  alumniId  String        @unique
+  alumni    AlumniProfile @relation(fields: [alumniId], references: [id], onDelete: Cascade)
+  title     String
+  body      String        @db.Text
+  coverImage String?
+  status    PublishStatus @default(DRAFT)
+  createdAt DateTime      @default(now())
+
+  @@map("alumni_stories")
+}
+
+model Donation {
+  id        String         @id @default(cuid())
+  alumniId  String?
+  alumni    AlumniProfile? @relation(fields: [alumniId], references: [id], onDelete: SetNull)
+  donorName String
+  email     String?
+  amount    Decimal        @db.Decimal(12, 2)
+  currency  String         @default("UGX")
+  campaign  String?
+  status    DonationStatus @default(PENDING)
+  reference String?        @unique
+  createdAt DateTime       @default(now())
+
+  @@map("donations")
+}
+
+// ─────────────────────────────────────────────────────────────
+//  SCHOOL STATISTICS, ACHIEVEMENTS, HOUSE SYSTEM
+// ─────────────────────────────────────────────────────────────
+
+model SchoolStat {
+  id        String   @id @default(cuid())
+  label     String   // "Students Enrolled"
+  value     String   // "2,400+"
+  icon      String?
+  order     Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@map("school_stats")
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  category    String?  // academics | sports | arts
+  studentName String?
+  imageUrl    String?
+  awardedAt   DateTime?
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@map("achievements")
+}
+
+model House {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  color     String   // hex
+  motto     String?
+  points    Int      @default(0)
+  emblemUrl String?
+  scores    HouseScore[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("houses")
+}
+
+model HouseScore {
+  id        String   @id @default(cuid())
+  houseId   String
+  house     House    @relation(fields: [houseId], references: [id], onDelete: Cascade)
+  category  String   // sports | academics | discipline
+  points    Int
+  reason    String?
+  awardedAt DateTime @default(now())
+
+  @@index([houseId])
+  @@map("house_scores")
+}
+
+// ─────────────────────────────────────────────────────────────
+//  DIGITAL MAGAZINE
+// ─────────────────────────────────────────────────────────────
+
+model MagazineIssue {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  title       String
+  edition     String?       // "Term 1, 2026"
+  coverImage  String?
+  pdfUrl      String?
+  flipbookUrl String?
+  status      PublishStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+
+  @@map("magazine_issues")
+}
+
+// ─────────────────────────────────────────────────────────────
+//  EMERGENCY ALERTS & CONTACT
+// ─────────────────────────────────────────────────────────────
+
+model EmergencyAlert {
+  id        String        @id @default(cuid())
+  message   String
+  severity  AlertSeverity @default(INFO)
+  link      String?
+  isActive  Boolean       @default(false)
+  startsAt  DateTime?
+  endsAt    DateTime?
+  createdAt DateTime      @default(now())
+
+  @@map("emergency_alerts")
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String?
+  message   String   @db.Text
+  handled   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("contact_messages")
+}
+
+model NewsletterSubscriber {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String?
+  isConfirmed  Boolean   @default(false)
+  unsubscribedAt DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@map("newsletter_subscribers")
+}
+
+// ─────────────────────────────────────────────────────────────
+//  ACADEMICS
+// ─────────────────────────────────────────────────────────────
+
+model Department {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  name        String
+  section     SchoolSection
+  description String?       @db.Text
+  imageUrl    String?
+  order       Int           @default(0)
+  programmes  Programme[]
+  createdAt   DateTime      @default(now())
+
+  @@map("departments")
+}
+
+model Programme {
+  id           String     @id @default(cuid())
+  slug         String     @unique
+  name         String     // "Lower Primary", "Cambridge IGCSE"
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  description  String?    @db.Text
+  curriculum   String?    @db.Text
+  imageUrl     String?
+  createdAt    DateTime   @default(now())
+
+  @@map("programmes")
+}
+
+// ─────────────────────────────────────────────────────────────
+//  PHASE-2 SCAFFOLD: PARENT PORTAL (data model defined now)
+// ─────────────────────────────────────────────────────────────
+
+model ParentProfile {
+  id        String          @id @default(cuid())
+  userId    String          @unique
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phone     String?
+  address   String?
+  children  StudentProfile[]
+  createdAt DateTime        @default(now())
+
+  @@map("parent_profiles")
+}
+
+model StudentProfile {
+  id            String         @id @default(cuid())
+  admissionNo   String?        @unique
+  firstName     String
+  lastName      String
+  section       SchoolSection
+  residence     Residence      @default(DAY)
+  className     String?        // "P5 Blue"
+  houseId       String?
+  photoUrl      String?
+  parentId      String?
+  parent        ParentProfile? @relation(fields: [parentId], references: [id], onDelete: SetNull)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@map("student_profiles")
+}

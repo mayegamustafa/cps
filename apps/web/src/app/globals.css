@@ -1,0 +1,162 @@
+@import 'tailwindcss';
+
+/* ══════════════════════════════════════════════════════════════
+   City Parents School — Brand Design System
+   Maroon · Gold · White. Premium, editorial, accessible (WCAG AA).
+   ══════════════════════════════════════════════════════════════ */
+
+@theme {
+  /* — Brand: Maroon — */
+  --color-maroon-50: #fbf3f3;
+  --color-maroon-100: #f4dede;
+  --color-maroon-200: #e7b9bb;
+  --color-maroon-300: #d68b8f;
+  --color-maroon-400: #bd575e;
+  --color-maroon-500: #9c3640;
+  --color-maroon-600: #832530;
+  --color-maroon-700: #6e1f23; /* primary */
+  --color-maroon-800: #571a1c;
+  --color-maroon-900: #421515;
+  --color-maroon-950: #2a0c0d;
+
+  /* — Brand: Gold — */
+  --color-gold-50: #fdf9ec;
+  --color-gold-100: #f8edca;
+  --color-gold-200: #f0d98e;
+  --color-gold-300: #e7c155;
+  --color-gold-400: #d4af37; /* accent */
+  --color-gold-500: #c8a24b;
+  --color-gold-600: #a37e2f;
+  --color-gold-700: #7e5f25;
+  --color-gold-800: #5f4720;
+  --color-gold-900: #4a3a1f;
+
+  /* — Neutrals: warm paper & ink — */
+  --color-paper: #fbf8f3;
+  --color-paper-dark: #f3ece1;
+  --color-ink: #1c1614;
+  --color-ink-soft: #4a423f;
+  --color-ink-muted: #756c67;
+  --color-line: #e7ddd0;
+
+  /* — Typography — */
+  --font-display: 'Fraunces', 'Iowan Old Style', Georgia, 'Times New Roman',
+    serif;
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+
+  /* — Radii & shadows — */
+  --radius-sm: 0.375rem;
+  --radius: 0.625rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --shadow-soft: 0 1px 2px rgba(28, 22, 20, 0.04),
+    0 8px 24px -12px rgba(28, 22, 20, 0.18);
+  --shadow-lift: 0 24px 60px -28px rgba(28, 22, 20, 0.32);
+
+  /* — Layout — */
+  --spacing-section: 6rem;
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv11', 'ss01';
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+    color: var(--color-maroon-900);
+  }
+
+  ::selection {
+    background-color: var(--color-gold-200);
+    color: var(--color-maroon-900);
+  }
+
+  /* Visible, on-brand focus ring for keyboard users (WCAG 2.4.7) */
+  :where(a, button, input, textarea, select, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-maroon-600);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  .container-page {
+    width: 100%;
+    margin-inline: auto;
+    max-width: 80rem;
+    padding-inline: 1.25rem;
+  }
+  @media (min-width: 768px) {
+    .container-page { padding-inline: 2rem; }
+  }
+
+  /* Skip link for accessibility */
+  .skip-link {
+    position: absolute;
+    left: 1rem;
+    top: -3rem;
+    z-index: 100;
+    background: var(--color-maroon-700);
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    transition: top 0.2s ease;
+  }
+  .skip-link:focus {
+    top: 1rem;
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-maroon-600);
+  }
+  .eyebrow::before {
+    content: '';
+    width: 1.75rem;
+    height: 1px;
+    background: var(--color-gold-400);
+  }
+}
+
+/* Subtle entrance animation utility */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-rise {
+  animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
