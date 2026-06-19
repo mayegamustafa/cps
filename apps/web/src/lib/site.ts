@@ -13,6 +13,8 @@ export type SiteConfig = {
     name: string;
     locality: string;
     foundingYear: string;
+    /** Active colour theme: 'slate' (maroon/white/grey) or 'gold' (maroon/gold/white). */
+    theme: 'slate' | 'gold';
   };
   tagline: string;
   description: string;
@@ -51,6 +53,7 @@ export const siteDefaults: SiteConfig = {
     name: 'City Parents School',
     locality: 'Kampala',
     foundingYear: '1999',
+    theme: 'slate',
   },
   tagline: 'Nurturing brilliance, building character.',
   description:

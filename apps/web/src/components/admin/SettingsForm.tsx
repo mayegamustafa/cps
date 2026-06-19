@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { Field, TextAreaField } from '@/components/ui/Field';
+import { Field, TextAreaField, SelectField } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
 import { siteDefaults, type SiteConfig } from '@/lib/site';
@@ -96,6 +96,24 @@ export function SettingsForm() {
           </div>
           <Field label="Logo URL" id="logoUrl" value={cfg.brand.logoUrl} onChange={(e) => patch((d) => { d.brand.logoUrl = e.target.value; })} />
           <p className="text-xs text-ink-muted">Uploading custom files routes to Cloudflare R2 once storage is connected.</p>
+
+          <SelectField
+            label="Colour theme"
+            id="theme"
+            value={cfg.brand.theme}
+            onChange={(e) => patch((d) => { d.brand.theme = e.target.value as SiteConfig['brand']['theme']; })}
+          >
+            <option value="slate">Maroon, White &amp; Grey (default)</option>
+            <option value="gold">Maroon, Gold &amp; White (classic)</option>
+          </SelectField>
+          <div className="flex gap-2">
+            <span className="flex items-center gap-1.5 rounded-full border border-line px-3 py-1 text-xs">
+              <span className="h-3 w-3 rounded-full" style={{ background: '#6e1f23' }} />
+              <span className="h-3 w-3 rounded-full" style={{ background: cfg.brand.theme === 'gold' ? '#d4af37' : '#64748b' }} />
+              <span className="h-3 w-3 rounded-full border border-line" style={{ background: '#ffffff' }} />
+              Live preview after save
+            </span>
+          </div>
         </Card>
 
         <Card title="Identity" desc="School name, location and strapline.">

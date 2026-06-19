@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { site } from '@/lib/site';
+import { getSiteConfig } from '@/lib/site-config';
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
@@ -62,13 +63,14 @@ const jsonLd = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const config = await getSiteConfig();
   return (
-    <html lang="en">
+    <html lang="en" data-theme={config.brand.theme}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />

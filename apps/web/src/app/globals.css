@@ -2,11 +2,15 @@
 
 /* ══════════════════════════════════════════════════════════════
    City Parents School — Brand Design System
-   Maroon · Gold · White. Premium, editorial, accessible (WCAG AA).
+   Two admin-switchable themes via <html data-theme>:
+     • default (no attr / "slate"): Maroon · White · Grey
+     • "gold": the original Maroon · Gold · White
+   The accent scale is named gold-* for both themes (values swap per theme),
+   so components never change when the theme switches.
    ══════════════════════════════════════════════════════════════ */
 
 @theme {
-  /* — Brand: Maroon — */
+  /* — Brand: Maroon (shared by both themes) — */
   --color-maroon-50: #fbf3f3;
   --color-maroon-100: #f4dede;
   --color-maroon-200: #e7b9bb;
@@ -19,25 +23,25 @@
   --color-maroon-900: #421515;
   --color-maroon-950: #2a0c0d;
 
-  /* — Brand: Gold — */
-  --color-gold-50: #fdf9ec;
-  --color-gold-100: #f8edca;
-  --color-gold-200: #f0d98e;
-  --color-gold-300: #e7c155;
-  --color-gold-400: #d4af37; /* accent */
-  --color-gold-500: #c8a24b;
-  --color-gold-600: #a37e2f;
-  --color-gold-700: #7e5f25;
-  --color-gold-800: #5f4720;
-  --color-gold-900: #4a3a1f;
+  /* — Accent scale (DEFAULT theme = Slate / Grey) — */
+  --color-gold-50: #f8fafc;
+  --color-gold-100: #f1f5f9;
+  --color-gold-200: #e2e8f0;
+  --color-gold-300: #cbd5e1;
+  --color-gold-400: #64748b; /* accent */
+  --color-gold-500: #475569;
+  --color-gold-600: #334155;
+  --color-gold-700: #1e293b;
+  --color-gold-800: #172033;
+  --color-gold-900: #0f172a;
 
-  /* — Neutrals: warm paper & ink — */
-  --color-paper: #fbf8f3;
-  --color-paper-dark: #f3ece1;
-  --color-ink: #1c1614;
-  --color-ink-soft: #4a423f;
-  --color-ink-muted: #756c67;
-  --color-line: #e7ddd0;
+  /* — Neutrals (DEFAULT theme = clean white & grey) — */
+  --color-paper: #ffffff;
+  --color-paper-dark: #f1f5f9;
+  --color-ink: #0f172a;
+  --color-ink-soft: #334155;
+  --color-ink-muted: #64748b;
+  --color-line: #e2e8f0;
 
   /* — Typography — */
   --font-display: 'Fraunces', 'Iowan Old Style', Georgia, 'Times New Roman',
@@ -56,6 +60,28 @@
 
   /* — Layout — */
   --spacing-section: 6rem;
+}
+
+/* ── Alternate theme: original Maroon · Gold · White (admin-switchable) ──
+   Higher specificity than :root so it overrides the default tokens. */
+html[data-theme='gold'] {
+  --color-gold-50: #fdf9ec;
+  --color-gold-100: #f8edca;
+  --color-gold-200: #f0d98e;
+  --color-gold-300: #e7c155;
+  --color-gold-400: #d4af37;
+  --color-gold-500: #c8a24b;
+  --color-gold-600: #a37e2f;
+  --color-gold-700: #7e5f25;
+  --color-gold-800: #5f4720;
+  --color-gold-900: #4a3a1f;
+
+  --color-paper: #fbf8f3;
+  --color-paper-dark: #f3ece1;
+  --color-ink: #1c1614;
+  --color-ink-soft: #4a423f;
+  --color-ink-muted: #756c67;
+  --color-line: #e7ddd0;
 }
 
 @layer base {
