@@ -31,13 +31,15 @@ export function Hero({ config = siteDefaults }: { config?: SiteConfig }) {
           }}
         />
       )}
+      {/* Lighter scrim: darker on the left for text legibility, fading right so
+          the background image/video stays clearly visible. */}
       <div
         aria-hidden
-        className="absolute inset-0 -z-10 bg-gradient-to-br from-maroon-950 via-maroon-950/85 to-maroon-900/60"
+        className="absolute inset-0 -z-10 bg-gradient-to-r from-maroon-950/75 via-maroon-950/40 to-maroon-900/15"
       />
       <div
         aria-hidden
-        className="absolute inset-0 -z-10 bg-gradient-to-t from-maroon-950 via-transparent to-transparent"
+        className="absolute inset-0 -z-10 bg-gradient-to-t from-maroon-950/50 via-transparent to-transparent"
       />
 
       <div className="container-page grid min-h-[88vh] items-center gap-12 py-20 lg:grid-cols-[1.15fr_0.85fr]">
