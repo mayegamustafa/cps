@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Sidebar } from '@/components/admin/Sidebar';
 import { Icon } from '@/components/Icon';
+import { AdminGuard } from '@/components/admin/AdminGuard';
 
 export const metadata: Metadata = {
   title: 'Admin',
@@ -14,6 +15,7 @@ export default function AdminPanelLayout({
   children: React.ReactNode;
 }) {
   return (
+    <AdminGuard>
     <div className="flex min-h-screen bg-paper-dark/40">
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
@@ -44,5 +46,6 @@ export default function AdminPanelLayout({
         <main className="flex-1 p-6 lg:p-8">{children}</main>
       </div>
     </div>
+    </AdminGuard>
   );
 }

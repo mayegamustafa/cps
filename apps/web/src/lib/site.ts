@@ -34,6 +34,8 @@ export type SiteConfig = {
     titleLead: string;
     titleAccent: string;
     intro: string;
+    /** Optional background video URL (mp4/webm). Autoplays muted + looped when set. */
+    backgroundVideo: string;
     primaryCta: { label: string; href: string };
     secondaryCta: { label: string; href: string };
     stats: { value: string; label: string }[];
@@ -85,6 +87,7 @@ export const siteDefaults: SiteConfig = {
     titleAccent: 'building character.',
     intro:
       'A premier institution shaping confident, curious and compassionate learners from Pre-Primary through Upper Primary, in day and boarding sections, in the heart of Kampala.',
+    backgroundVideo: '',
     primaryCta: { label: 'Begin Admission', href: '/admissions' },
     secondaryCta: { label: 'Take the Virtual Tour', href: '/virtual-tour' },
     stats: [

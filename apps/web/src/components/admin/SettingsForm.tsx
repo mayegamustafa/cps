@@ -133,6 +133,13 @@ export function SettingsForm() {
             <Field label="Headline line 2 (gold)" id="ta" value={cfg.hero.titleAccent} onChange={(e) => patch((d) => { d.hero.titleAccent = e.target.value; })} />
           </div>
           <TextAreaField label="Intro" id="hintro" value={cfg.hero.intro} onChange={(e) => patch((d) => { d.hero.intro = e.target.value; })} />
+          <Field
+            label="Background video URL (autoplays, muted, looped)"
+            id="herovid"
+            value={cfg.hero.backgroundVideo}
+            placeholder="https://.../campus.mp4 — leave empty to use the image"
+            onChange={(e) => patch((d) => { d.hero.backgroundVideo = e.target.value; })}
+          />
           <div className="grid grid-cols-3 gap-3">
             {cfg.hero.stats.map((s, i) => (
               <div key={i} className="space-y-2 rounded-xl border border-line p-3">

@@ -7,15 +7,30 @@ export function Hero({ config = siteDefaults }: { config?: SiteConfig }) {
 
   return (
     <section className="relative isolate overflow-hidden bg-maroon-950 text-white">
-      {/* Background image + gradient scrim */}
-      <div
-        aria-hidden
-        className="absolute inset-0 -z-10 bg-cover bg-center"
-        style={{
-          backgroundImage:
-            "url('https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=2000&q=70')",
-        }}
-      />
+      {/* Background: autoplaying muted video when configured, else image */}
+      {hero.backgroundVideo ? (
+        <video
+          aria-hidden
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          poster="https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=2000&q=70"
+          className="absolute inset-0 -z-10 h-full w-full object-cover"
+        >
+          <source src={hero.backgroundVideo} />
+        </video>
+      ) : (
+        <div
+          aria-hidden
+          className="absolute inset-0 -z-10 bg-cover bg-center"
+          style={{
+            backgroundImage:
+              "url('https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=2000&q=70')",
+          }}
+        />
+      )}
       <div
         aria-hidden
         className="absolute inset-0 -z-10 bg-gradient-to-br from-maroon-950 via-maroon-950/85 to-maroon-900/60"

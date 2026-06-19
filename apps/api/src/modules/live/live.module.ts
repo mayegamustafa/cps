@@ -43,6 +43,20 @@ function slugify(title: string) {
 export class LiveController {
   constructor(private prisma: PrismaService) {}
 
+  // Public: the currently-live stream (if any), for the homepage/live player
+  @Get('active')
+  async active() {
+    const stream = await this.prisma.liveStream.findFirst({
+      where: { status: StreamStatus.LIVE },
+      orderBy: { startedAt: 'desc' },
+      select: {
+        id: true, slug: true, title: true, description: true, status: true,
+        provider: true, embedUrl: true, hlsUrl: true, thumbnailUrl: true, startedAt: true,
+      },
+    });
+    return stream ?? null;
+  }
+
   // Public: viewing page data by slug
   @Get(':slug')
   async bySlug(@Param('slug') slug: string) {

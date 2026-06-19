@@ -15,6 +15,7 @@ import { DownloadsModule } from './modules/downloads/downloads.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { StatsModule } from './modules/stats/stats.module';
 import { AnnouncementsModule } from './modules/announcements/announcements.module';
+import { SetupModule } from './modules/setup/setup.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { AnnouncementsModule } from './modules/announcements/announcements.modul
     SettingsModule,
     StatsModule,
     AnnouncementsModule,
+    SetupModule,
     // Further modules (gallery, alumni, staff, seo) follow the
     // same controller→service→Prisma pattern.
   ],
