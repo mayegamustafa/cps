@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { PageHero } from '@/components/ui/PageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Icon } from '@/components/Icon';
-import { jobs } from '@/lib/content';
+import { getVacancies } from '@/lib/public-data';
 
 export const metadata: Metadata = {
   title: 'Careers',
@@ -11,7 +11,8 @@ export const metadata: Metadata = {
     'Join the City Parents School team. Browse current teaching and non-teaching vacancies and apply online.',
 };
 
-export default function CareersPage() {
+export default async function CareersPage() {
+  const jobs = await getVacancies();
   return (
     <>
       <PageHero
@@ -50,8 +51,13 @@ export default function CareersPage() {
         <div className="container-page">
           <SectionHeading eyebrow="Open positions" title="Current vacancies" />
           <ul className="mt-12 space-y-4">
-            {jobs.map((j) => (
-              <li key={j.slug}>
+            {jobs.length === 0 ? (
+              <li className="rounded-2xl border border-line bg-paper p-6 text-ink-muted">
+                There are no open positions right now. Please check back soon.
+              </li>
+            ) : null}
+            {jobs.map((j, i) => (
+              <li key={i}>
                 <Link
                   href={`/careers/${j.slug}`}
                   className="group flex flex-col gap-4 rounded-2xl border border-line bg-paper p-6 transition-all hover:border-maroon-700/30 hover:shadow-soft sm:flex-row sm:items-center sm:justify-between"
@@ -60,8 +66,8 @@ export default function CareersPage() {
                     <h3 className="text-xl group-hover:text-maroon-700">{j.title}</h3>
                     <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink-muted">
                       <span className="flex items-center gap-1.5"><Icon name="users" size={14} /> {j.department}</span>
-                      <span className="flex items-center gap-1.5"><Icon name="clock" size={14} /> {j.type}</span>
-                      <span className="flex items-center gap-1.5"><Icon name="calendar" size={14} /> Closes {new Date(j.deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+                      <span className="flex items-center gap-1.5 capitalize"><Icon name="clock" size={14} /> {j.type}</span>
+                      <span className="flex items-center gap-1.5"><Icon name="calendar" size={14} /> Closes {j.deadline}</span>
                     </p>
                   </div>
                   <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-maroon-700 px-5 py-2.5 text-sm font-medium text-white sm:self-center">

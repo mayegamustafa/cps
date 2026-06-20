@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import { PageHero } from '@/components/ui/PageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Icon } from '@/components/Icon';
-import { galleryAlbums, recordings } from '@/lib/content';
+import { recordings } from '@/lib/content';
+import { getAlbums } from '@/lib/public-data';
 
 export const metadata: Metadata = {
   title: 'Gallery & Media',
@@ -10,7 +11,8 @@ export const metadata: Metadata = {
     'Photo albums and video highlights from sports, academics, graduation, trips and events at City Parents School.',
 };
 
-export default function GalleryPage() {
+export default async function GalleryPage() {
+  const galleryAlbums = await getAlbums();
   return (
     <>
       <PageHero
@@ -26,9 +28,9 @@ export default function GalleryPage() {
         <div className="container-page">
           <SectionHeading eyebrow="Photo albums" title="Captured moments" />
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {galleryAlbums.map((a) => (
+            {galleryAlbums.map((a, i) => (
               <button
-                key={a.title}
+                key={i}
                 className="group relative aspect-[4/3] overflow-hidden rounded-2xl text-left"
               >
                 <div className="h-full w-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: `url('${a.image}')` }} />
@@ -37,7 +39,7 @@ export default function GalleryPage() {
                   <span className="text-xs font-semibold uppercase tracking-wide text-gold-300">{a.category}</span>
                   <h3 className="text-xl !text-white">{a.title}</h3>
                   <p className="mt-1 flex items-center gap-1.5 text-sm text-paper/80">
-                    <Icon name="sparkle" size={14} /> {a.count} photos
+                    <Icon name="image" size={14} /> View album
                   </p>
                 </div>
               </button>

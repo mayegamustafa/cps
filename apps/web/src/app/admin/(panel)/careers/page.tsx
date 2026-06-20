@@ -1,40 +1,37 @@
-import { PageHeader, DataTable, StatusBadge, RowActions } from '@/components/admin/AdminUI';
-import { Button } from '@/components/ui/Button';
-import { adminApplications } from '@/lib/admin';
-import { jobs } from '@/lib/content';
+'use client';
+
+import { ResourceManager, type ResourceConfig } from '@/components/admin/ResourceManager';
+
+const config: ResourceConfig = {
+  title: 'Careers',
+  description: 'Manage job vacancies. Open vacancies appear on the public Careers page.',
+  listUrl: '/api/careers/vacancies/admin/list',
+  createUrl: '/api/careers/vacancies',
+  itemUrl: (row) => `/api/careers/vacancies/${row.id}`,
+  fields: [
+    { key: 'title', label: 'Job title', required: true, table: true },
+    { key: 'department', label: 'Department', required: true, table: true },
+    { key: 'type', label: 'Type', type: 'select', table: true, options: [
+      { value: 'FULL_TIME', label: 'Full-time' },
+      { value: 'PART_TIME', label: 'Part-time' },
+      { value: 'CONTRACT', label: 'Contract' },
+      { value: 'TEMPORARY', label: 'Temporary' },
+      { value: 'VOLUNTEER', label: 'Volunteer' },
+    ] },
+    { key: 'status', label: 'Status', type: 'select', table: true, options: [
+      { value: 'OPEN', label: 'Open' },
+      { value: 'CLOSED', label: 'Closed' },
+      { value: 'DRAFT', label: 'Draft' },
+    ] },
+    { key: 'location', label: 'Location', placeholder: 'Kampala, Uganda' },
+    { key: 'deadline', label: 'Application deadline', type: 'date', table: true },
+    { key: 'salaryRange', label: 'Salary range' },
+    { key: 'requirements', label: 'Requirements (comma separated)', type: 'tags' },
+    { key: 'responsibilities', label: 'Responsibilities (comma separated)', type: 'tags' },
+    { key: 'description', label: 'Description', type: 'textarea', required: true },
+  ],
+};
 
 export default function AdminCareersPage() {
-  return (
-    <>
-      <PageHeader
-        title="Careers"
-        subtitle="Manage vacancies, review applications and shortlist candidates."
-        action={<Button href="#" icon="plus">New vacancy</Button>}
-      />
-
-      <h2 className="mb-3 font-display text-lg text-maroon-900">Open vacancies</h2>
-      <DataTable
-        columns={['Position', 'Department', 'Type', 'Deadline', '']}
-        rows={jobs.map((j) => [
-          <span key="t" className="font-medium">{j.title}</span>,
-          j.department,
-          j.type,
-          j.deadline,
-          <RowActions key="a" />,
-        ])}
-      />
-
-      <h2 className="mb-3 mt-10 font-display text-lg text-maroon-900">Recent applications</h2>
-      <DataTable
-        columns={['Candidate', 'Applied for', 'Date', 'Status', '']}
-        rows={adminApplications.map((a) => [
-          <span key="n" className="font-medium">{a.name}</span>,
-          a.role,
-          a.date,
-          <StatusBadge key="s" status={a.status} />,
-          <RowActions key="x" />,
-        ])}
-      />
-    </>
-  );
+  return <ResourceManager config={config} />;
 }

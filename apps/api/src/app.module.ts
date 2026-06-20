@@ -16,6 +16,8 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { StatsModule } from './modules/stats/stats.module';
 import { AnnouncementsModule } from './modules/announcements/announcements.module';
 import { SetupModule } from './modules/setup/setup.module';
+import { AlumniModule } from './modules/alumni/alumni.module';
+import { GalleryModule } from './modules/gallery/gallery.module';
 
 @Module({
   imports: [
@@ -35,8 +37,9 @@ import { SetupModule } from './modules/setup/setup.module';
     StatsModule,
     AnnouncementsModule,
     SetupModule,
-    // Further modules (gallery, alumni, staff, seo) follow the
-    // same controller→service→Prisma pattern.
+    AlumniModule,
+    GalleryModule,
+    // Further modules (staff, seo) follow the same controller→Prisma pattern.
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

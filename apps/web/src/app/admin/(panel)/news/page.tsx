@@ -1,25 +1,28 @@
-import { PageHeader, DataTable, StatusBadge, RowActions } from '@/components/admin/AdminUI';
-import { Button } from '@/components/ui/Button';
-import { adminNews } from '@/lib/admin';
+'use client';
+
+import { ResourceManager, type ResourceConfig } from '@/components/admin/ResourceManager';
+
+const config: ResourceConfig = {
+  title: 'News & Articles',
+  description: 'Create, edit and publish news. Published items appear on the public site.',
+  listUrl: '/api/news/admin/list',
+  createUrl: '/api/news',
+  itemUrl: (row) => `/api/news/${row.id}`,
+  fields: [
+    { key: 'title', label: 'Title', required: true, table: true },
+    { key: 'status', label: 'Status', type: 'select', table: true, options: [
+      { value: 'DRAFT', label: 'Draft' },
+      { value: 'PUBLISHED', label: 'Published' },
+      { value: 'SCHEDULED', label: 'Scheduled' },
+      { value: 'ARCHIVED', label: 'Archived' },
+    ] },
+    { key: 'excerpt', label: 'Excerpt', placeholder: 'Short summary' },
+    { key: 'coverImage', label: 'Cover image URL', type: 'image' },
+    { key: 'tags', label: 'Tags', type: 'tags' },
+    { key: 'body', label: 'Body', type: 'textarea', required: true },
+  ],
+};
 
 export default function AdminNewsPage() {
-  return (
-    <>
-      <PageHeader
-        title="News & Articles"
-        subtitle="Create, edit and publish news for the public website."
-        action={<Button href="#" icon="plus">New article</Button>}
-      />
-      <DataTable
-        columns={['Title', 'Status', 'Date', 'Views', '']}
-        rows={adminNews.map((n) => [
-          <span key="t" className="font-medium">{n.title}</span>,
-          <StatusBadge key="s" status={n.status} />,
-          n.date,
-          n.views.toLocaleString(),
-          <RowActions key="a" />,
-        ])}
-      />
-    </>
-  );
+  return <ResourceManager config={config} />;
 }

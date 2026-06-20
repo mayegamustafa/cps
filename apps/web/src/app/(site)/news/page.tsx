@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { PageHero } from '@/components/ui/PageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Icon } from '@/components/Icon';
-import { events } from '@/lib/content';
+import { getNews, getEvents } from '@/lib/public-data';
 
 export const metadata: Metadata = {
   title: 'News & Events',
@@ -11,19 +11,11 @@ export const metadata: Metadata = {
     'The latest news, announcements and the upcoming events calendar at City Parents School.',
 };
 
-const articles = [
-  { slug: 'national-examinations-2026', title: 'City Parents tops the district in national examinations', excerpt: 'Our candidates delivered the school’s best-ever results, with distinctions across the board.', category: 'Achievement', date: 'May 12, 2026', image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=900&q=70' },
-  { slug: 'sports-gala-2026', title: 'Annual Sports Gala unites all four houses', excerpt: 'A day of athletics, spirit and friendly rivalry on the school field.', category: 'Events', date: 'Apr 28, 2026', image: 'https://images.unsplash.com/photo-1551958219-acbc608c6377?auto=format&fit=crop&w=900&q=70' },
-  { slug: 'science-block-opening', title: 'New science and innovation block opens', excerpt: 'State-of-the-art laboratories expand our capacity for hands-on learning.', category: 'Campus', date: 'Mar 15, 2026', image: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=900&q=70' },
-  { slug: 'debate-champions', title: 'Debate team crowned national champions', excerpt: 'Our senior debaters argued their way to a national title in Kampala.', category: 'Achievement', date: 'Feb 20, 2026', image: 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&w=900&q=70' },
-  { slug: 'community-outreach', title: 'Pupils lead community clean-up drive', excerpt: 'Service learning in action as our students give back to the neighbourhood.', category: 'Community', date: 'Feb 02, 2026', image: 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=900&q=70' },
-  { slug: 'music-festival', title: 'Inter-house music festival delights families', excerpt: 'An evening of choral and instrumental brilliance from every house.', category: 'Arts', date: 'Jan 18, 2026', image: 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?auto=format&fit=crop&w=900&q=70' },
-];
-
 const monthName = (iso: string) =>
   new Date(iso).toLocaleDateString('en-GB', { month: 'short' }).toUpperCase();
 
-export default function NewsPage() {
+export default async function NewsPage() {
+  const [articles, events] = await Promise.all([getNews(), getEvents()]);
   return (
     <>
       <PageHero
@@ -65,8 +57,8 @@ export default function NewsPage() {
         <div className="container-page">
           <SectionHeading eyebrow="Upcoming" title="Events calendar" intro="Mark your diary and register for the events that matter to your family." />
           <ul className="mt-12 space-y-3">
-            {events.map((e) => (
-              <li key={e.title} className="flex flex-col gap-4 rounded-2xl border border-line bg-paper p-5 sm:flex-row sm:items-center">
+            {events.map((e, i) => (
+              <li key={i} className="flex flex-col gap-4 rounded-2xl border border-line bg-paper p-5 sm:flex-row sm:items-center">
                 <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-xl bg-maroon-700 text-white">
                   <span className="font-display text-2xl leading-none">{new Date(e.date).getDate()}</span>
                   <span className="text-xs font-semibold text-gold-300">{monthName(e.date)}</span>

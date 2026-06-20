@@ -29,6 +29,15 @@ export class NewsController {
     return this.news.findPublished(Number(take) || 12, Number(skip) || 0);
   }
 
+  // ── Admin list (declared before :slug so it isn't captured) ──
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.MARKETING_ADMIN, Role.CONTENT_EDITOR)
+  @Get('admin/list')
+  adminList() {
+    return this.news.findAll();
+  }
+
   @Get(':slug')
   bySlug(@Param('slug') slug: string) {
     return this.news.findBySlug(slug);

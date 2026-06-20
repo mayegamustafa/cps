@@ -5,17 +5,28 @@ import { Field } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
 
-const fileCls =
-  'w-full rounded-xl border border-dashed border-maroon-700/30 bg-maroon-50/40 px-4 py-3 text-sm text-ink-soft file:mr-4 file:rounded-full file:border-0 file:bg-maroon-700 file:px-4 file:py-2 file:text-white hover:border-maroon-700/60';
+export function JobApplicationForm({ role, vacancyId }: { role: string; vacancyId?: string }) {
+  const [status, setStatus] = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
 
-export function JobApplicationForm({ role }: { role: string }) {
-  const [status, setStatus] = useState<'idle' | 'sending' | 'done'>('idle');
-
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setStatus('sending');
-    // File uploads stream to Cloudflare R2 via signed URLs in production.
-    setTimeout(() => setStatus('done'), 600);
+    const data = Object.fromEntries(new FormData(e.currentTarget).entries());
+    if (!vacancyId) {
+      // No live vacancy id (demo content) — confirm optimistically.
+      setStatus('done');
+      return;
+    }
+    try {
+      const res = await fetch(`/api/careers/vacancies/${vacancyId}/apply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      setStatus(res.ok ? 'done' : 'error');
+    } catch {
+      setStatus('error');
+    }
   }
 
   if (status === 'done') {
@@ -43,18 +54,25 @@ export function JobApplicationForm({ role }: { role: string }) {
         <Field label="Email" id="email" name="email" type="email" required />
         <Field label="Phone" id="phone" name="phone" required />
       </div>
-      <div>
-        <label htmlFor="cv" className="mb-1.5 block text-sm font-medium text-ink">
-          Curriculum Vitae (PDF) <span className="text-maroon-600">*</span>
-        </label>
-        <input id="cv" name="cv" type="file" accept=".pdf,.doc,.docx" required className={fileCls} />
-      </div>
-      <div>
-        <label htmlFor="certs" className="mb-1.5 block text-sm font-medium text-ink">
-          Academic certificates
-        </label>
-        <input id="certs" name="certs" type="file" accept=".pdf,.jpg,.png" multiple className={fileCls} />
-      </div>
+      <Field
+        label="Link to your CV"
+        id="cvUrl"
+        name="cvUrl"
+        type="url"
+        required
+        placeholder="https://… (Google Drive, Dropbox, etc.)"
+        hint="Share a public link to your CV. Direct file upload is enabled once Cloudflare R2 is connected."
+      />
+      <Field
+        label="Link to cover letter (optional)"
+        id="coverLetterUrl"
+        name="coverLetterUrl"
+        type="url"
+        placeholder="https://…"
+      />
+      {status === 'error' ? (
+        <p className="text-sm text-maroon-600">Could not submit your application. Please try again.</p>
+      ) : null}
       <Button type="submit" size="lg" icon="arrow-right" disabled={status === 'sending'}>
         {status === 'sending' ? 'Submitting…' : 'Submit application'}
       </Button>

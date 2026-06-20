@@ -8,8 +8,9 @@ import {
 import { PublishStatus } from '@cps/database';
 
 export class CreateNewsDto {
-  @IsString() @MinLength(3)
-  slug: string;
+  // Slug is auto-generated from the title when omitted.
+  @IsOptional() @IsString()
+  slug?: string;
 
   @IsString() @MinLength(3)
   title: string;
@@ -17,7 +18,7 @@ export class CreateNewsDto {
   @IsOptional() @IsString()
   excerpt?: string;
 
-  @IsString()
+  @IsString() @MinLength(1)
   body: string;
 
   @IsOptional() @IsString()
@@ -30,4 +31,11 @@ export class CreateNewsDto {
   tags?: string[];
 }
 
-export class UpdateNewsDto extends CreateNewsDto {}
+export class UpdateNewsDto {
+  @IsOptional() @IsString() title?: string;
+  @IsOptional() @IsString() excerpt?: string;
+  @IsOptional() @IsString() body?: string;
+  @IsOptional() @IsString() coverImage?: string;
+  @IsOptional() @IsEnum(PublishStatus) status?: PublishStatus;
+  @IsOptional() @IsArray() @IsString({ each: true }) tags?: string[];
+}

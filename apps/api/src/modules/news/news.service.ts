@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PublishStatus } from '@cps/database';
+import { uniqueSlug } from '../../common/slug';
 import type { CreateNewsDto, UpdateNewsDto } from './news.dto';
 
 @Injectable()
@@ -17,6 +18,14 @@ export class NewsService {
     });
   }
 
+  /** Admin list — every non-deleted article, any status. */
+  findAll() {
+    return this.prisma.newsArticle.findMany({
+      where: { deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async findBySlug(slug: string) {
     const article = await this.prisma.newsArticle.findFirst({
       where: { slug, status: PublishStatus.PUBLISHED, deletedAt: null },
@@ -30,11 +39,29 @@ export class NewsService {
   }
 
   create(dto: CreateNewsDto, authorId: string) {
-    return this.prisma.newsArticle.create({ data: { ...dto, authorId } });
+    const status = dto.status ?? PublishStatus.DRAFT;
+    return this.prisma.newsArticle.create({
+      data: {
+        ...dto,
+        slug: dto.slug || uniqueSlug(dto.title),
+        status,
+        publishedAt: status === PublishStatus.PUBLISHED ? new Date() : null,
+      },
+    });
   }
 
-  update(id: string, dto: UpdateNewsDto) {
-    return this.prisma.newsArticle.update({ where: { id }, data: dto });
+  async update(id: string, dto: UpdateNewsDto) {
+    const current = await this.prisma.newsArticle.findUnique({ where: { id } });
+    if (!current) throw new NotFoundException('Article not found');
+    // Set publishedAt the first time it becomes published.
+    const publishedAt =
+      dto.status === PublishStatus.PUBLISHED && !current.publishedAt
+        ? new Date()
+        : undefined;
+    return this.prisma.newsArticle.update({
+      where: { id },
+      data: { ...dto, ...(publishedAt ? { publishedAt } : {}) },
+    });
   }
 
   remove(id: string) {

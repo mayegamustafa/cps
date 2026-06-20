@@ -7,6 +7,7 @@ import { Icon, type IconName } from '@/components/Icon';
 import { site } from '@/lib/site';
 import { getSiteConfig } from '@/lib/site-config';
 import { getStats } from '@/lib/stats';
+import { getNews } from '@/lib/public-data';
 
 const pathways: {
   name: string;
@@ -74,33 +75,6 @@ const values: { title: string; icon: IconName; body: string }[] = [
   },
 ];
 
-const news = [
-  {
-    title: 'City Parents tops the district in national examinations',
-    category: 'Achievement',
-    date: 'May 2026',
-    href: '/news/national-examinations-2026',
-    image:
-      'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=900&q=70',
-  },
-  {
-    title: 'Annual Sports Gala unites all four houses on the field',
-    category: 'Events',
-    date: 'Apr 2026',
-    href: '/news/sports-gala-2026',
-    image:
-      'https://images.unsplash.com/photo-1551958219-acbc608c6377?auto=format&fit=crop&w=900&q=70',
-  },
-  {
-    title: 'New science and innovation block opens its doors',
-    category: 'Campus',
-    date: 'Mar 2026',
-    href: '/news/science-block-opening',
-    image:
-      'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=900&q=70',
-  },
-];
-
 const testimonials = [
   {
     quote:
@@ -119,6 +93,7 @@ const testimonials = [
 export default async function HomePage() {
   const config = await getSiteConfig();
   const stats = await getStats();
+  const news = (await getNews()).slice(0, 3);
   return (
     <>
       <Hero config={config} />
@@ -281,8 +256,8 @@ export default async function HomePage() {
           <div className="mt-12 grid gap-6 md:grid-cols-3">
             {news.map((n) => (
               <Link
-                key={n.href}
-                href={n.href}
+                key={n.slug}
+                href={`/news/${n.slug}`}
                 className="group overflow-hidden rounded-2xl border border-line bg-paper transition-all duration-300 hover:-translate-y-1 hover:shadow-lift"
               >
                 <div className="relative aspect-[16/10] overflow-hidden">

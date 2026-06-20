@@ -1,26 +1,36 @@
-import { PageHeader, DataTable, StatusBadge, RowActions } from '@/components/admin/AdminUI';
-import { Button } from '@/components/ui/Button';
-import { recentAdmissions } from '@/lib/admin';
+'use client';
+
+import { ResourceManager, type ResourceConfig } from '@/components/admin/ResourceManager';
+
+const config: ResourceConfig = {
+  title: 'Admissions',
+  description: 'Review pupil applications and update their status.',
+  listUrl: '/api/admissions',
+  createUrl: '/api/admissions',
+  itemUrl: (row) => `/api/admissions/${row.id}/decision`,
+  updateMethod: 'PATCH',
+  readOnlyCreate: true,
+  fields: [
+    { key: 'reference', label: 'Reference', table: true, readonly: true },
+    { key: 'pupilFirstName', label: 'Pupil first name', table: true, readonly: true },
+    { key: 'pupilLastName', label: 'Pupil last name', table: true, readonly: true },
+    { key: 'section', label: 'Section', table: true, readonly: true },
+    { key: 'guardianName', label: 'Guardian', readonly: true },
+    { key: 'guardianEmail', label: 'Guardian email', readonly: true },
+    { key: 'status', label: 'Status', type: 'select', table: true, required: true, options: [
+      { value: 'SUBMITTED', label: 'Submitted' },
+      { value: 'UNDER_REVIEW', label: 'Under review' },
+      { value: 'SHORTLISTED', label: 'Shortlisted' },
+      { value: 'INTERVIEW_SCHEDULED', label: 'Interview scheduled' },
+      { value: 'OFFER_MADE', label: 'Offer made' },
+      { value: 'ACCEPTED', label: 'Accepted' },
+      { value: 'REJECTED', label: 'Rejected' },
+      { value: 'WITHDRAWN', label: 'Withdrawn' },
+    ] },
+    { key: 'decisionNote', label: 'Decision note', type: 'textarea' },
+  ],
+};
 
 export default function AdminAdmissionsPage() {
-  return (
-    <>
-      <PageHeader
-        title="Admissions"
-        subtitle="Review applications, request documents and issue admission letters."
-        action={<Button href="#" variant="outline" icon="download">Export</Button>}
-      />
-      <DataTable
-        columns={['Reference', 'Pupil', 'Section', 'Submitted', 'Status', '']}
-        rows={recentAdmissions.map((a) => [
-          <span key="r" className="font-mono text-xs">{a.ref}</span>,
-          <span key="p" className="font-medium">{a.pupil}</span>,
-          a.section,
-          a.date,
-          <StatusBadge key="s" status={a.status} />,
-          <RowActions key="x" />,
-        ])}
-      />
-    </>
-  );
+  return <ResourceManager config={config} />;
 }

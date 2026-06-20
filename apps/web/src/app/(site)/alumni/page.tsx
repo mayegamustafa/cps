@@ -3,7 +3,7 @@ import { PageHero } from '@/components/ui/PageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
-import { alumni } from '@/lib/content';
+import { getAlumni } from '@/lib/public-data';
 
 export const metadata: Metadata = {
   title: 'Alumni',
@@ -11,7 +11,8 @@ export const metadata: Metadata = {
     'The City Parents School alumni community, register, reconnect, share your story and give back.',
 };
 
-export default function AlumniPage() {
+export default async function AlumniPage() {
+  const alumni = await getAlumni();
   return (
     <>
       <PageHero
@@ -49,8 +50,8 @@ export default function AlumniPage() {
         <div className="container-page">
           <SectionHeading eyebrow="Our community" title="Where our graduates are today" />
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {alumni.map((a) => (
-              <div key={a.name} className="rounded-2xl border border-line bg-paper p-6 text-center">
+            {alumni.map((a, i) => (
+              <div key={i} className="rounded-2xl border border-line bg-paper p-6 text-center">
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gold-400 font-display text-2xl text-maroon-900">
                   {a.name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
                 </div>

@@ -1,10 +1,12 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Module,
   Param,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -23,6 +25,16 @@ class CreateDownloadDto {
   @IsOptional() @IsBoolean() isPublic?: boolean;
 }
 
+class UpdateDownloadDto {
+  @IsOptional() @IsString() @MinLength(2) title?: string;
+  @IsOptional() @IsString() category?: string;
+  @IsOptional() @IsString() fileUrl?: string;
+  @IsOptional() @IsString() description?: string;
+  @IsOptional() @IsBoolean() isPublic?: boolean;
+}
+
+const EDITORS = [Role.SUPER_ADMIN, Role.MARKETING_ADMIN, Role.CONTENT_EDITOR];
+
 @ApiTags('downloads')
 @Controller('downloads')
 export class DownloadsController {
@@ -36,6 +48,15 @@ export class DownloadsController {
     });
   }
 
+  // Admin: every document (incl. non-public).
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...EDITORS)
+  @Get('admin/list')
+  adminList() {
+    return this.prisma.download.findMany({ orderBy: { createdAt: 'desc' } });
+  }
+
   @Post(':id/track')
   track(@Param('id') id: string) {
     return this.prisma.download.update({
@@ -46,10 +67,26 @@ export class DownloadsController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SUPER_ADMIN, Role.MARKETING_ADMIN, Role.CONTENT_EDITOR)
+  @Roles(...EDITORS)
   @Post()
   create(@Body() dto: CreateDownloadDto) {
     return this.prisma.download.create({ data: dto });
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...EDITORS)
+  @Put(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateDownloadDto) {
+    return this.prisma.download.update({ where: { id }, data: dto });
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.MARKETING_ADMIN)
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.prisma.download.delete({ where: { id } });
   }
 }
 
