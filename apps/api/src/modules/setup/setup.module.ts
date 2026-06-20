@@ -5,6 +5,7 @@ import {
   Get,
   Module,
   Post,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import {
@@ -31,17 +32,31 @@ export class SetupController {
 
   @Get('status')
   async status() {
-    const admins = await this.prisma.user.count({
-      where: { roles: { has: Role.SUPER_ADMIN } },
-    });
+    let admins: number;
+    try {
+      admins = await this.prisma.user.count({
+        where: { roles: { has: Role.SUPER_ADMIN } },
+      });
+    } catch (e) {
+      throw new ServiceUnavailableException(
+        `Database not reachable or not migrated: ${(e as Error).message}`,
+      );
+    }
     return { adminExists: admins > 0, needsSetup: admins === 0 };
   }
 
   @Post('seed')
   async seed(@Body() body: { setupKey?: string }) {
-    const adminCount = await this.prisma.user.count({
-      where: { roles: { has: Role.SUPER_ADMIN } },
-    });
+    let adminCount: number;
+    try {
+      adminCount = await this.prisma.user.count({
+        where: { roles: { has: Role.SUPER_ADMIN } },
+      });
+    } catch (e) {
+      throw new ServiceUnavailableException(
+        `Database not reachable or not migrated: ${(e as Error).message}`,
+      );
+    }
 
     if (adminCount > 0) {
       const key = process.env.SETUP_KEY;
@@ -192,5 +207,25 @@ export class SetupController {
   }
 }
 
-@Module({ controllers: [SetupController] })
+@ApiTags('health')
+@Controller('health')
+export class HealthController {
+  constructor(private prisma: PrismaService) {}
+
+  @Get()
+  async check() {
+    try {
+      await this.prisma.$queryRaw`SELECT 1`;
+      return { status: 'ok', db: 'ok' };
+    } catch (e) {
+      throw new ServiceUnavailableException({
+        status: 'error',
+        db: 'error',
+        message: (e as Error).message,
+      });
+    }
+  }
+}
+
+@Module({ controllers: [SetupController, HealthController] })
 export class SetupModule {}
