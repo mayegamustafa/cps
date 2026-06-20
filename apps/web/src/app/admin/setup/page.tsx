@@ -4,14 +4,18 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/Button';
+import { Field } from '@/components/ui/Field';
 import { Icon } from '@/components/Icon';
 
 const API = ''; // same-origin; proxied to the backend by app/api/[...path]/route.ts
 
 export default function SetupPage() {
-  const [status, setStatus] = useState<'checking' | 'ready' | 'done' | 'working' | 'error'>('checking');
+  const [phase, setPhase] = useState<'checking' | 'ready' | 'error'>('checking');
+  const [adminEmail, setAdminEmail] = useState('admin@cityparents.ac.ug');
   const [adminExists, setAdminExists] = useState(false);
-  const [result, setResult] = useState<{ adminEmail?: string; message?: string } | null>(null);
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState<{ email: string; password: string } | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -20,35 +24,49 @@ export default function SetupPage() {
         const res = await fetch(`${API}/api/setup/status`);
         const data = await res.json();
         setAdminExists(!!data.adminExists);
-        setStatus('ready');
+        if (data.adminEmail) setAdminEmail(data.adminEmail);
+        setPhase('ready');
       } catch {
-        setStatus('error');
+        setPhase('error');
         setError('Cannot reach the API. Make sure the API service is running and API_ORIGIN is set on the web service.');
       }
     })();
   }, []);
 
   async function seed() {
-    setStatus('working');
+    setBusy(true);
     setError('');
     try {
-      const res = await fetch(`${API}/api/setup/seed`, {
+      const res = await fetch(`${API}/api/setup/seed`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      const data = await res.json();
+      if (!res.ok) setError(data.message ?? 'Seeding failed.');
+      else setAdminExists(true);
+    } catch {
+      setError('Cannot reach the API.');
+    }
+    setBusy(false);
+  }
+
+  async function setAdminPassword(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError('');
+    try {
+      const res = await fetch(`${API}/api/setup/reset-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ password }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.message ?? 'Seeding failed.');
-        setStatus('error');
-        return;
+        setError(data.message ?? 'Could not set the password.');
+      } else {
+        setDone({ email: data.email ?? adminEmail, password });
       }
-      setResult(data);
-      setStatus('done');
     } catch {
       setError('Cannot reach the API.');
-      setStatus('error');
     }
+    setBusy(false);
   }
 
   return (
@@ -57,57 +75,65 @@ export default function SetupPage() {
         <Logo />
         <h1 className="mt-6 text-2xl">Platform setup</h1>
         <p className="mt-2 text-sm text-ink-soft">
-          Seed the database with the administrator account and baseline content.
-          Run this once after deploying.
+          Seed the database and set the administrator login. Use this once after deploying.
         </p>
 
-        {status === 'checking' ? <p className="mt-6 text-ink-muted">Checking status…</p> : null}
+        {phase === 'checking' ? <p className="mt-6 text-ink-muted">Checking status…</p> : null}
 
-        {status === 'ready' ? (
-          <div className="mt-6">
-            <div className="rounded-xl bg-paper-dark p-4 text-sm">
-              {adminExists ? (
-                <p className="flex items-start gap-2 text-ink-soft">
-                  <Icon name="shield-check" size={18} className="mt-0.5 shrink-0 text-emerald-600" />
-                  <span>
-                    An administrator already exists. If you can&rsquo;t sign in, set
-                    <code className="mx-1 rounded bg-white px-1.5 py-0.5">SEED_ADMIN_PASSWORD</code>
-                    on the API service and click below to reset the admin password to it.
-                  </span>
-                </p>
-              ) : (
-                <p className="flex items-center gap-2 text-ink-soft">
-                  <Icon name="bell" size={18} className="text-maroon-600" />
-                  No administrator found yet. Click below to seed the database.
-                </p>
-              )}
-            </div>
-            <Button onClick={seed} size="lg" icon="arrow-right" className="mt-5 w-full">
-              {adminExists ? 'Seed / reset admin password' : 'Seed database'}
-            </Button>
-          </div>
-        ) : null}
-
-        {status === 'working' ? <p className="mt-6 text-ink-muted">Seeding…</p> : null}
-
-        {status === 'done' ? (
+        {done ? (
           <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-5">
             <h2 className="flex items-center gap-2 text-lg text-emerald-800">
-              <Icon name="shield-check" size={20} /> Done
+              <Icon name="shield-check" size={20} /> Admin ready
             </h2>
-            <p className="mt-2 text-sm text-emerald-900">{result?.message}</p>
-            {result?.adminEmail ? (
-              <p className="mt-3 text-sm">
-                Sign in with <strong>{result.adminEmail}</strong> and the password set in
-                <code className="mx-1 rounded bg-white px-1.5 py-0.5">SEED_ADMIN_PASSWORD</code>
-                (default <code className="rounded bg-white px-1.5 py-0.5">ChangeMe123!</code>).
-              </p>
-            ) : null}
+            <p className="mt-2 text-sm text-emerald-900">Sign in with these exact credentials:</p>
+            <div className="mt-3 space-y-1 rounded-lg bg-white p-3 font-mono text-sm">
+              <div>Email: <strong>{done.email}</strong></div>
+              <div>Password: <strong>{done.password}</strong></div>
+            </div>
             <Button href="/admin/login" className="mt-5" icon="arrow-right">Go to login</Button>
+          </div>
+        ) : phase === 'ready' ? (
+          <div className="mt-6 space-y-6">
+            {!adminExists ? (
+              <div>
+                <p className="mb-3 flex items-center gap-2 text-sm text-ink-soft">
+                  <Icon name="bell" size={18} className="text-maroon-600" />
+                  No administrator yet. Seed the database first.
+                </p>
+                <Button onClick={seed} size="lg" icon="arrow-right" className="w-full" disabled={busy}>
+                  {busy ? 'Seeding…' : 'Seed database'}
+                </Button>
+              </div>
+            ) : null}
+
+            <form onSubmit={setAdminPassword} className="space-y-3 border-t border-line pt-6">
+              <p className="text-sm text-ink-soft">
+                Set the administrator password. You&rsquo;ll log in with this exact value.
+              </p>
+              <div className="rounded-lg bg-paper-dark px-3 py-2 text-sm">
+                Admin email: <strong>{adminEmail}</strong>
+              </div>
+              <Field
+                label="New admin password"
+                id="pwd"
+                type="text"
+                value={password}
+                required
+                placeholder="At least 6 characters"
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <Button type="submit" size="lg" icon="arrow-right" className="w-full" disabled={busy || password.length < 6}>
+                {busy ? 'Saving…' : 'Set password & enable login'}
+              </Button>
+            </form>
+
+            {error ? (
+              <p className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</p>
+            ) : null}
           </div>
         ) : null}
 
-        {status === 'error' ? (
+        {phase === 'error' ? (
           <div className="mt-6">
             <p className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</p>
             <Button onClick={() => location.reload()} variant="outline" className="mt-4">Try again</Button>

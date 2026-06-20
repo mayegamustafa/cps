@@ -1,5 +1,8 @@
 import {
+  BadRequestException,
+  Body,
   Controller,
+  ForbiddenException,
   Get,
   Module,
   Post,
@@ -40,7 +43,49 @@ export class SetupController {
         `Database not reachable or not migrated: ${(e as Error).message}`,
       );
     }
-    return { adminExists: admins > 0, needsSetup: admins === 0 };
+    return {
+      adminExists: admins > 0,
+      needsSetup: admins === 0,
+      adminEmail: process.env.SEED_ADMIN_EMAIL ?? 'admin@cityparents.ac.ug',
+    };
+  }
+
+  /**
+   * Set the administrator's password to a known value (bootstrap recovery).
+   * Creates the admin if missing. If SETUP_KEY is configured it must be supplied,
+   * otherwise this is open for first-time setup — set SETUP_KEY after go-live.
+   */
+  @Post('reset-admin')
+  async resetAdmin(@Body() body: { password?: string; setupKey?: string }) {
+    const key = process.env.SETUP_KEY;
+    if (key && body?.setupKey !== key) {
+      throw new ForbiddenException('Invalid setupKey.');
+    }
+    const password = (body?.password ?? '').trim();
+    if (password.length < 6) {
+      throw new BadRequestException('Password must be at least 6 characters.');
+    }
+    const email = process.env.SEED_ADMIN_EMAIL ?? 'admin@cityparents.ac.ug';
+    try {
+      await this.prisma.user.upsert({
+        where: { email },
+        update: { passwordHash: hashPassword(password), isActive: true, roles: [Role.SUPER_ADMIN] },
+        create: {
+          email,
+          passwordHash: hashPassword(password),
+          firstName: process.env.SEED_ADMIN_FIRST_NAME ?? 'Super',
+          lastName: process.env.SEED_ADMIN_LAST_NAME ?? 'Admin',
+          roles: [Role.SUPER_ADMIN],
+          isActive: true,
+          emailVerified: true,
+        },
+      });
+    } catch (e) {
+      throw new ServiceUnavailableException(
+        `Database not reachable or not migrated: ${(e as Error).message}`,
+      );
+    }
+    return { ok: true, email, message: `Admin password set. Sign in with ${email}.` };
   }
 
   @Post('seed')
