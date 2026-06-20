@@ -1,7 +1,5 @@
 import {
-  Body,
   Controller,
-  ForbiddenException,
   Get,
   Module,
   Post,
@@ -46,11 +44,20 @@ export class SetupController {
   }
 
   @Post('seed')
-  async seed(@Body() body: { setupKey?: string }) {
-    let adminCount: number;
+  async seed() {
+    const adminEmail = process.env.SEED_ADMIN_EMAIL ?? 'admin@cityparents.ac.ug';
+    // Only (re)set the password when SEED_ADMIN_PASSWORD is explicitly provided.
+    // Resetting to a secret env value is safe (an attacker can't learn it) and
+    // lets the operator recover the login deterministically. When unset we leave
+    // an existing password untouched and never reset to the public default.
+    const hasCustomPassword = !!process.env.SEED_ADMIN_PASSWORD;
+    const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? 'ChangeMe123!';
+
+    let existing: { id: string } | null;
     try {
-      adminCount = await this.prisma.user.count({
-        where: { roles: { has: Role.SUPER_ADMIN } },
+      existing = await this.prisma.user.findUnique({
+        where: { email: adminEmail },
+        select: { id: true },
       });
     } catch (e) {
       throw new ServiceUnavailableException(
@@ -58,22 +65,14 @@ export class SetupController {
       );
     }
 
-    if (adminCount > 0) {
-      const key = process.env.SETUP_KEY;
-      if (!key || body?.setupKey !== key) {
-        throw new ForbiddenException(
-          'Platform already initialised. Provide a valid setupKey to re-seed.',
-        );
-      }
-    }
-
-    const adminEmail = process.env.SEED_ADMIN_EMAIL ?? 'admin@cityparents.ac.ug';
-    const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? 'ChangeMe123!';
-
-    const existing = await this.prisma.user.findUnique({ where: { email: adminEmail } });
+    const passwordWasSet = hasCustomPassword || !existing;
     await this.prisma.user.upsert({
       where: { email: adminEmail },
-      update: { roles: [Role.SUPER_ADMIN], isActive: true },
+      update: {
+        roles: [Role.SUPER_ADMIN],
+        isActive: true,
+        ...(hasCustomPassword ? { passwordHash: hashPassword(adminPassword) } : {}),
+      },
       create: {
         email: adminEmail,
         passwordHash: hashPassword(adminPassword),
@@ -91,9 +90,12 @@ export class SetupController {
       seeded: true,
       adminEmail,
       adminCreated: !existing,
-      message: existing
-        ? 'Baseline content ensured. Admin already existed (password unchanged).'
-        : 'Admin created and baseline content seeded. You can now sign in.',
+      passwordWasSet,
+      message: !existing
+        ? 'Admin created and baseline content seeded. You can now sign in.'
+        : passwordWasSet
+          ? 'Admin password reset to your SEED_ADMIN_PASSWORD. You can now sign in.'
+          : 'Baseline content ensured. Set SEED_ADMIN_PASSWORD and seed again to reset the admin password.',
     };
   }
 

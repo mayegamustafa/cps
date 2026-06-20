@@ -67,9 +67,13 @@ export default function SetupPage() {
           <div className="mt-6">
             <div className="rounded-xl bg-paper-dark p-4 text-sm">
               {adminExists ? (
-                <p className="flex items-center gap-2 text-ink-soft">
-                  <Icon name="shield-check" size={18} className="text-emerald-600" />
-                  An administrator already exists. The database looks initialised.
+                <p className="flex items-start gap-2 text-ink-soft">
+                  <Icon name="shield-check" size={18} className="mt-0.5 shrink-0 text-emerald-600" />
+                  <span>
+                    An administrator already exists. If you can&rsquo;t sign in, set
+                    <code className="mx-1 rounded bg-white px-1.5 py-0.5">SEED_ADMIN_PASSWORD</code>
+                    on the API service and click below to reset the admin password to it.
+                  </span>
                 </p>
               ) : (
                 <p className="flex items-center gap-2 text-ink-soft">
@@ -79,7 +83,7 @@ export default function SetupPage() {
               )}
             </div>
             <Button onClick={seed} size="lg" icon="arrow-right" className="mt-5 w-full">
-              Seed database
+              {adminExists ? 'Seed / reset admin password' : 'Seed database'}
             </Button>
           </div>
         ) : null}
