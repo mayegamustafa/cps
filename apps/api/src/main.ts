@@ -2,9 +2,49 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { dirname, join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { AppModule } from './app.module';
 
+/**
+ * Apply pending DB migrations at startup, so the schema exists regardless of how
+ * the platform starts the container (Dockerfile entrypoint, Nixpacks, or a
+ * custom start command). Idempotent and non-fatal — logs and continues so the
+ * /api/health and /api/setup endpoints can report problems clearly.
+ */
+async function runMigrations() {
+  try {
+    const dbPkg = require.resolve('@cps/database/package.json');
+    const dbDir = dirname(dbPkg);
+    const schema = join(dbDir, 'prisma', 'schema.prisma');
+
+    // Resolve the Prisma CLI entry directly (no npx, no network). prisma is a
+    // dependency of @cps/database, so resolve it from that package's context.
+    const prismaPkgPath = require.resolve('prisma/package.json', { paths: [dbDir] });
+    const prismaPkg = JSON.parse(readFileSync(prismaPkgPath, 'utf8')) as {
+      bin: string | { prisma: string };
+    };
+    const binRel = typeof prismaPkg.bin === 'string' ? prismaPkg.bin : prismaPkg.bin.prisma;
+    const cli = join(dirname(prismaPkgPath), binRel);
+
+    const exec = promisify(execFile);
+    const { stdout } = await exec(
+      process.execPath,
+      [cli, 'migrate', 'deploy', '--schema', schema],
+      { env: process.env, timeout: 120_000, maxBuffer: 10 * 1024 * 1024 },
+    );
+    // eslint-disable-next-line no-console
+    console.log('[migrate] ' + stdout.trim());
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('[migrate] skipped/failed: ' + (e as Error).message);
+  }
+}
+
 async function bootstrap() {
+  await runMigrations();
   const app = await NestFactory.create(AppModule);
 
   app.use(helmet());
