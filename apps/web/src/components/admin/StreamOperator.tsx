@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/admin/AdminUI';
 import { Icon } from '@/components/Icon';
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const API = ''; // same-origin; proxied to the backend
 
 type Stream = {
   id: string;

@@ -17,7 +17,7 @@ export function AdmissionForm() {
     const ref = `CPS-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4001'}/api/admissions`,
+        `/api/admissions`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

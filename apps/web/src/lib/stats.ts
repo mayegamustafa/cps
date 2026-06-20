@@ -1,3 +1,5 @@
+import { serverApi } from './api-base';
+
 export type SchoolStat = {
   id: string;
   label: string;
@@ -16,7 +18,7 @@ const FALLBACK: SchoolStat[] = [
 /** Live, admin-editable statistics with offline fallback. */
 export async function getStats(): Promise<SchoolStat[]> {
   if (process.env.NEXT_PHASE === 'phase-production-build') return FALLBACK;
-  const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+  const API = serverApi();
   try {
     const res = await fetch(`${API}/api/stats`, {
       next: { revalidate: 60 },

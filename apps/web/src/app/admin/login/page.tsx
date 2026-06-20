@@ -20,7 +20,7 @@ export default function AdminLoginPage() {
     const data = Object.fromEntries(new FormData(e.currentTarget).entries());
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4001'}/api/auth/login`,
+        `/api/auth/login`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

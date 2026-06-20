@@ -33,7 +33,8 @@ first boot**, so the platform comes up working.
   SEED_ADMIN_PASSWORD = <a strong password>
   NODE_ENV = production
   ```
-  (Railway injects `PORT` automatically; the API binds to it.)
+  (Railway injects `PORT` automatically; the API binds to it. `CORS_ORIGIN` is
+  optional now that the web proxies API calls server-side.)
 - Deploy. Under **Settings → Networking → Generate Domain** to get the public API
   URL, e.g. `https://api-production-xxxx.up.railway.app`.
 
@@ -42,15 +43,15 @@ first boot**, so the platform comes up working.
 - **New → GitHub Repo** (same repo) → name it `web`.
 - Settings → **Build**: Builder = **Dockerfile**, Dockerfile Path =
   `apps/web/Dockerfile`. Root Directory = `/`.
-- Variables (these are also passed as Docker build args by Railway, so they are
-  baked into the bundle):
+- Variables:
   ```
-  NEXT_PUBLIC_API_URL  = https://<your-api-domain>      # from step 2
-  NEXT_PUBLIC_SITE_URL = https://<your-web-domain>      # this service's domain
+  API_ORIGIN           = https://<your-api-domain>      # from step 2 (runtime; https:// optional)
+  NEXT_PUBLIC_SITE_URL = https://<your-web-domain>      # this service's domain (for SEO/OG)
   ```
+  The browser calls the web origin (`/api/*`) and the web server proxies to
+  `API_ORIGIN` — so there is **no CORS to configure** and `API_ORIGIN` is read at
+  runtime (changing it does not require a rebuild).
 - **Settings → Networking → Generate Domain** to get the web URL.
-- Go back to the **API** service and set `CORS_ORIGIN` to the web domain, then
-  redeploy the API.
 
 ## 4. Verify
 

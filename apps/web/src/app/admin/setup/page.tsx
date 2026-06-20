@@ -6,7 +6,7 @@ import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4001';
+const API = ''; // same-origin; proxied to the backend by app/api/[...path]/route.ts
 
 export default function SetupPage() {
   const [status, setStatus] = useState<'checking' | 'ready' | 'done' | 'working' | 'error'>('checking');
@@ -23,7 +23,7 @@ export default function SetupPage() {
         setStatus('ready');
       } catch {
         setStatus('error');
-        setError('Cannot reach the API. Make sure the API service is running and NEXT_PUBLIC_API_URL is correct.');
+        setError('Cannot reach the API. Make sure the API service is running and API_ORIGIN is set on the web service.');
       }
     })();
   }, []);

@@ -5,7 +5,7 @@ import { Field } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const API = ''; // same-origin; proxied to the backend
 
 type Stat = { id: string; label: string; value: string; order?: number };
 

@@ -1,6 +1,6 @@
 /** Minimal typed fetch wrapper for the NestJS API. */
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const BASE = ''; // same-origin; proxied to the backend by app/api/[...path]/route.ts
 
 export async function apiFetch<T>(
   path: string,

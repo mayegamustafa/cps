@@ -1,6 +1,7 @@
 import { siteDefaults, type SiteConfig } from './site';
+import { serverApi } from './api-base';
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const API = serverApi();
 
 type DeepPartial<T> = {
   [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K];

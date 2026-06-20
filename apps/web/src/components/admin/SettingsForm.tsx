@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
 import { siteDefaults, type SiteConfig } from '@/lib/site';
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const API = ''; // same-origin; proxied to the backend
 
 function Card({ title, desc, children }: { title: string; desc: string; children: React.ReactNode }) {
   return (

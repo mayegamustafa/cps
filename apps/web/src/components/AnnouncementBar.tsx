@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
+import { serverApi } from '@/lib/api-base';
 
 type Announcement = {
   id: string;
@@ -17,7 +18,7 @@ const styles: Record<string, string> = {
 // Server component: fetches the active announcement(s) for the site-wide banner.
 export async function AnnouncementBar() {
   if (process.env.NEXT_PHASE === 'phase-production-build') return null;
-  const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4001';
+  const API = serverApi();
   let items: Announcement[] = [];
   try {
     const res = await fetch(`${API}/api/announcements`, {

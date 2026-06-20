@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4001';
+const API = ''; // same-origin; proxied to the backend
 
 /**
  * Client-side gate for the admin panel: requires a valid session token and

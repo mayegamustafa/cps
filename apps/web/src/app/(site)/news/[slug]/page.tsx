@@ -4,6 +4,7 @@ import { PageHero } from '@/components/ui/PageHero';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
 import { ShareButtons } from '@/components/ShareButtons';
+import { serverApi } from '@/lib/api-base';
 
 type Article = {
   slug: string;
@@ -14,7 +15,7 @@ type Article = {
   publishedAt?: string | null;
 };
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const API = serverApi();
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
 function titleFromSlug(slug: string) {

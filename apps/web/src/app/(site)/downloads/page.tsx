@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { PageHero } from '@/components/ui/PageHero';
 import { Icon } from '@/components/Icon';
 import { downloads as fallbackDownloads } from '@/lib/content';
+import { serverApi } from '@/lib/api-base';
 
 export const metadata: Metadata = {
   title: 'Downloads Center',
@@ -25,7 +26,7 @@ function formatSize(bytes?: number | null) {
 // Live documents from the API, falling back to bundled defaults when offline.
 async function getDownloads(): Promise<DownloadItem[]> {
   if (process.env.NEXT_PHASE === 'phase-production-build') return fallbackDownloads;
-  const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+  const API = serverApi();
   try {
     const res = await fetch(`${API}/api/downloads`, {
       next: { revalidate: 60 },

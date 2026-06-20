@@ -3,6 +3,7 @@ import { PageHero } from '@/components/ui/PageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Icon } from '@/components/Icon';
 import { recordings, events } from '@/lib/content';
+import { serverApi } from '@/lib/api-base';
 
 export const metadata: Metadata = {
   title: 'Live TV',
@@ -21,7 +22,7 @@ type ActiveStream = {
 // The currently-live stream from the API (null when nothing is live / API down).
 async function getActiveStream(): Promise<ActiveStream> {
   if (process.env.NEXT_PHASE === 'phase-production-build') return null;
-  const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4001';
+  const API = serverApi();
   try {
     const res = await fetch(`${API}/api/live/active`, {
       next: { revalidate: 15 },
