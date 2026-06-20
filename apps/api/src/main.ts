@@ -44,7 +44,6 @@ async function runMigrations() {
 }
 
 async function bootstrap() {
-  await runMigrations();
   const app = await NestFactory.create(AppModule);
 
   app.use(helmet());
@@ -70,6 +69,10 @@ async function bootstrap() {
   await app.listen(port, '0.0.0.0');
   // eslint-disable-next-line no-console
   console.log(`API ready on http://localhost:${port}/api`);
+
+  // Apply migrations AFTER the server is listening, so a slow migrate can never
+  // delay the port opening and trip the platform health check.
+  void runMigrations();
 }
 
 bootstrap();
