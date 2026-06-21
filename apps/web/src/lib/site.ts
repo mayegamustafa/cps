@@ -8,6 +8,7 @@
  */
 
 import type { IconName } from '@/components/Icon';
+import type { FormField } from '@/components/admin/FieldDesigner';
 
 export type CtaLink = { label: string; href: string };
 
@@ -129,6 +130,8 @@ export type SiteConfig = {
     newsCategories: string[];
     eventCategories: string[];
   };
+  /** Extra questions appended to the public admissions application form. */
+  admissionsFields: FormField[];
 };
 
 export const siteDefaults: SiteConfig = {
@@ -305,6 +308,7 @@ export const siteDefaults: SiteConfig = {
     newsCategories: ['Achievement', 'Events', 'Campus', 'Academics', 'Community', 'Announcement'],
     eventCategories: ['Academic', 'Sports', 'Cultural', 'Parents', 'Holiday', 'Ceremony'],
   },
+  admissionsFields: [],
 };
 
 // Backwards-compatible alias used by components that only need static values.

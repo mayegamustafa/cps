@@ -3,9 +3,8 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
+import { FieldDesigner, withKeys, type FormField } from '@/components/admin/FieldDesigner';
 
-type FieldType = 'text' | 'textarea' | 'email' | 'phone' | 'number' | 'date' | 'select' | 'checkbox' | 'file';
-type FormField = { key: string; label: string; type: FieldType; required?: boolean; options?: string[]; placeholder?: string };
 type FormItem = {
   id: string;
   slug?: string;
@@ -19,28 +18,12 @@ type FormItem = {
 };
 type Submission = { id: string; data: Record<string, unknown>; createdAt: string };
 
-const FIELD_TYPES: { value: FieldType; label: string }[] = [
-  { value: 'text', label: 'Short text' },
-  { value: 'textarea', label: 'Paragraph' },
-  { value: 'email', label: 'Email' },
-  { value: 'phone', label: 'Phone' },
-  { value: 'number', label: 'Number' },
-  { value: 'date', label: 'Date' },
-  { value: 'select', label: 'Dropdown' },
-  { value: 'checkbox', label: 'Checkbox (yes/no)' },
-  { value: 'file', label: 'File upload' },
-];
-
 const inputCls =
   'w-full rounded-xl border border-line bg-white px-4 py-2.5 text-sm text-ink shadow-sm placeholder:text-ink-muted focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20';
 
 function authHeaders(): Record<string, string> {
   const t = typeof window !== 'undefined' ? sessionStorage.getItem('cps_token') : null;
   return { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) };
-}
-
-function slugifyKey(s: string) {
-  return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || `field_${Date.now()}`;
 }
 
 function blankForm(): FormItem {
@@ -70,27 +53,11 @@ export function FormsManager() {
   function edit(f: FormItem) { setDraft({ ...f, fields: Array.isArray(f.fields) ? f.fields : [] }); setView('builder'); setMsg(''); }
 
   function patchDraft(p: Partial<FormItem>) { setDraft((d) => ({ ...d, ...p })); }
-  function setField(i: number, p: Partial<FormField>) {
-    setDraft((d) => { const fields = [...d.fields]; fields[i] = { ...fields[i], ...p }; return { ...d, fields }; });
-  }
-  function addField() {
-    setDraft((d) => ({ ...d, fields: [...d.fields, { key: '', label: '', type: 'text', required: false }] }));
-  }
-  function removeField(i: number) { setDraft((d) => ({ ...d, fields: d.fields.filter((_, j) => j !== i) })); }
-  function moveField(i: number, dir: -1 | 1) {
-    setDraft((d) => {
-      const j = i + dir;
-      if (j < 0 || j >= d.fields.length) return d;
-      const fields = [...d.fields];
-      [fields[i], fields[j]] = [fields[j], fields[i]];
-      return { ...d, fields };
-    });
-  }
 
   async function saveForm() {
     setBusy(true); setMsg('');
     // Ensure every field has a stable key derived from its label.
-    const fields = draft.fields.map((f) => ({ ...f, key: f.key || slugifyKey(f.label) }));
+    const fields = withKeys(draft.fields);
     const payload = {
       title: draft.title,
       description: draft.description ?? '',
@@ -284,46 +251,7 @@ export function FormsManager() {
         </section>
 
         <section className="rounded-2xl border border-line bg-white p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-lg text-maroon-900">Fields</h2>
-            <button type="button" onClick={addField} className="rounded-full border border-maroon-700/30 px-3.5 py-2 text-sm font-medium text-maroon-800 hover:bg-maroon-50">+ Add field</button>
-          </div>
-          {draft.fields.length === 0 ? (
-            <p className="text-sm text-ink-muted">No fields yet. Click “Add field” to start designing the form.</p>
-          ) : (
-            <div className="space-y-3">
-              {draft.fields.map((f, i) => (
-                <div key={i} className="rounded-xl border border-line p-4">
-                  <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-ink-soft">Question / label</label>
-                      <input className={inputCls} value={f.label} onChange={(e) => setField(i, { label: e.target.value })} placeholder="e.g. Full name" />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-ink-soft">Type</label>
-                      <select className={inputCls} value={f.type} onChange={(e) => setField(i, { type: e.target.value as FieldType })}>
-                        {FIELD_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-                      </select>
-                    </div>
-                    <div className="flex items-end gap-1 pb-1">
-                      <button type="button" onClick={() => moveField(i, -1)} aria-label="Move up" className="rounded-lg p-2 text-ink-muted hover:bg-maroon-50">↑</button>
-                      <button type="button" onClick={() => moveField(i, 1)} aria-label="Move down" className="rounded-lg p-2 text-ink-muted hover:bg-maroon-50">↓</button>
-                      <button type="button" onClick={() => removeField(i)} aria-label="Remove" className="rounded-lg p-2 text-rose-600 hover:bg-rose-50"><Icon name="trash" size={16} /></button>
-                    </div>
-                  </div>
-                  {f.type === 'select' ? (
-                    <div className="mt-3">
-                      <label className="mb-1 block text-xs font-medium text-ink-soft">Dropdown options (comma separated)</label>
-                      <input className={inputCls} value={(f.options ?? []).join(', ')} onChange={(e) => setField(i, { options: e.target.value.split(',').map((s) => s.trim()).filter(Boolean) })} placeholder="Option A, Option B, Option C" />
-                    </div>
-                  ) : null}
-                  <label className="mt-3 inline-flex items-center gap-2 text-sm text-ink-soft">
-                    <input type="checkbox" checked={!!f.required} onChange={(e) => setField(i, { required: e.target.checked })} /> Required
-                  </label>
-                </div>
-              ))}
-            </div>
-          )}
+          <FieldDesigner fields={draft.fields} onChange={(fields) => patchDraft({ fields })} />
         </section>
       </div>
     </>

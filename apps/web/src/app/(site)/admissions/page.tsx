@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Accordion } from '@/components/ui/Accordion';
 import { AdmissionForm } from '@/components/forms/AdmissionForm';
 import { admissionSteps, feeStructure, faqs } from '@/lib/content';
+import { getSiteConfig } from '@/lib/site-config';
 
 export const metadata: Metadata = {
   title: 'Admissions',
@@ -12,7 +13,8 @@ export const metadata: Metadata = {
     'Apply online to City Parents School. Admission process, fee structure, downloads and frequently asked questions.',
 };
 
-export default function AdmissionsPage() {
+export default async function AdmissionsPage() {
+  const config = await getSiteConfig();
   return (
     <>
       <ConfigurablePageHero page="admissions"
@@ -56,7 +58,7 @@ export default function AdmissionsPage() {
               ) : null}
             </div>
           </div>
-          <AdmissionForm />
+          <AdmissionForm extraFields={config.admissionsFields ?? []} />
         </div>
       </section>
 

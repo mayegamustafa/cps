@@ -15,6 +15,7 @@ import {
   IsEmail,
   IsEnum,
   IsInt,
+  IsObject,
   IsOptional,
   IsString,
   Max,
@@ -36,6 +37,7 @@ class ApplyDto {
   @IsString() phone: string;
   @IsString() cvUrl: string;
   @IsOptional() @IsString() coverLetterUrl?: string;
+  @IsOptional() @IsObject() extraData?: Record<string, unknown>;
 }
 
 class CreateVacancyDto {
@@ -49,6 +51,7 @@ class CreateVacancyDto {
   @IsOptional() @IsString() salaryRange?: string;
   @IsOptional() @IsDateString() deadline?: string;
   @IsOptional() @IsEnum(JobStatus) status?: JobStatus;
+  @IsOptional() @IsArray() applicationFields?: unknown[];
 }
 
 class UpdateVacancyDto {
@@ -62,6 +65,7 @@ class UpdateVacancyDto {
   @IsOptional() @IsString() salaryRange?: string;
   @IsOptional() @IsDateString() deadline?: string;
   @IsOptional() @IsEnum(JobStatus) status?: JobStatus;
+  @IsOptional() @IsArray() applicationFields?: unknown[];
 }
 
 const HR = [Role.SUPER_ADMIN, Role.HR_ADMIN];
@@ -104,7 +108,10 @@ export class CareersController {
 
   @Post('vacancies/:id/apply')
   apply(@Param('id') vacancyId: string, @Body() dto: ApplyDto) {
-    return this.prisma.jobApplication.create({ data: { vacancyId, ...dto } });
+    const { extraData, ...rest } = dto;
+    return this.prisma.jobApplication.create({
+      data: { vacancyId, ...rest, ...(extraData ? { extraData: extraData as object } : {}) },
+    });
   }
 
   @ApiBearerAuth()
@@ -112,13 +119,14 @@ export class CareersController {
   @Roles(...HR)
   @Post('vacancies')
   createVacancy(@Body() dto: CreateVacancyDto) {
-    const { deadline, title, ...rest } = dto;
+    const { deadline, title, applicationFields, ...rest } = dto;
     return this.prisma.jobVacancy.create({
       data: {
         ...rest,
         title,
         slug: uniqueSlug(title),
         deadline: deadline ? new Date(deadline) : null,
+        ...(applicationFields !== undefined ? { applicationFields: applicationFields as object } : {}),
       },
     });
   }
@@ -128,10 +136,14 @@ export class CareersController {
   @Roles(...HR)
   @Put('vacancies/:id')
   updateVacancy(@Param('id') id: string, @Body() dto: UpdateVacancyDto) {
-    const { deadline, ...rest } = dto;
+    const { deadline, applicationFields, ...rest } = dto;
     return this.prisma.jobVacancy.update({
       where: { id },
-      data: { ...rest, ...(deadline ? { deadline: new Date(deadline) } : {}) },
+      data: {
+        ...rest,
+        ...(deadline ? { deadline: new Date(deadline) } : {}),
+        ...(applicationFields !== undefined ? { applicationFields: applicationFields as object } : {}),
+      },
     });
   }
 

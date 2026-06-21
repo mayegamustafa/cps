@@ -4,10 +4,13 @@ import { useState } from 'react';
 import { Field, SelectField } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
+import { PublicFieldInputs } from '@/components/forms/PublicFieldInputs';
+import type { FormField } from '@/components/admin/FieldDesigner';
 
-export function AdmissionForm() {
+export function AdmissionForm({ extraFields = [] }: { extraFields?: FormField[] }) {
   const [status, setStatus] = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
   const [reference, setReference] = useState('');
+  const [extra, setExtra] = useState<Record<string, unknown>>({});
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -21,7 +24,7 @@ export function AdmissionForm() {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...payload, reference: ref }),
+          body: JSON.stringify({ ...payload, reference: ref, ...(extraFields.length ? { extraData: extra } : {}) }),
         },
       );
       if (!res.ok) {
@@ -90,6 +93,13 @@ export function AdmissionForm() {
           <Field label="Phone" id="guardianPhone" name="guardianPhone" required placeholder="+256 …" />
         </div>
       </fieldset>
+
+      {extraFields.length ? (
+        <fieldset className="space-y-5 border-t border-line pt-6">
+          <legend className="eyebrow mb-2">Additional information</legend>
+          <PublicFieldInputs fields={extraFields} values={extra} onChange={(k, v) => setExtra((p) => ({ ...p, [k]: v }))} />
+        </fieldset>
+      ) : null}
 
       <p className="text-xs text-ink-muted">
         You will be able to upload the birth certificate and previous reports

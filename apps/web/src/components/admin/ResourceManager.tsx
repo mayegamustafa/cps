@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
 import { FileUpload } from '@/components/admin/FileUpload';
 import { uploadFile } from '@/components/admin/FileUpload';
+import { FieldDesigner, type FormField as DesignerField } from '@/components/admin/FieldDesigner';
 import { siteDefaults } from '@/lib/site';
 
 const API = ''; // same-origin; proxied to the backend
@@ -21,6 +22,7 @@ export type FieldType =
   | 'image'
   | 'file'
   | 'multiImage'
+  | 'formBuilder'
   | 'boolean';
 
 export type Field = {
@@ -67,6 +69,7 @@ function emptyForm(fields: Field[]) {
 
 // Convert a stored row value into a form input value.
 function toInput(field: Field, value: unknown): string | boolean {
+  if (field.type === 'formBuilder') return JSON.stringify(Array.isArray(value) ? value : []);
   if (value == null) return field.type === 'boolean' ? false : '';
   if (field.type === 'multiImage') return Array.isArray(value) ? value.join('\n') : String(value);
   if (field.type === 'tags') return Array.isArray(value) ? value.join(', ') : String(value);
@@ -83,6 +86,9 @@ function toPayload(fields: Field[], form: Record<string, string | boolean>) {
     if (field.readonly) continue;
     const v = form[field.key];
     if (field.type === 'boolean') out[field.key] = Boolean(v);
+    else if (field.type === 'formBuilder') {
+      try { out[field.key] = JSON.parse(String(v) || '[]'); } catch { out[field.key] = []; }
+    }
     else if (v === '' || v == null) continue;
     else if (field.type === 'number') out[field.key] = Number(v);
     else if (field.type === 'multiImage')
@@ -154,6 +160,13 @@ function displayCell(field: Field, value: unknown): string {
   if (field.type === 'tags') return Array.isArray(value) ? value.join(', ') : String(value);
   if (field.type === 'date' || field.type === 'datetime')
     return new Date(String(value)).toLocaleDateString();
+  // Render objects (e.g. extra-question answers) as "key: value" pairs.
+  if (typeof value === 'object') {
+    const s = Object.entries(value as Record<string, unknown>)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(' · ');
+    return s.length > 80 ? s.slice(0, 77) + '…' : s || '—';
+  }
   const s = String(value);
   return s.length > 60 ? s.slice(0, 57) + '…' : s;
 }
@@ -273,7 +286,7 @@ export function ResourceManager({ config }: { config: ResourceConfig }) {
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             {config.fields.filter((field) => !field.readonly).map((field) => (
-              <div key={field.key} className={field.type === 'textarea' ? 'sm:col-span-2' : ''}>
+              <div key={field.key} className={field.type === 'textarea' || field.type === 'formBuilder' || field.type === 'multiImage' ? 'sm:col-span-2' : ''}>
                 <FieldInput field={field} value={form[field.key]} onChange={(v) => setForm((f) => ({ ...f, [field.key]: v }))} />
               </div>
             ))}
@@ -374,6 +387,17 @@ function FieldInput({
   }
   if (field.type === 'multiImage') {
     return <MultiImageInput label={field.label} value={String(value)} onChange={(v) => onChange(v)} />;
+  }
+  if (field.type === 'formBuilder') {
+    let parsed: DesignerField[] = [];
+    try { parsed = JSON.parse(String(value) || '[]'); } catch { parsed = []; }
+    return (
+      <div>{label}
+        <div className="mt-1 rounded-xl border border-line p-4">
+          <FieldDesigner fields={parsed} onChange={(next) => onChange(JSON.stringify(next))} addLabel="+ Add question" />
+        </div>
+      </div>
+    );
   }
   const inputType =
     field.type === 'number' ? 'number'

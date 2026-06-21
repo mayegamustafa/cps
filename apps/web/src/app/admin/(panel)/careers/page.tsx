@@ -29,6 +29,7 @@ const config: ResourceConfig = {
     { key: 'requirements', label: 'Requirements (comma separated)', type: 'tags' },
     { key: 'responsibilities', label: 'Responsibilities (comma separated)', type: 'tags' },
     { key: 'description', label: 'Description', type: 'textarea', required: true },
+    { key: 'applicationFields', label: 'Extra application questions (shown on the apply form)', type: 'formBuilder' },
   ],
 };
 

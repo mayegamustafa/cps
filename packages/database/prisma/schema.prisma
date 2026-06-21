@@ -478,6 +478,8 @@ model JobVacancy {
   salaryRange   String?
   deadline      DateTime?
   status        JobStatus        @default(DRAFT)
+  /// Admin-defined extra application questions (FormField[]), per vacancy.
+  applicationFields Json         @default("[]")
   applications  JobApplication[]
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
@@ -497,6 +499,8 @@ model JobApplication {
   phone         String
   cvUrl         String
   coverLetterUrl String?
+  /// Answers to the vacancy's custom application questions (key → value).
+  extraData     Json?
   documents     ApplicationDocument[]
   status        ApplicationStatus @default(SUBMITTED)
   score         Int?              // recruiter ranking
@@ -559,6 +563,8 @@ model AdmissionApplication {
   status          ApplicationStatus @default(SUBMITTED)
   decisionNote    String?           @db.Text
   letterUrl       String?           // generated admission letter (R2)
+  /// Answers to admin-defined extra admission questions (key → value).
+  extraData       Json?
   documents       AdmissionDocument[]
   updates         AdmissionUpdate[]
   createdAt       DateTime          @default(now())

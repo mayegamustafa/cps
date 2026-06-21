@@ -13,6 +13,7 @@ import {
   IsDateString,
   IsEmail,
   IsEnum,
+  IsObject,
   IsOptional,
   IsString,
   MinLength,
@@ -38,6 +39,7 @@ class CreateAdmissionDto {
   @IsEmail() guardianEmail: string;
   @IsString() guardianPhone: string;
   @IsOptional() @IsString() relationship?: string;
+  @IsOptional() @IsObject() extraData?: Record<string, unknown>;
 }
 
 class DecisionDto {
@@ -56,9 +58,13 @@ export class AdmissionsController {
   // Public: submit a new application
   @Post()
   async create(@Body() dto: CreateAdmissionDto) {
-    const { pupilDob, ...rest } = dto;
+    const { pupilDob, extraData, ...rest } = dto;
     const application = await this.prisma.admissionApplication.create({
-      data: { ...rest, pupilDob: new Date(pupilDob) },
+      data: {
+        ...rest,
+        pupilDob: new Date(pupilDob),
+        ...(extraData ? { extraData: extraData as object } : {}),
+      },
     });
     // Confirmation email (best-effort; no-op when SMTP is not configured).
     void this.mail.send({

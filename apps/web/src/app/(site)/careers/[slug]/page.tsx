@@ -16,6 +16,7 @@ type Vacancy = {
   description?: string;
   requirements?: string[];
   responsibilities?: string[];
+  applicationFields?: import('@/components/admin/FieldDesigner').FormField[];
 };
 
 async function getVacancy(slug: string): Promise<Vacancy | null> {
@@ -134,7 +135,7 @@ export default async function JobPage({
                 Submit your details and a link to your CV. We will be in touch if you are shortlisted.
               </p>
               <div className="mt-6">
-                <JobApplicationForm role={job.title} vacancyId={job.id} />
+                <JobApplicationForm role={job.title} vacancyId={job.id} extraFields={Array.isArray(job.applicationFields) ? job.applicationFields : []} />
               </div>
             </div>
           </div>

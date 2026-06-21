@@ -6,6 +6,7 @@ import { Field, TextAreaField, SelectField } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
 import { uploadFile, FileUpload } from '@/components/admin/FileUpload';
 import { siteDefaults, type SiteConfig, type PageHeadKey } from '@/lib/site';
+import { FieldDesigner, type FormField } from '@/components/admin/FieldDesigner';
 import type { IconName } from '@/components/Icon';
 
 const API = ''; // same-origin; proxied to the backend
@@ -20,7 +21,7 @@ const ICONS: IconName[] = [
   'mail', 'image', 'video', 'briefcase', 'download', 'megaphone', 'calendar', 'bell',
 ];
 
-const TABS = ['Brand', 'Hero', 'Homepage', 'Page heads', 'Footer', 'Categories', 'Contact'] as const;
+const TABS = ['Brand', 'Hero', 'Homepage', 'Page heads', 'Footer', 'Categories', 'Admissions form', 'Contact'] as const;
 type Tab = (typeof TABS)[number];
 
 const PAGE_HEADS: { key: PageHeadKey; label: string }[] = [
@@ -450,6 +451,12 @@ export function SettingsForm() {
             <StringList label="Gallery categories" items={cfg.taxonomies.galleryCategories} placeholder="e.g. Sports" onChange={(v) => patch((d) => { d.taxonomies.galleryCategories = v; })} />
             <StringList label="News categories" items={cfg.taxonomies.newsCategories} placeholder="e.g. Achievement" onChange={(v) => patch((d) => { d.taxonomies.newsCategories = v; })} />
             <StringList label="Event categories" items={cfg.taxonomies.eventCategories} placeholder="e.g. Sports" onChange={(v) => patch((d) => { d.taxonomies.eventCategories = v; })} />
+          </Card>
+        ) : null}
+
+        {tab === 'Admissions form' ? (
+          <Card onSave={save} title="Admissions application — extra questions" desc="These questions are added to the public admissions form, after the standard pupil and guardian details. Answers appear in the Admissions list and exports.">
+            <FieldDesigner fields={(cfg.admissionsFields ?? []) as FormField[]} onChange={(fields) => patch((d) => { d.admissionsFields = fields; })} addLabel="+ Add question" />
           </Card>
         ) : null}
 

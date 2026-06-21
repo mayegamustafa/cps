@@ -27,6 +27,7 @@ const config: ResourceConfig = {
       { value: 'REJECTED', label: 'Rejected' },
       { value: 'WITHDRAWN', label: 'Withdrawn' },
     ] },
+    { key: 'extraData', label: 'Extra answers', table: true, readonly: true },
     { key: 'decisionNote', label: 'Decision note', type: 'textarea' },
   ],
 };

@@ -4,14 +4,18 @@ import { useState } from 'react';
 import { Field } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
+import { PublicFieldInputs } from '@/components/forms/PublicFieldInputs';
+import type { FormField } from '@/components/admin/FieldDesigner';
 
-export function JobApplicationForm({ role, vacancyId }: { role: string; vacancyId?: string }) {
+export function JobApplicationForm({ role, vacancyId, extraFields = [] }: { role: string; vacancyId?: string; extraFields?: FormField[] }) {
   const [status, setStatus] = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
+  const [extra, setExtra] = useState<Record<string, unknown>>({});
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setStatus('sending');
-    const data = Object.fromEntries(new FormData(e.currentTarget).entries());
+    const core = Object.fromEntries(new FormData(e.currentTarget).entries());
+    const data = { ...core, ...(extraFields.length ? { extraData: extra } : {}) };
     if (!vacancyId) {
       // No live vacancy id (demo content) — confirm optimistically.
       setStatus('done');
@@ -70,6 +74,11 @@ export function JobApplicationForm({ role, vacancyId }: { role: string; vacancyI
         type="url"
         placeholder="https://…"
       />
+      {extraFields.length ? (
+        <div className="space-y-5 border-t border-line pt-5">
+          <PublicFieldInputs fields={extraFields} values={extra} onChange={(k, v) => setExtra((p) => ({ ...p, [k]: v }))} />
+        </div>
+      ) : null}
       {status === 'error' ? (
         <p className="text-sm text-maroon-600">Could not submit your application. Please try again.</p>
       ) : null}
