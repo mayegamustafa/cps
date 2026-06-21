@@ -9,6 +9,7 @@ export const adminNav: { label: string; href: string; icon: IconName }[] = [
   { label: 'Gallery & Media', href: '/admin/media', icon: 'image' },
   { label: 'Admissions', href: '/admin/admissions', icon: 'inbox' },
   { label: 'Careers', href: '/admin/careers', icon: 'briefcase' },
+  { label: 'Job Applications', href: '/admin/job-applications', icon: 'users' },
   { label: 'Live Streams', href: '/admin/live', icon: 'video' },
   { label: 'Alumni', href: '/admin/alumni', icon: 'users' },
   { label: 'Downloads', href: '/admin/downloads', icon: 'download' },
