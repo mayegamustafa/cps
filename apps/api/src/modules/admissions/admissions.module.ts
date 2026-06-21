@@ -22,6 +22,8 @@ import { ApplicationStatus, Role, SchoolSection, Residence } from '@cps/database
 import { PrismaService } from '../../prisma/prisma.service';
 import { JwtAuthGuard, RolesGuard } from '../../auth/guards';
 import { Roles } from '../../auth/roles.decorator';
+import { MailService } from '../mail/mail.module';
+import { admissionReceivedEmail, admissionDecisionEmail } from '../mail/templates';
 
 class CreateAdmissionDto {
   @IsString() reference: string;
@@ -46,15 +48,29 @@ class DecisionDto {
 @ApiTags('admissions')
 @Controller('admissions')
 export class AdmissionsController {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private mail: MailService,
+  ) {}
 
   // Public: submit a new application
   @Post()
-  create(@Body() dto: CreateAdmissionDto) {
+  async create(@Body() dto: CreateAdmissionDto) {
     const { pupilDob, ...rest } = dto;
-    return this.prisma.admissionApplication.create({
+    const application = await this.prisma.admissionApplication.create({
       data: { ...rest, pupilDob: new Date(pupilDob) },
     });
+    // Confirmation email (best-effort; no-op when SMTP is not configured).
+    void this.mail.send({
+      to: application.guardianEmail,
+      subject: `Application received — ${application.reference}`,
+      html: admissionReceivedEmail({
+        guardian: application.guardianName,
+        pupil: `${application.pupilFirstName} ${application.pupilLastName}`,
+        reference: application.reference,
+      }),
+    });
+    return application;
   }
 
   // Public: track by reference
@@ -84,7 +100,7 @@ export class AdmissionsController {
   @Roles(Role.SUPER_ADMIN, Role.ADMISSIONS_ADMIN)
   @Patch(':id/decision')
   async decide(@Param('id') id: string, @Body() dto: DecisionDto) {
-    return this.prisma.admissionApplication.update({
+    const application = await this.prisma.admissionApplication.update({
       where: { id },
       data: {
         status: dto.status,
@@ -97,6 +113,19 @@ export class AdmissionsController {
         },
       },
     });
+    // Notify the guardian of the decision (best-effort).
+    void this.mail.send({
+      to: application.guardianEmail,
+      subject: `Application update — ${application.reference}`,
+      html: admissionDecisionEmail({
+        guardian: application.guardianName,
+        pupil: `${application.pupilFirstName} ${application.pupilLastName}`,
+        reference: application.reference,
+        status: dto.status,
+        note: dto.decisionNote,
+      }),
+    });
+    return application;
   }
 }
 

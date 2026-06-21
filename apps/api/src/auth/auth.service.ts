@@ -10,12 +10,15 @@ import { PrismaService } from '../prisma/prisma.service';
 import { verifyPassword, hashPassword } from './password.util';
 import type { LoginDto } from './dto';
 import type { JwtPayload } from './jwt.strategy';
+import { MailService } from '../modules/mail/mail.module';
+import { emailLayout } from '../modules/mail/templates';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwt: JwtService,
+    private mail: MailService,
   ) {}
 
   async login(dto: LoginDto, ctx: { ip?: string; userAgent?: string }) {
@@ -91,8 +94,24 @@ export class AuthService {
         resetTokenExpiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
       },
     });
-    // TODO: send email via SMTP. Until configured, expose for completion/testing.
-    const devToken = process.env.NODE_ENV === 'production' ? undefined : rawToken;
+    // Email the reset link via SMTP when configured. If SMTP is not set up
+    // (and not in production) the raw token is also returned so the flow can
+    // still be completed/tested.
+    const base = process.env.WEB_ORIGIN ?? process.env.PUBLIC_WEB_URL ?? '';
+    const link = `${base}/admin/reset?token=${rawToken}`;
+    const result = await this.mail.send({
+      to: user.email,
+      subject: 'Reset your City Parents School admin password',
+      html: emailLayout({
+        heading: 'Password reset',
+        body: `<p>We received a request to reset your password.</p>
+          <p><a href="${link}" style="display:inline-block;background:#6e1f23;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;">Reset password</a></p>
+          <p style="color:#8a8a8a;font-size:13px;">Or paste this link: ${link}</p>
+          <p style="color:#8a8a8a;font-size:13px;">This link expires in 1 hour. If you did not request this, you can ignore this email.</p>`,
+      }),
+    });
+    const devToken =
+      result.sent || process.env.NODE_ENV === 'production' ? undefined : rawToken;
     return { ok: true, resetToken: devToken };
   }
 

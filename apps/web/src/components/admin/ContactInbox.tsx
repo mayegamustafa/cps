@@ -23,6 +23,10 @@ export function ContactInbox() {
   const [items, setItems] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState('');
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [sending, setSending] = useState(false);
+  const [replyNote, setReplyNote] = useState('');
 
   async function load() {
     setLoading(true);
@@ -38,6 +42,34 @@ export function ContactInbox() {
   async function setHandled(id: string, handled: boolean) {
     const res = await fetch(`/api/contact/${id}`, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify({ handled }) }).catch(() => null);
     if (res && res.ok) setItems((p) => p.map((m) => (m.id === id ? { ...m, handled } : m)));
+  }
+
+  function openReply(id: string) {
+    setReplyTo((cur) => (cur === id ? null : id));
+    setReplyText('');
+    setReplyNote('');
+  }
+
+  async function sendReply(id: string) {
+    if (replyText.trim().length < 2) return;
+    setSending(true);
+    setReplyNote('');
+    const res = await fetch(`/api/contact/${id}/reply`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ message: replyText }),
+    }).catch(() => null);
+    const data = res && res.ok ? await res.json() : null;
+    setSending(false);
+    if (data?.sent) {
+      setItems((p) => p.map((m) => (m.id === id ? { ...m, handled: true } : m)));
+      setReplyTo(null);
+      setReplyText('');
+    } else {
+      setReplyNote(data?.error === 'SMTP not configured'
+        ? 'Email is not configured yet — set up SMTP under Integrations, or use the mail icon to reply from your own client.'
+        : `Could not send: ${data?.error ?? 'try again'}.`);
+    }
   }
 
   async function remove(id: string) {
@@ -80,9 +112,9 @@ export function ContactInbox() {
                   <p className="mt-1 whitespace-pre-line text-sm text-ink-soft">{m.message}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
-                  <a href={`mailto:${m.email}?subject=${encodeURIComponent('Re: ' + (m.subject || 'Your enquiry'))}`} aria-label="Reply" className="rounded-lg p-2 text-ink-muted hover:bg-maroon-50 hover:text-maroon-700">
+                  <button onClick={() => openReply(m.id)} aria-label="Reply" className="rounded-lg p-2 text-ink-muted hover:bg-maroon-50 hover:text-maroon-700">
                     <Icon name="mail" size={18} />
-                  </a>
+                  </button>
                   <button onClick={() => setHandled(m.id, !m.handled)} aria-label="Toggle handled" className="rounded-lg p-2 text-ink-muted hover:bg-emerald-50 hover:text-emerald-700">
                     <Icon name="shield-check" size={18} />
                   </button>
@@ -91,6 +123,41 @@ export function ContactInbox() {
                   </button>
                 </div>
               </div>
+
+              {replyTo === m.id ? (
+                <div className="mt-4 border-t border-line pt-4">
+                  <label htmlFor={`reply-${m.id}`} className="mb-1.5 block text-sm font-medium text-ink">
+                    Reply to {m.name} ({m.email})
+                  </label>
+                  <textarea
+                    id={`reply-${m.id}`}
+                    rows={4}
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    placeholder="Type your reply… It will be emailed to the sender and the message marked handled."
+                    className="w-full rounded-xl border border-line bg-white px-4 py-2.5 text-sm text-ink shadow-sm focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20"
+                  />
+                  {replyNote ? <p className="mt-2 text-sm text-rose-600">{replyNote}</p> : null}
+                  <div className="mt-3 flex items-center gap-2">
+                    <button
+                      onClick={() => sendReply(m.id)}
+                      disabled={sending || replyText.trim().length < 2}
+                      className="rounded-full bg-maroon-700 px-5 py-2 text-sm font-medium text-white hover:bg-maroon-800 disabled:opacity-50"
+                    >
+                      {sending ? 'Sending…' : 'Send reply'}
+                    </button>
+                    <a
+                      href={`mailto:${m.email}?subject=${encodeURIComponent('Re: ' + (m.subject || 'Your enquiry'))}`}
+                      className="rounded-full border border-line px-5 py-2 text-sm font-medium text-ink-soft hover:bg-paper-dark/40"
+                    >
+                      Open in mail app
+                    </a>
+                    <button onClick={() => setReplyTo(null)} className="px-3 py-2 text-sm text-ink-muted hover:text-ink">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : null}
             </div>
           ))}
         </div>

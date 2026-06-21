@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { PageHero } from '@/components/ui/PageHero';
 import { Icon } from '@/components/Icon';
+import { AlbumGallery } from '@/components/AlbumGallery';
 import { serverApi } from '@/lib/api-base';
 
 type Album = {
@@ -66,13 +67,7 @@ export default async function AlbumPage({
           {images.length === 0 ? (
             <p className="text-center text-ink-muted">No photos in this album yet.</p>
           ) : (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              {images.map((src, i) => (
-                <a key={i} href={src} target="_blank" rel="noopener noreferrer" className="group relative aspect-square overflow-hidden rounded-xl">
-                  <div className="h-full w-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: `url('${src}')` }} />
-                </a>
-              ))}
-            </div>
+            <AlbumGallery images={images} title={album.title} />
           )}
           <div className="mt-12">
             <Link href="/gallery" className="inline-flex items-center gap-1.5 text-sm font-semibold text-maroon-700">

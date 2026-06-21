@@ -19,6 +19,8 @@ import { SetupModule } from './modules/setup/setup.module';
 import { AlumniModule } from './modules/alumni/alumni.module';
 import { GalleryModule } from './modules/gallery/gallery.module';
 import { MediaModule } from './modules/media/media.module';
+import { IntegrationsModule } from './modules/integrations/integrations.module';
+import { MailModule } from './modules/mail/mail.module';
 
 @Module({
   imports: [
@@ -41,6 +43,8 @@ import { MediaModule } from './modules/media/media.module';
     AlumniModule,
     GalleryModule,
     MediaModule,
+    IntegrationsModule,
+    MailModule,
     // Further modules (staff, seo) follow the same controller→Prisma pattern.
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
