@@ -13,6 +13,7 @@ export const adminNav: { label: string; href: string; icon: IconName }[] = [
   { label: 'Alumni', href: '/admin/alumni', icon: 'users' },
   { label: 'Downloads', href: '/admin/downloads', icon: 'download' },
   { label: 'Social Wall', href: '/admin/social', icon: 'instagram' },
+  { label: 'Forms', href: '/admin/forms', icon: 'inbox' },
   { label: 'Messages', href: '/admin/contact', icon: 'mail' },
   { label: 'Integrations', href: '/admin/integrations', icon: 'link' },
   { label: 'Settings & SEO', href: '/admin/settings', icon: 'settings' },

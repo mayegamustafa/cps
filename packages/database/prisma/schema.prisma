@@ -870,6 +870,36 @@ model NewsletterSubscriber {
   @@map("newsletter_subscribers")
 }
 
+// Admin-designed custom forms and their submissions.
+model Form {
+  id             String           @id @default(cuid())
+  slug           String           @unique
+  title          String
+  description    String?          @db.Text
+  /// Array of field definitions: { key, label, type, required, options, placeholder }
+  fields         Json             @default("[]")
+  status         PublishStatus    @default(DRAFT)
+  submitLabel    String?
+  successMessage String?          @db.Text
+  submissions    FormSubmission[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@map("forms")
+}
+
+model FormSubmission {
+  id        String   @id @default(cuid())
+  formId    String
+  form      Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  /// Map of field key → submitted value
+  data      Json
+  createdAt DateTime @default(now())
+
+  @@index([formId, createdAt])
+  @@map("form_submissions")
+}
+
 // ─────────────────────────────────────────────────────────────
 //  ACADEMICS
 // ─────────────────────────────────────────────────────────────
