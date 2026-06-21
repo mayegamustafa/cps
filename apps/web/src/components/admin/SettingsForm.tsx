@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Field, TextAreaField, SelectField } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
-import { uploadFile } from '@/components/admin/FileUpload';
+import { uploadFile, FileUpload } from '@/components/admin/FileUpload';
 import { siteDefaults, type SiteConfig, type PageHeadKey } from '@/lib/site';
 import type { IconName } from '@/components/Icon';
 
@@ -37,11 +37,27 @@ const PAGE_HEADS: { key: PageHeadKey; label: string }[] = [
   { key: 'downloads', label: 'Downloads' },
 ];
 
-function Card({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
+function Card({ title, desc, onSave, children }: { title: string; desc?: string; onSave?: () => Promise<void> | void; children: React.ReactNode }) {
+  const [done, setDone] = useState(false);
+  const [saving, setSaving] = useState(false);
   return (
     <section className="rounded-2xl border border-line bg-white p-6">
-      <h2 className="font-display text-lg text-maroon-900">{title}</h2>
-      {desc ? <p className="mt-1 text-sm text-ink-soft">{desc}</p> : null}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="font-display text-lg text-maroon-900">{title}</h2>
+          {desc ? <p className="mt-1 text-sm text-ink-soft">{desc}</p> : null}
+        </div>
+        {onSave ? (
+          <button
+            type="button"
+            disabled={saving}
+            onClick={async () => { setSaving(true); await onSave(); setSaving(false); setDone(true); setTimeout(() => setDone(false), 2000); }}
+            className="shrink-0 rounded-full bg-maroon-700 px-4 py-2 text-sm font-medium text-white hover:bg-maroon-800 disabled:opacity-50"
+          >
+            {saving ? 'Saving…' : done ? 'Saved ✓' : 'Save'}
+          </button>
+        ) : null}
+      </div>
       <div className="mt-5 space-y-4">{children}</div>
     </section>
   );
@@ -203,7 +219,7 @@ export function SettingsForm() {
       <div className="space-y-6">
         {tab === 'Brand' ? (
           <>
-            <Card title="School badge & logo" desc="The crest shown in the header and footer. Paste a URL or upload.">
+            <Card onSave={save} title="School badge & logo" desc="The crest shown in the header and footer. Paste a URL or upload.">
               <div className="flex items-center gap-4">
                 <span className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-line bg-paper">
                   <Image src={cfg.brand.logoUrl} alt="Logo preview" width={64} height={64} className="h-full w-full object-contain" unoptimized />
@@ -220,7 +236,7 @@ export function SettingsForm() {
               </SelectField>
             </Card>
 
-            <Card title="Identity & SEO" desc="School name, location and the description used in the footer and search results.">
+            <Card onSave={save} title="Identity & SEO" desc="School name, location and the description used in the footer and search results.">
               <Field label="School name" id="name" value={cfg.brand.name} onChange={(e) => patch((d) => { d.brand.name = e.target.value; })} />
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Locality" id="locality" value={cfg.brand.locality} onChange={(e) => patch((d) => { d.brand.locality = e.target.value; })} />
@@ -233,14 +249,14 @@ export function SettingsForm() {
         ) : null}
 
         {tab === 'Hero' ? (
-          <Card title="Homepage hero" desc="The large banner at the top of the home page.">
+          <Card onSave={save} title="Homepage hero" desc="The large banner at the top of the home page.">
             <Field label="Eyebrow" id="eyebrow" value={cfg.hero.eyebrow} onChange={(e) => patch((d) => { d.hero.eyebrow = e.target.value; })} />
             <div className="grid grid-cols-2 gap-4">
               <Field label="Headline line 1" id="tl" value={cfg.hero.titleLead} onChange={(e) => patch((d) => { d.hero.titleLead = e.target.value; })} />
               <Field label="Headline line 2 (accent)" id="ta" value={cfg.hero.titleAccent} onChange={(e) => patch((d) => { d.hero.titleAccent = e.target.value; })} />
             </div>
             <TextAreaField label="Intro" id="hintro" value={cfg.hero.intro} onChange={(e) => patch((d) => { d.hero.intro = e.target.value; })} />
-            <Field label="Background video URL (autoplays, muted, looped)" id="herovid" value={cfg.hero.backgroundVideo} placeholder="https://.../campus.mp4 — leave empty to use the image" onChange={(e) => patch((d) => { d.hero.backgroundVideo = e.target.value; })} />
+            <FileUpload label="Background video (upload an mp4 or paste a URL — autoplays, muted, looped; leave empty to use the image)" accept="video/*" value={cfg.hero.backgroundVideo} onChange={(url) => patch((d) => { d.hero.backgroundVideo = url; })} />
             <div className="grid grid-cols-2 gap-4">
               <Field label="Primary button" id="hpc" value={cfg.hero.primaryCta.label} onChange={(e) => patch((d) => { d.hero.primaryCta.label = e.target.value; })} />
               <Field label="Primary link" id="hpl" value={cfg.hero.primaryCta.href} onChange={(e) => patch((d) => { d.hero.primaryCta.href = e.target.value; })} />
@@ -264,7 +280,7 @@ export function SettingsForm() {
 
         {tab === 'Homepage' ? (
           <>
-            <Card title="Welcome section" desc="The introduction block with a feature image and highlights.">
+            <Card onSave={save} title="Welcome section" desc="The introduction block with a feature image and highlights.">
               <Field label="Eyebrow" id="w-eb" value={h.welcome.eyebrow} onChange={(e) => patch((d) => { d.home.welcome.eyebrow = e.target.value; })} />
               <Field label="Title" id="w-t" value={h.welcome.title} onChange={(e) => patch((d) => { d.home.welcome.title = e.target.value; })} />
               <TextAreaField label="Intro" id="w-i" value={h.welcome.intro} onChange={(e) => patch((d) => { d.home.welcome.intro = e.target.value; })} />
@@ -280,7 +296,7 @@ export function SettingsForm() {
               </div>
             </Card>
 
-            <Card title="Academic pathways" desc="The three programme cards. Leave empty to hide the section.">
+            <Card onSave={save} title="Academic pathways" desc="The three programme cards. Leave empty to hide the section.">
               <Field label="Eyebrow" id="p-eb" value={h.pathways.eyebrow} onChange={(e) => patch((d) => { d.home.pathways.eyebrow = e.target.value; })} />
               <Field label="Title" id="p-t" value={h.pathways.title} onChange={(e) => patch((d) => { d.home.pathways.title = e.target.value; })} />
               <TextAreaField label="Intro" id="p-i" value={h.pathways.intro} onChange={(e) => patch((d) => { d.home.pathways.intro = e.target.value; })} />
@@ -304,7 +320,7 @@ export function SettingsForm() {
               </Repeater>
             </Card>
 
-            <Card title="Why City Parents" desc="The feature/value cards. Leave empty to hide the section.">
+            <Card onSave={save} title="Why City Parents" desc="The feature/value cards. Leave empty to hide the section.">
               <Field label="Eyebrow" id="y-eb" value={h.why.eyebrow} onChange={(e) => patch((d) => { d.home.why.eyebrow = e.target.value; })} />
               <Field label="Title" id="y-t" value={h.why.title} onChange={(e) => patch((d) => { d.home.why.title = e.target.value; })} />
               <Repeater
@@ -325,7 +341,7 @@ export function SettingsForm() {
               </Repeater>
             </Card>
 
-            <Card title="Admissions banner" desc="The maroon call-to-action band.">
+            <Card onSave={save} title="Admissions banner" desc="The maroon call-to-action band.">
               <Field label="Eyebrow" id="a-eb" value={h.admissionsCta.eyebrow} onChange={(e) => patch((d) => { d.home.admissionsCta.eyebrow = e.target.value; })} />
               <Field label="Title" id="a-t" value={h.admissionsCta.title} onChange={(e) => patch((d) => { d.home.admissionsCta.title = e.target.value; })} />
               <TextAreaField label="Intro" id="a-i" value={h.admissionsCta.intro} onChange={(e) => patch((d) => { d.home.admissionsCta.intro = e.target.value; })} />
@@ -338,7 +354,7 @@ export function SettingsForm() {
               </div>
             </Card>
 
-            <Card title="News heading & Testimonials">
+            <Card onSave={save} title="News heading & Testimonials">
               <div className="grid grid-cols-2 gap-4">
                 <Field label="News eyebrow" id="n-eb" value={h.news.eyebrow} onChange={(e) => patch((d) => { d.home.news.eyebrow = e.target.value; })} />
                 <Field label="News title" id="n-t" value={h.news.title} onChange={(e) => patch((d) => { d.home.news.title = e.target.value; })} />
@@ -363,7 +379,7 @@ export function SettingsForm() {
               </Repeater>
             </Card>
 
-            <Card title="Plan a visit">
+            <Card onSave={save} title="Plan a visit">
               <Field label="Eyebrow" id="v-eb" value={h.visit.eyebrow} onChange={(e) => patch((d) => { d.home.visit.eyebrow = e.target.value; })} />
               <Field label="Title" id="v-t" value={h.visit.title} onChange={(e) => patch((d) => { d.home.visit.title = e.target.value; })} />
               <TextAreaField label="Intro" id="v-i" value={h.visit.intro} onChange={(e) => patch((d) => { d.home.visit.intro = e.target.value; })} />
@@ -373,7 +389,7 @@ export function SettingsForm() {
         ) : null}
 
         {tab === 'Page heads' ? (
-          <Card title="Page header banners" desc="Each inner page's banner. Turn one off to hide it, or edit its text and background image.">
+          <Card onSave={save} title="Page header banners" desc="Each inner page's banner. Turn one off to hide it, or edit its text and background image.">
             {PAGE_HEADS.map(({ key, label }) => {
               const ph = cfg.pageHeads[key];
               return (
@@ -400,7 +416,7 @@ export function SettingsForm() {
         ) : null}
 
         {tab === 'Footer' ? (
-          <Card title="Footer link columns" desc="The grouped link lists in the site footer.">
+          <Card onSave={save} title="Footer link columns" desc="The grouped link lists in the site footer.">
             <Repeater
               items={cfg.footer.columns}
               onChange={(v) => patch((d) => { d.footer.columns = v; })}
@@ -430,7 +446,7 @@ export function SettingsForm() {
         ) : null}
 
         {tab === 'Categories' ? (
-          <Card title="Content categories" desc="The dropdown options used when creating albums, news and events. Add or remove freely.">
+          <Card onSave={save} title="Content categories" desc="The dropdown options used when creating albums, news and events. Add or remove freely.">
             <StringList label="Gallery categories" items={cfg.taxonomies.galleryCategories} placeholder="e.g. Sports" onChange={(v) => patch((d) => { d.taxonomies.galleryCategories = v; })} />
             <StringList label="News categories" items={cfg.taxonomies.newsCategories} placeholder="e.g. Achievement" onChange={(v) => patch((d) => { d.taxonomies.newsCategories = v; })} />
             <StringList label="Event categories" items={cfg.taxonomies.eventCategories} placeholder="e.g. Sports" onChange={(v) => patch((d) => { d.taxonomies.eventCategories = v; })} />
@@ -439,7 +455,7 @@ export function SettingsForm() {
 
         {tab === 'Contact' ? (
           <>
-            <Card title="Contact & address" desc="Shown in the header bar, footer and contact page.">
+            <Card onSave={save} title="Contact & address" desc="Shown in the header bar, footer and contact page.">
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Phone" id="phone" value={cfg.contact.phone} onChange={(e) => patch((d) => { d.contact.phone = e.target.value; })} />
                 <Field label="WhatsApp number" id="wa" value={cfg.contact.whatsapp} onChange={(e) => patch((d) => { d.contact.whatsapp = e.target.value; })} />
@@ -453,7 +469,7 @@ export function SettingsForm() {
               </div>
             </Card>
 
-            <Card title="Social media links" desc="Used in the header, footer and social wall.">
+            <Card onSave={save} title="Social media links" desc="Used in the header, footer and social wall.">
               {cfg.social.map((s, i) => (
                 <Field key={s.network} label={s.label} id={`social-${s.network}`} value={s.href} placeholder={`https://${s.network}.com/...`} onChange={(e) => patch((d) => { d.social[i].href = e.target.value; })} />
               ))}

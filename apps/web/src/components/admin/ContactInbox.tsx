@@ -78,13 +78,40 @@ export function ContactInbox() {
     if (res && res.ok) setItems((p) => p.filter((m) => m.id !== id));
   }
 
+  function exportCsv() {
+    const cols: { key: keyof Message; label: string }[] = [
+      { key: 'name', label: 'Name' }, { key: 'email', label: 'Email' }, { key: 'phone', label: 'Phone' },
+      { key: 'subject', label: 'Subject' }, { key: 'message', label: 'Message' },
+      { key: 'handled', label: 'Handled' }, { key: 'createdAt', label: 'Received' },
+    ];
+    const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const lines = [cols.map((c) => c.label).join(',')];
+    for (const m of items) lines.push(cols.map((c) => esc(m[c.key])).join(','));
+    const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `contact-messages-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
   return (
     <>
-      <div className="mb-8">
-        <h1 className="font-display text-2xl text-maroon-900">Contact messages</h1>
-        <p className="mt-1 text-sm text-ink-soft">
-          Enquiries submitted through the public contact form. {msg}
-        </p>
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl text-maroon-900">Contact messages</h1>
+          <p className="mt-1 text-sm text-ink-soft">
+            Enquiries submitted through the public contact form. {msg}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={exportCsv}
+          disabled={items.length === 0}
+          className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-2 text-sm font-medium text-ink-soft hover:bg-maroon-50 hover:text-maroon-700 disabled:opacity-40"
+        >
+          <Icon name="download" size={16} /> Excel (CSV)
+        </button>
       </div>
 
       {loading ? (

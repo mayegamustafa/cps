@@ -11,7 +11,7 @@ const config: ResourceConfig = {
   fields: [
     { key: 'title', label: 'Title', required: true, table: true },
     { key: 'category', label: 'Category', required: true, table: true, placeholder: 'Prospectus, Forms, Policies…' },
-    { key: 'fileUrl', label: 'File URL', required: true, placeholder: 'https://… link to the document' },
+    { key: 'fileUrl', label: 'Document (upload PDF/Excel or paste a URL)', type: 'file', required: true },
     { key: 'description', label: 'Description' },
     { key: 'isPublic', label: 'Visible on website', type: 'boolean', table: true },
   ],

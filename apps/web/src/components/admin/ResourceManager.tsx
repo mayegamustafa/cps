@@ -19,6 +19,7 @@ export type FieldType =
   | 'datetime'
   | 'tags'
   | 'image'
+  | 'file'
   | 'multiImage'
   | 'boolean';
 
@@ -93,6 +94,58 @@ function toPayload(fields: Field[], form: Record<string, string | boolean>) {
     else out[field.key] = v;
   }
   return out;
+}
+
+// Flatten a stored value into a plain string for export.
+function exportValue(value: unknown): string {
+  if (value == null) return '';
+  if (Array.isArray(value)) return value.join('; ');
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+}
+
+// Build and download a CSV (opens in Excel/Sheets).
+function downloadCsv(title: string, fields: Field[], rows: Record<string, unknown>[]) {
+  const cols = fields.filter((f) => f.type !== 'image' && f.type !== 'multiImage' && f.type !== 'file');
+  const header = cols.map((c) => c.label);
+  const escape = (s: string) => `"${s.replace(/"/g, '""')}"`;
+  const lines = [header.map(escape).join(',')];
+  for (const row of rows) {
+    lines.push(cols.map((c) => escape(exportValue(row[c.key]))).join(','));
+  }
+  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${title.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Open a print-friendly window (the user chooses "Save as PDF" in the dialog).
+function printRows(title: string, fields: Field[], rows: Record<string, unknown>[]) {
+  const cols = fields.filter((f) => f.type !== 'image' && f.type !== 'multiImage' && f.type !== 'file');
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const head = cols.map((c) => `<th>${esc(c.label)}</th>`).join('');
+  const body = rows
+    .map((r) => `<tr>${cols.map((c) => `<td>${esc(exportValue(r[c.key]))}</td>`).join('')}</tr>`)
+    .join('');
+  const html = `<!doctype html><html><head><title>${esc(title)}</title>
+    <style>
+      body{font-family:Arial,Helvetica,sans-serif;color:#222;padding:24px;}
+      h1{color:#6e1f23;font-size:20px;margin:0 0 4px;}
+      p{color:#666;font-size:12px;margin:0 0 16px;}
+      table{width:100%;border-collapse:collapse;font-size:12px;}
+      th,td{border:1px solid #ddd;padding:6px 8px;text-align:left;vertical-align:top;}
+      th{background:#f5eceb;color:#6e1f23;}
+    </style></head><body>
+    <h1>City Parents School — ${esc(title)}</h1>
+    <p>${rows.length} record(s) · Generated ${new Date().toLocaleString()}</p>
+    <table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
+    <script>window.onload=function(){window.print();}</script>
+    </body></html>`;
+  const w = window.open('', '_blank');
+  if (w) { w.document.write(html); w.document.close(); }
 }
 
 function displayCell(field: Field, value: unknown): string {
@@ -189,8 +242,24 @@ export function ResourceManager({ config }: { config: ResourceConfig }) {
           <h1 className="font-display text-2xl text-maroon-900">{config.title}</h1>
           <p className="mt-1 text-sm text-ink-soft">{config.description}</p>
         </div>
-        <div className="flex items-center gap-3">
-          {msg ? <span className="text-sm font-medium text-maroon-700">{msg}</span> : null}
+        <div className="flex items-center gap-2">
+          {msg ? <span className="mr-1 text-sm font-medium text-maroon-700">{msg}</span> : null}
+          <button
+            type="button"
+            onClick={() => downloadCsv(config.title, config.fields, rows)}
+            disabled={rows.length === 0}
+            className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-2 text-sm font-medium text-ink-soft hover:bg-maroon-50 hover:text-maroon-700 disabled:opacity-40"
+          >
+            <Icon name="download" size={16} /> Excel (CSV)
+          </button>
+          <button
+            type="button"
+            onClick={() => printRows(config.title, config.fields, rows)}
+            disabled={rows.length === 0}
+            className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-2 text-sm font-medium text-ink-soft hover:bg-maroon-50 hover:text-maroon-700 disabled:opacity-40"
+          >
+            <Icon name="download" size={16} /> PDF / Print
+          </button>
           {config.readOnlyCreate ? null : (
             <Button onClick={startCreate} icon="plus">Add new</Button>
           )}
@@ -299,6 +368,9 @@ function FieldInput({
   }
   if (field.type === 'image') {
     return <FileUpload label={field.label} value={String(value)} onChange={(url) => onChange(url)} />;
+  }
+  if (field.type === 'file') {
+    return <FileUpload label={field.label} accept="*" value={String(value)} onChange={(url) => onChange(url)} />;
   }
   if (field.type === 'multiImage') {
     return <MultiImageInput label={field.label} value={String(value)} onChange={(v) => onChange(v)} />;
