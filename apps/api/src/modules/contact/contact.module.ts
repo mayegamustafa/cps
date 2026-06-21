@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { Role } from '@cps/database';
@@ -31,6 +31,25 @@ export class ContactController {
   @Get()
   list() {
     return this.prisma.contactMessage.findMany({ orderBy: { createdAt: 'desc' } });
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.MARKETING_ADMIN)
+  @Patch(':id')
+  setHandled(@Param('id') id: string, @Body() dto: { handled?: boolean }) {
+    return this.prisma.contactMessage.update({
+      where: { id },
+      data: { handled: dto.handled ?? true },
+    });
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.MARKETING_ADMIN)
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.prisma.contactMessage.delete({ where: { id } });
   }
 }
 

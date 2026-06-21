@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Injectable,
   Module,
@@ -10,7 +11,8 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { IsEnum } from 'class-validator';
+import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator';
+import { randomBytes } from 'node:crypto';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import {
   ModerationStatus,
@@ -24,6 +26,14 @@ import { Roles } from '../../auth/roles.decorator';
 
 class ModerateDto {
   @IsEnum(ModerationStatus) moderation: ModerationStatus;
+}
+
+class CreatePostDto {
+  @IsEnum(SocialNetwork) network: SocialNetwork;
+  @IsString() caption: string;
+  @IsOptional() @IsString() permalink?: string;
+  @IsOptional() @IsString() thumbnailUrl?: string;
+  @IsOptional() @IsBoolean() isVideo?: boolean;
 }
 
 /**
@@ -79,6 +89,60 @@ export class SocialController {
       where: { moderation: ModerationStatus.PENDING },
       orderBy: { postedAt: 'desc' },
     });
+  }
+
+  // Admin: list every post.
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.MARKETING_ADMIN)
+  @Get('admin/list')
+  adminList() {
+    return this.prisma.socialPost.findMany({ orderBy: { postedAt: 'desc' } });
+  }
+
+  // Admin: add a curated post manually (auto-approved).
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.MARKETING_ADMIN)
+  @Post()
+  create(@Body() dto: CreatePostDto) {
+    return this.prisma.socialPost.create({
+      data: {
+        network: dto.network,
+        caption: dto.caption,
+        permalink: dto.permalink ?? '#',
+        thumbnailUrl: dto.thumbnailUrl,
+        isVideo: dto.isVideo ?? false,
+        externalId: `manual_${randomBytes(6).toString('hex')}`,
+        postedAt: new Date(),
+        moderation: ModerationStatus.APPROVED,
+      },
+    });
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.MARKETING_ADMIN)
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: Partial<CreatePostDto>) {
+    return this.prisma.socialPost.update({
+      where: { id },
+      data: {
+        ...(dto.caption !== undefined ? { caption: dto.caption } : {}),
+        ...(dto.permalink !== undefined ? { permalink: dto.permalink } : {}),
+        ...(dto.thumbnailUrl !== undefined ? { thumbnailUrl: dto.thumbnailUrl } : {}),
+        ...(dto.isVideo !== undefined ? { isVideo: dto.isVideo } : {}),
+        ...(dto.network !== undefined ? { network: dto.network } : {}),
+      },
+    });
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.MARKETING_ADMIN)
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.prisma.socialPost.delete({ where: { id } });
   }
 
   @ApiBearerAuth()

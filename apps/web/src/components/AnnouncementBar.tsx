@@ -7,6 +7,7 @@ type Announcement = {
   message: string;
   severity: 'INFO' | 'WARNING' | 'CRITICAL' | string;
   link?: string | null;
+  linkLabel?: string | null;
 };
 
 const styles: Record<string, string> = {
@@ -40,7 +41,7 @@ export async function AnnouncementBar() {
           {a.message}
           {a.link ? (
             <Link href={a.link} className="ml-2 inline-flex items-center gap-1 underline underline-offset-2">
-              Learn more <Icon name="arrow-right" size={14} />
+              {a.linkLabel || 'Learn more'} <Icon name="arrow-right" size={14} />
             </Link>
           ) : null}
         </p>

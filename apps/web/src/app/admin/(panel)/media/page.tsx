@@ -16,7 +16,8 @@ const config: ResourceConfig = {
       { value: 'PUBLISHED', label: 'Published' },
       { value: 'ARCHIVED', label: 'Archived' },
     ] },
-    { key: 'coverImage', label: 'Cover image URL', type: 'image' },
+    { key: 'coverImage', label: 'Cover image', type: 'image' },
+    { key: 'images', label: 'Album photos', type: 'multiImage' },
     { key: 'description', label: 'Description', type: 'textarea' },
   ],
 };

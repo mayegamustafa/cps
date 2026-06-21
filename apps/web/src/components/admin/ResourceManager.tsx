@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
+import { FileUpload } from '@/components/admin/FileUpload';
+import { uploadFile } from '@/components/admin/FileUpload';
 
 const API = ''; // same-origin; proxied to the backend
 
@@ -15,6 +17,7 @@ export type FieldType =
   | 'datetime'
   | 'tags'
   | 'image'
+  | 'multiImage'
   | 'boolean';
 
 export type Field = {
@@ -60,6 +63,7 @@ function emptyForm(fields: Field[]) {
 // Convert a stored row value into a form input value.
 function toInput(field: Field, value: unknown): string | boolean {
   if (value == null) return field.type === 'boolean' ? false : '';
+  if (field.type === 'multiImage') return Array.isArray(value) ? value.join('\n') : String(value);
   if (field.type === 'tags') return Array.isArray(value) ? value.join(', ') : String(value);
   if (field.type === 'boolean') return Boolean(value);
   if (field.type === 'datetime' && typeof value === 'string') return value.slice(0, 16);
@@ -76,6 +80,8 @@ function toPayload(fields: Field[], form: Record<string, string | boolean>) {
     if (field.type === 'boolean') out[field.key] = Boolean(v);
     else if (v === '' || v == null) continue;
     else if (field.type === 'number') out[field.key] = Number(v);
+    else if (field.type === 'multiImage')
+      out[field.key] = String(v).split('\n').map((s) => s.trim()).filter(Boolean);
     else if (field.type === 'tags')
       out[field.key] = String(v).split(/[\n,]/).map((s) => s.trim()).filter(Boolean);
     else if (field.type === 'datetime' || field.type === 'date')
@@ -284,6 +290,12 @@ function FieldInput({
       </div>
     );
   }
+  if (field.type === 'image') {
+    return <FileUpload label={field.label} value={String(value)} onChange={(url) => onChange(url)} />;
+  }
+  if (field.type === 'multiImage') {
+    return <MultiImageInput label={field.label} value={String(value)} onChange={(v) => onChange(v)} />;
+  }
   const inputType =
     field.type === 'number' ? 'number'
     : field.type === 'date' ? 'date'
@@ -291,7 +303,61 @@ function FieldInput({
     : 'text';
   return (
     <div>{label}
-      <input id={field.key} type={inputType} required={field.required} placeholder={field.placeholder ?? (field.type === 'image' ? 'https://… image URL' : field.type === 'tags' ? 'comma, separated' : '')} value={String(value)} onChange={(e) => onChange(e.target.value)} className={inputCls} />
+      <input id={field.key} type={inputType} required={field.required} placeholder={field.placeholder ?? (field.type === 'tags' ? 'comma, separated' : '')} value={String(value)} onChange={(e) => onChange(e.target.value)} className={inputCls} />
+    </div>
+  );
+}
+
+// Manages a newline-separated list of image URLs with upload + paste + remove.
+function MultiImageInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [paste, setPaste] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const urls = value.split('\n').map((s) => s.trim()).filter(Boolean);
+  const add = (url: string) => onChange([...urls, url].join('\n'));
+  const removeAt = (i: number) => onChange(urls.filter((_, j) => j !== i).join('\n'));
+
+  async function onPick(file: File) {
+    setBusy(true);
+    setError('');
+    try {
+      add(await uploadFile(file));
+    } catch (e) {
+      setError((e as Error).message + ' Paste a URL instead.');
+    }
+    setBusy(false);
+  }
+
+  return (
+    <div className="sm:col-span-2">
+      <label className="mb-1.5 block text-sm font-medium text-ink">{label}</label>
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" onClick={() => fileRef.current?.click()} disabled={busy} className="inline-flex items-center gap-1.5 rounded-full border border-maroon-700/30 px-3.5 py-2 text-sm font-medium text-maroon-800 hover:bg-maroon-50 disabled:opacity-50">
+          <Icon name="image" size={16} /> {busy ? 'Uploading…' : 'Upload photo'}
+        </button>
+        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onPick(f); }} />
+        <input type="url" value={paste} placeholder="…or paste an image URL" onChange={(e) => setPaste(e.target.value)} className="min-w-48 flex-1 rounded-xl border border-line bg-white px-4 py-2 text-sm focus:border-maroon-500 focus:outline-none" />
+        <button type="button" onClick={() => { if (paste.trim()) { add(paste.trim()); setPaste(''); } }} className="rounded-full border border-line px-3 py-2 text-sm hover:bg-maroon-50">Add</button>
+      </div>
+      {error ? <p className="mt-1 text-xs text-maroon-600">{error}</p> : null}
+      {urls.length > 0 ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {urls.map((u, i) => (
+            <span key={i} className="group relative h-16 w-16 overflow-hidden rounded-lg border border-line bg-cover bg-center" style={{ backgroundImage: `url('${u}')` }}>
+              <button type="button" onClick={() => removeAt(i)} aria-label="Remove" className="absolute right-0 top-0 bg-maroon-900/80 px-1.5 text-xs text-white opacity-0 group-hover:opacity-100">×</button>
+            </span>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

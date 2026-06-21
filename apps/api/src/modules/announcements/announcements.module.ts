@@ -20,6 +20,9 @@ class CreateAnnouncementDto {
   @IsString() @MinLength(2) message: string;
   @IsOptional() @IsEnum(AlertSeverity) severity?: AlertSeverity;
   @IsOptional() @IsString() link?: string;
+  @IsOptional() @IsString() linkLabel?: string;
+  @IsOptional() @IsString() imageUrl?: string;
+  @IsOptional() @IsBoolean() popup?: boolean;
   @IsOptional() @IsBoolean() isActive?: boolean;
 }
 
@@ -27,6 +30,9 @@ class UpdateAnnouncementDto {
   @IsOptional() @IsString() @MinLength(2) message?: string;
   @IsOptional() @IsEnum(AlertSeverity) severity?: AlertSeverity;
   @IsOptional() @IsString() link?: string;
+  @IsOptional() @IsString() linkLabel?: string;
+  @IsOptional() @IsString() imageUrl?: string;
+  @IsOptional() @IsBoolean() popup?: boolean;
   @IsOptional() @IsBoolean() isActive?: boolean;
 }
 

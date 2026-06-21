@@ -1,6 +1,7 @@
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { AnnouncementBar } from '@/components/AnnouncementBar';
+import { AnnouncementPopup } from '@/components/AnnouncementPopup';
 import { getSiteConfig } from '@/lib/site-config';
 
 export default async function SiteLayout({
@@ -16,6 +17,7 @@ export default async function SiteLayout({
       <Header config={config} />
       <main id="main">{children}</main>
       <Footer config={config} />
+      <AnnouncementPopup />
     </>
   );
 }

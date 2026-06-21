@@ -9,7 +9,7 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsArray, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { PublishStatus, Role } from '@cps/database';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -22,6 +22,7 @@ class CreateGalleryDto {
   @IsOptional() @IsString() description?: string;
   @IsOptional() @IsString() category?: string;
   @IsOptional() @IsString() coverImage?: string;
+  @IsOptional() @IsArray() @IsString({ each: true }) images?: string[];
   @IsOptional() @IsEnum(PublishStatus) status?: PublishStatus;
 }
 
@@ -30,6 +31,7 @@ class UpdateGalleryDto {
   @IsOptional() @IsString() description?: string;
   @IsOptional() @IsString() category?: string;
   @IsOptional() @IsString() coverImage?: string;
+  @IsOptional() @IsArray() @IsString({ each: true }) images?: string[];
   @IsOptional() @IsEnum(PublishStatus) status?: PublishStatus;
 }
 
@@ -57,6 +59,14 @@ export class GalleryController {
     return this.prisma.gallery.findMany({
       where: { deletedAt: null },
       orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  // Public: a single published album (with photos).
+  @Get(':slug')
+  bySlug(@Param('slug') slug: string) {
+    return this.prisma.gallery.findFirst({
+      where: { slug, status: PublishStatus.PUBLISHED, deletedAt: null },
     });
   }
 

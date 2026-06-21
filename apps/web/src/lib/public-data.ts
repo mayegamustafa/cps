@@ -61,15 +61,16 @@ export async function getEvents(): Promise<EventCard[]> {
   });
 }
 
-export type AlbumCard = { title: string; category: string; count: number; image: string };
+export type AlbumCard = { slug?: string; title: string; category: string; count: number; image: string };
 export async function getAlbums(): Promise<AlbumCard[]> {
   const rows = (await get('/api/gallery', fallbackAlbums)) as Record<string, unknown>[];
   if (rows === (fallbackAlbums as unknown)) return fallbackAlbums as AlbumCard[];
   return rows.map((r) => ({
+    slug: r.slug ? String(r.slug) : undefined,
     title: String(r.title),
     category: String(r.category ?? 'Album'),
-    count: 0,
-    image: r.coverImage ? String(r.coverImage) : FALLBACK_IMG,
+    count: Array.isArray(r.images) ? r.images.length : 0,
+    image: r.coverImage ? String(r.coverImage) : (Array.isArray(r.images) && r.images[0] ? String(r.images[0]) : FALLBACK_IMG),
   }));
 }
 
@@ -83,6 +84,19 @@ export async function getVacancies(): Promise<JobCard[]> {
     department: String(r.department ?? ''),
     type: String(r.type ?? 'FULL_TIME').replace(/_/g, '-').toLowerCase(),
     deadline: r.deadline ? new Date(String(r.deadline)).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Open',
+  }));
+}
+
+export type SocialPostCard = { id: string; network: string; caption: string; permalink: string; thumbnailUrl?: string; isVideo: boolean };
+export async function getSocialWall(): Promise<SocialPostCard[]> {
+  const rows = (await get('/api/social/wall', [])) as Record<string, unknown>[];
+  return rows.map((r) => ({
+    id: String(r.id),
+    network: String(r.network ?? 'instagram').toLowerCase(),
+    caption: String(r.caption ?? ''),
+    permalink: String(r.permalink ?? '#'),
+    thumbnailUrl: r.thumbnailUrl ? String(r.thumbnailUrl) : undefined,
+    isVideo: Boolean(r.isVideo),
   }));
 }
 

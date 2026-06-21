@@ -398,6 +398,7 @@ model Gallery {
   description String?
   category    String?       // sports | academics | graduation | trips | events
   coverImage  String?
+  images      String[]      @default([]) // photo URLs in the album
   status      PublishStatus @default(DRAFT)
   items       GalleryItem[]
   createdAt   DateTime      @default(now())
@@ -440,8 +441,8 @@ model SocialAccount {
 
 model SocialPost {
   id           String           @id @default(cuid())
-  accountId    String
-  account      SocialAccount    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId    String?
+  account      SocialAccount?   @relation(fields: [accountId], references: [id], onDelete: Cascade)
   externalId   String
   network      SocialNetwork
   permalink    String
@@ -834,6 +835,9 @@ model EmergencyAlert {
   message   String
   severity  AlertSeverity @default(INFO)
   link      String?
+  linkLabel String?
+  imageUrl  String?
+  popup     Boolean       @default(false)
   isActive  Boolean       @default(false)
   startsAt  DateTime?
   endsAt    DateTime?
