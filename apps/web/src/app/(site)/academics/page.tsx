@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { PageHero } from '@/components/ui/PageHero';
+import { ConfigurablePageHero } from '@/components/ui/ConfigurablePageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default function AcademicsPage() {
   return (
     <>
-      <PageHero
+      <ConfigurablePageHero page="academics"
         eyebrow="Academics"
         title="A continuous journey of discovery and excellence."
         intro="From the first day of Kindergarten to the final year of Primary, our curriculum is carefully sequenced to build knowledge, skills and character at every stage."

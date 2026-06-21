@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { PageHero } from '@/components/ui/PageHero';
+import { ConfigurablePageHero } from '@/components/ui/ConfigurablePageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
@@ -15,7 +15,7 @@ export default async function AlumniPage() {
   const alumni = await getAlumni();
   return (
     <>
-      <PageHero
+      <ConfigurablePageHero page="alumni"
         eyebrow="Alumni Community"
         title="Once a City Parent, always a City Parent."
         intro="Our alumni lead in every field across Uganda and the world. Reconnect with classmates, share your journey and help shape the next generation."

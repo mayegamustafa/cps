@@ -3,8 +3,35 @@
  *
  * These values are the fallback shown when the API has no saved settings (or is
  * unreachable). The admin "Settings & SEO" screen edits a `site` record that is
- * deep-merged over these defaults by getSiteConfig().
+ * deep-merged over these defaults by getSiteConfig(). Every field here is
+ * therefore editable from the admin panel.
  */
+
+import type { IconName } from '@/components/Icon';
+
+export type CtaLink = { label: string; href: string };
+
+export type PageHeadConfig = {
+  show: boolean;
+  eyebrow?: string;
+  title?: string;
+  intro?: string;
+  image?: string;
+};
+
+/** Inner pages that render an editable header banner. */
+export type PageHeadKey =
+  | 'about'
+  | 'academics'
+  | 'admissions'
+  | 'news'
+  | 'gallery'
+  | 'alumni'
+  | 'careers'
+  | 'contact'
+  | 'virtual-tour'
+  | 'live'
+  | 'downloads';
 
 export type SiteConfig = {
   brand: {
@@ -36,8 +63,8 @@ export type SiteConfig = {
     intro: string;
     /** Optional background video URL (mp4/webm). Autoplays muted + looped when set. */
     backgroundVideo: string;
-    primaryCta: { label: string; href: string };
-    secondaryCta: { label: string; href: string };
+    primaryCta: CtaLink;
+    secondaryCta: CtaLink;
     stats: { value: string; label: string }[];
     live: {
       status: string;
@@ -45,6 +72,62 @@ export type SiteConfig = {
       ctaLabel: string;
       chatLabel: string;
     };
+  };
+  /** Editable homepage sections below the hero. */
+  home: {
+    welcome: {
+      eyebrow: string;
+      title: string;
+      intro: string;
+      image: string;
+      bullets: string[];
+      statValue: string;
+      statLabel: string;
+      primaryCta: CtaLink;
+      secondaryCta: CtaLink;
+    };
+    pathways: {
+      eyebrow: string;
+      title: string;
+      intro: string;
+      items: { name: string; icon: IconName; age: string; blurb: string; href: string }[];
+    };
+    why: {
+      eyebrow: string;
+      title: string;
+      items: { title: string; icon: IconName; body: string }[];
+    };
+    admissionsCta: {
+      eyebrow: string;
+      title: string;
+      intro: string;
+      image: string;
+      primaryCta: CtaLink;
+      secondaryCta: CtaLink;
+    };
+    news: { eyebrow: string; title: string };
+    testimonials: {
+      eyebrow: string;
+      title: string;
+      items: { quote: string; name: string; role: string }[];
+    };
+    visit: {
+      eyebrow: string;
+      title: string;
+      intro: string;
+      officeHours: string;
+    };
+  };
+  footer: {
+    columns: { heading: string; links: CtaLink[] }[];
+  };
+  /** Per-page header banners (show/hide + editable copy and image). */
+  pageHeads: Record<PageHeadKey, PageHeadConfig>;
+  /** Admin-editable category lists used by the content dropdowns. */
+  taxonomies: {
+    galleryCategories: string[];
+    newsCategories: string[];
+    eventCategories: string[];
   };
 };
 
@@ -102,6 +185,126 @@ export const siteDefaults: SiteConfig = {
       chatLabel: 'Chat with Admissions',
     },
   },
+  home: {
+    welcome: {
+      eyebrow: 'Welcome to City Parents',
+      title: 'A school where every child is known, challenged and championed.',
+      intro:
+        'For three decades, City Parents School has been a home for ambitious learning in Kampala. We pair a demanding academic programme with genuine care, so that pupils leave us not only with results, but with character.',
+      image:
+        'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=1000&q=70',
+      bullets: [
+        'Experienced, qualified and caring teaching staff',
+        'A safe, modern campus on Kabaka Anjagala Road',
+        'Strong pastoral care and house system',
+      ],
+      statValue: '98%',
+      statLabel: 'of parents recommend us to other families',
+      primaryCta: { label: 'Our Story', href: '/about' },
+      secondaryCta: { label: 'Meet the Leadership', href: '/about#leadership' },
+    },
+    pathways: {
+      eyebrow: 'Academics',
+      title: 'Three pathways. One standard of excellence.',
+      intro:
+        'A continuous, carefully-sequenced journey from the first day of Nursery to the final year of Secondary.',
+      items: [
+        { name: 'Pre-Primary', icon: 'heart-hand', age: 'KG1 to KG3 · Ages 3 to 5', blurb: 'A warm, play-rich foundation where curiosity, language and confidence take root.', href: '/academics#pre-primary' },
+        { name: 'Lower Primary', icon: 'book-open', age: 'P.1 to P.3 · Ages 6 to 8', blurb: 'The building blocks of formal learning, growing strong reading, writing and numeracy.', href: '/academics#lower-primary' },
+        { name: 'Upper Primary', icon: 'graduation-cap', age: 'P.4 to P.7 · Ages 9 to 12', blurb: 'Academic mastery and confidence, preparing pupils for the Primary Leaving Examinations.', href: '/academics#upper-primary' },
+      ],
+    },
+    why: {
+      eyebrow: 'Why City Parents',
+      title: 'An education that lasts a lifetime.',
+      items: [
+        { title: 'Academic Excellence', icon: 'trophy', body: 'Consistently among the top-performing schools in the region, with a record of national distinction.' },
+        { title: 'Character & Values', icon: 'shield-check', body: 'Integrity, discipline and compassion are taught as deliberately as mathematics and science.' },
+        { title: 'Global Outlook', icon: 'globe', body: 'Learners graduate as confident citizens prepared for universities and careers worldwide.' },
+        { title: 'Creative & Co-curricular', icon: 'palette', body: 'Music, sport, debate and the arts give every child a stage to discover their talents.' },
+        { title: 'Inquiry & Science', icon: 'flask', body: 'Modern laboratories and a question-led approach build genuine scientific thinking.' },
+        { title: 'Vibrant Community', icon: 'users', body: 'A close partnership of teachers, parents and alumni surrounds every learner.' },
+      ],
+    },
+    admissionsCta: {
+      eyebrow: 'Admissions 2026 / 2027',
+      title: 'Applications are open. Give your child a head start.',
+      intro:
+        'Our online admissions portal makes it simple to apply, upload documents and track your child’s application from anywhere.',
+      image:
+        'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&w=1600&q=60',
+      primaryCta: { label: 'Start Application', href: '/admissions' },
+      secondaryCta: { label: 'Download Prospectus', href: '/downloads' },
+    },
+    news: { eyebrow: 'News & Events', title: 'The latest from our community' },
+    testimonials: {
+      eyebrow: 'In their words',
+      title: 'Trusted by families and alumni',
+      items: [
+        { quote: 'The teachers know my daughter as an individual. She has grown in confidence and curiosity in ways we never expected.', name: 'Sarah N.', role: 'Parent, Primary' },
+        { quote: 'City Parents gave me the foundation and the values that carried me through university and into my career.', name: 'David K.', role: 'Alumnus, Class of 2012' },
+      ],
+    },
+    visit: {
+      eyebrow: 'Plan a visit',
+      title: 'Come and see City Parents for yourself.',
+      intro:
+        'We warmly welcome prospective families to tour our campus, meet our teachers and experience the City Parents difference first-hand.',
+      officeHours: 'Monday to Friday, 8:00am to 5:00pm',
+    },
+  },
+  footer: {
+    columns: [
+      {
+        heading: 'Explore',
+        links: [
+          { label: 'About School', href: '/about' },
+          { label: 'Academics', href: '/academics' },
+          { label: 'Virtual Tour', href: '/virtual-tour' },
+          { label: 'Live TV', href: '/live' },
+          { label: 'Achievement Wall', href: '/achievements' },
+        ],
+      },
+      {
+        heading: 'Community',
+        links: [
+          { label: 'News & Events', href: '/news' },
+          { label: 'Gallery', href: '/gallery' },
+          { label: 'Alumni', href: '/alumni' },
+          { label: 'Digital Magazine', href: '/magazine' },
+          { label: 'Houses', href: '/houses' },
+        ],
+      },
+      {
+        heading: 'Resources',
+        links: [
+          { label: 'Admissions', href: '/admissions' },
+          { label: 'Careers', href: '/careers' },
+          { label: 'Downloads Center', href: '/downloads' },
+          { label: 'Parent Portal', href: '/portal' },
+          { label: 'Contact', href: '/contact' },
+        ],
+      },
+    ],
+  },
+  pageHeads: {
+    about: { show: true, eyebrow: 'Our School', title: 'A legacy of nurturing brilliance.', intro: 'Discover the story, people and values behind City Parents School.' },
+    academics: { show: true, eyebrow: 'Academics', title: 'A continuous journey of discovery and excellence.', intro: 'From Kindergarten to the final year of Primary, our curriculum is carefully sequenced to build knowledge, skills and character at every stage.' },
+    admissions: { show: true, eyebrow: 'Admissions 2026 / 2027', title: 'Begin your child’s journey with us.', intro: 'Our online admissions process makes it simple to apply, upload documents and track your application, from anywhere.' },
+    news: { show: true, eyebrow: 'Newsroom', title: 'News & Events', intro: 'The latest stories, achievements and happenings from across the school.' },
+    gallery: { show: true, eyebrow: 'Media Center', title: 'Life at City Parents, in pictures and film.', intro: 'Browse moments from across our school year, sports, academics, the arts, trips and our biggest celebrations.' },
+    alumni: { show: true, eyebrow: 'Alumni', title: 'Once a City Parent, always a City Parent.', intro: 'Celebrating the achievements of our graduates around the world.' },
+    careers: { show: true, eyebrow: 'Careers', title: 'Join our team.', intro: 'Build your career with a school that invests in its people.' },
+    contact: { show: true, eyebrow: 'Contact', title: 'We would love to hear from you.', intro: 'Reach the right office quickly — admissions, general enquiries or a campus visit.' },
+    'virtual-tour': { show: true, eyebrow: 'Virtual Tour', title: 'Explore our campus from anywhere.', intro: 'Take a guided look around our classrooms, laboratories and grounds.' },
+    live: { show: true, eyebrow: 'Live TV', title: 'Watch City Parents live.', intro: 'Assemblies, events and ceremonies streamed to families wherever they are.' },
+    downloads: { show: true, eyebrow: 'Downloads', title: 'Forms, prospectus and resources.', intro: 'Everything you need to download in one place.' },
+  },
+  taxonomies: {
+    galleryCategories: ['Sports', 'Graduation', 'Trips', 'Academics', 'Arts', 'Events', 'Campus'],
+    newsCategories: ['Achievement', 'Events', 'Campus', 'Academics', 'Community', 'Announcement'],
+    eventCategories: ['Academic', 'Sports', 'Cultural', 'Parents', 'Holiday', 'Ceremony'],
+  },
 };
 
 // Backwards-compatible alias used by components that only need static values.
@@ -118,26 +321,9 @@ export const primaryNav = [
   { label: 'Contact', href: '/contact' },
 ] as const;
 
+// Legacy export kept for any importer; the footer now reads config.footer.columns.
 export const footerNav = {
-  Explore: [
-    { label: 'About School', href: '/about' },
-    { label: 'Academics', href: '/academics' },
-    { label: 'Virtual Tour', href: '/virtual-tour' },
-    { label: 'Live TV', href: '/live' },
-    { label: 'Achievement Wall', href: '/achievements' },
-  ],
-  Community: [
-    { label: 'News & Events', href: '/news' },
-    { label: 'Gallery', href: '/gallery' },
-    { label: 'Alumni', href: '/alumni' },
-    { label: 'Digital Magazine', href: '/magazine' },
-    { label: 'Houses', href: '/houses' },
-  ],
-  Resources: [
-    { label: 'Admissions', href: '/admissions' },
-    { label: 'Careers', href: '/careers' },
-    { label: 'Downloads Center', href: '/downloads' },
-    { label: 'Parent Portal', href: '/portal' },
-    { label: 'Contact', href: '/contact' },
-  ],
+  Explore: siteDefaults.footer.columns[0].links,
+  Community: siteDefaults.footer.columns[1].links,
+  Resources: siteDefaults.footer.columns[2].links,
 } as const;

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { PageHero } from '@/components/ui/PageHero';
+import { ConfigurablePageHero } from '@/components/ui/ConfigurablePageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
@@ -22,7 +22,7 @@ const stops = [
 export default function VirtualTourPage() {
   return (
     <>
-      <PageHero
+      <ConfigurablePageHero page="virtual-tour"
         eyebrow="Virtual Tour"
         title="Walk our campus from anywhere."
         intro="Take an immersive 360° tour of City Parents School, explore our classrooms, laboratories, library, sports facilities and more, all from your device."

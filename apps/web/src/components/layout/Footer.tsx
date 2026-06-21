@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
 import { Icon, type IconName } from '@/components/Icon';
-import { footerNav, siteDefaults, type SiteConfig } from '@/lib/site';
+import { siteDefaults, type SiteConfig } from '@/lib/site';
 
 export function Footer({ config = siteDefaults }: { config?: SiteConfig }) {
   const { brand, contact, address, social, description } = config;
@@ -49,14 +49,14 @@ export function Footer({ config = siteDefaults }: { config?: SiteConfig }) {
           </div>
 
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
-            {Object.entries(footerNav).map(([heading, links]) => (
-              <div key={heading}>
+            {config.footer.columns.map((col) => (
+              <div key={col.heading}>
                 <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-400">
-                  {heading}
+                  {col.heading}
                 </h3>
                 <ul className="mt-4 space-y-2.5 text-sm">
-                  {links.map((l) => (
-                    <li key={l.href}>
+                  {col.links.map((l) => (
+                    <li key={l.href + l.label}>
                       <Link href={l.href} className="transition-colors hover:text-white">
                         {l.label}
                       </Link>

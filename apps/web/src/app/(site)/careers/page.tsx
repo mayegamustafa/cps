@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { PageHero } from '@/components/ui/PageHero';
+import { ConfigurablePageHero } from '@/components/ui/ConfigurablePageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Icon } from '@/components/Icon';
 import { getVacancies } from '@/lib/public-data';
@@ -15,7 +15,7 @@ export default async function CareersPage() {
   const jobs = await getVacancies();
   return (
     <>
-      <PageHero
+      <ConfigurablePageHero page="careers"
         eyebrow="Careers"
         title="Build your career with City Parents."
         intro="We are always looking for passionate, talented educators and professionals to join our community. Explore our current openings."

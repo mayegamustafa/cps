@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { PageHero } from '@/components/ui/PageHero';
+import { ConfigurablePageHero } from '@/components/ui/ConfigurablePageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Icon } from '@/components/Icon';
 import { ContactForm } from '@/components/forms/ContactForm';
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <>
-      <PageHero
+      <ConfigurablePageHero page="contact"
         eyebrow="Get in touch"
         title="We would love to hear from you."
         intro="Whether you are a prospective family, a current parent or a partner, our team is here to help."

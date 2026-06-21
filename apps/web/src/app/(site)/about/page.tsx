@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { PageHero } from '@/components/ui/PageHero';
+import { ConfigurablePageHero } from '@/components/ui/ConfigurablePageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Icon } from '@/components/Icon';
 import { leadership, values } from '@/lib/content';
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <>
-      <PageHero
+      <ConfigurablePageHero page="about"
         eyebrow="About City Parents"
         title="Three decades of shaping Uganda’s future leaders."
         intro="Founded in 1994, City Parents School has grown into one of Kampala’s most respected institutions, a place where academic ambition meets genuine care."

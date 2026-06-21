@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { PageHero } from '@/components/ui/PageHero';
+import { ConfigurablePageHero } from '@/components/ui/ConfigurablePageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Icon } from '@/components/Icon';
 import { getNews, getEvents } from '@/lib/public-data';
@@ -18,7 +18,7 @@ export default async function NewsPage() {
   const [articles, events] = await Promise.all([getNews(), getEvents()]);
   return (
     <>
-      <PageHero
+      <ConfigurablePageHero page="news"
         eyebrow="News & Events"
         title="What’s happening at City Parents."
         intro="Celebrate our achievements, follow campus stories and never miss an upcoming event."

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { PageHero } from '@/components/ui/PageHero';
+import { ConfigurablePageHero } from '@/components/ui/ConfigurablePageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Icon } from '@/components/Icon';
 import { recordings } from '@/lib/content';
@@ -17,7 +17,7 @@ export default async function GalleryPage() {
   const [galleryAlbums, social] = await Promise.all([getAlbums(), getSocialWall()]);
   return (
     <>
-      <PageHero
+      <ConfigurablePageHero page="gallery"
         eyebrow="Media Center"
         title="Life at City Parents, in pictures and film."
         intro="Browse moments from across our school year, sports, academics, the arts, trips and our biggest celebrations."

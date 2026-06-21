@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
 import { FileUpload } from '@/components/admin/FileUpload';
 import { uploadFile } from '@/components/admin/FileUpload';
+import { siteDefaults } from '@/lib/site';
 
 const API = ''; // same-origin; proxied to the backend
 
@@ -12,6 +13,7 @@ export type FieldType =
   | 'text'
   | 'textarea'
   | 'select'
+  | 'category'
   | 'number'
   | 'date'
   | 'datetime'
@@ -25,6 +27,8 @@ export type Field = {
   label: string;
   type?: FieldType;
   options?: { value: string; label: string }[];
+  /** For type 'category': which editable taxonomy list to use for the dropdown. */
+  taxonomy?: 'galleryCategories' | 'newsCategories' | 'eventCategories';
   required?: boolean;
   placeholder?: string;
   /** Show this field as a column in the list table. */
@@ -290,6 +294,9 @@ function FieldInput({
       </div>
     );
   }
+  if (field.type === 'category') {
+    return <CategorySelect field={field} value={String(value)} onChange={(v) => onChange(v)} labelEl={label} />;
+  }
   if (field.type === 'image') {
     return <FileUpload label={field.label} value={String(value)} onChange={(url) => onChange(url)} />;
   }
@@ -304,6 +311,94 @@ function FieldInput({
   return (
     <div>{label}
       <input id={field.key} type={inputType} required={field.required} placeholder={field.placeholder ?? (field.type === 'tags' ? 'comma, separated' : '')} value={String(value)} onChange={(e) => onChange(e.target.value)} className={inputCls} />
+    </div>
+  );
+}
+
+// Dropdown of categories from the editable taxonomy in site settings.
+// Admins can add a new category inline; it is persisted back to settings so it
+// appears everywhere (and in the Settings → Categories tab) thereafter.
+function CategorySelect({
+  field,
+  value,
+  onChange,
+  labelEl,
+}: {
+  field: Field;
+  value: string;
+  onChange: (v: string) => void;
+  labelEl: React.ReactNode;
+}) {
+  const tax = field.taxonomy ?? 'galleryCategories';
+  const [options, setOptions] = useState<string[]>(siteDefaults.taxonomies[tax]);
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${API}/api/settings`);
+        if (res.ok) {
+          const data = await res.json();
+          const list = data?.taxonomies?.[tax];
+          if (Array.isArray(list) && list.length) setOptions(list);
+        }
+      } catch {
+        /* keep defaults */
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tax]);
+
+  // Ensure the current value is selectable even if it isn't in the list yet.
+  const allOptions = value && !options.includes(value) ? [value, ...options] : options;
+
+  async function persist(next: string[]) {
+    try {
+      const cur: Record<string, unknown> = await fetch(`${API}/api/settings`).then((r) => (r.ok ? r.json() : {}));
+      const taxonomies = { ...((cur.taxonomies as Record<string, unknown>) ?? {}), [tax]: next };
+      await fetch(`${API}/api/settings`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify({ ...cur, taxonomies }),
+      });
+    } catch {
+      /* best-effort; the value is still applied to this item */
+    }
+  }
+
+  function commitNew() {
+    const v = draft.trim();
+    if (!v) { setAdding(false); return; }
+    const next = options.includes(v) ? options : [...options, v];
+    setOptions(next);
+    onChange(v);
+    setAdding(false);
+    setDraft('');
+    void persist(next);
+  }
+
+  return (
+    <div>{labelEl}
+      {adding ? (
+        <div className="flex gap-2">
+          <input autoFocus value={draft} placeholder="New category name" onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commitNew(); } }} className={inputCls} />
+          <button type="button" onClick={commitNew} className="shrink-0 rounded-xl bg-maroon-700 px-4 text-sm font-medium text-white hover:bg-maroon-800">Add</button>
+          <button type="button" onClick={() => setAdding(false)} className="shrink-0 rounded-xl px-3 text-sm text-ink-muted hover:text-ink">Cancel</button>
+        </div>
+      ) : (
+        <select
+          id={field.key}
+          required={field.required}
+          value={value}
+          onChange={(e) => { if (e.target.value === '__add__') setAdding(true); else onChange(e.target.value); }}
+          className={inputCls}
+        >
+          <option value="">Select…</option>
+          {allOptions.map((o) => <option key={o} value={o}>{o}</option>)}
+          <option value="__add__">+ Add new category…</option>
+        </select>
+      )}
     </div>
   );
 }

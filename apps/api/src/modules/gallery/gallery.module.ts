@@ -16,6 +16,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { JwtAuthGuard, RolesGuard } from '../../auth/guards';
 import { Roles } from '../../auth/roles.decorator';
 import { uniqueSlug } from '../../common/slug';
+import { deriveCover } from '../../common/media';
 
 class CreateGalleryDto {
   @IsString() @MinLength(2) title: string;
@@ -75,8 +76,10 @@ export class GalleryController {
   @Roles(...EDITORS)
   @Post()
   create(@Body() dto: CreateGalleryDto) {
+    // Cover is taken from the first photo (or a video's thumbnail) automatically.
+    const coverImage = deriveCover(dto.images, dto.coverImage);
     return this.prisma.gallery.create({
-      data: { ...dto, slug: uniqueSlug(dto.title) },
+      data: { ...dto, coverImage, slug: uniqueSlug(dto.title) },
     });
   }
 
@@ -85,7 +88,12 @@ export class GalleryController {
   @Roles(...EDITORS)
   @Put(':id')
   update(@Param('id') id: string, @Body() dto: UpdateGalleryDto) {
-    return this.prisma.gallery.update({ where: { id }, data: dto });
+    // Re-derive the cover whenever photos (or an explicit cover) change.
+    const data: UpdateGalleryDto = { ...dto };
+    if (dto.images !== undefined || dto.coverImage !== undefined) {
+      data.coverImage = deriveCover(dto.images, dto.coverImage);
+    }
+    return this.prisma.gallery.update({ where: { id }, data });
   }
 
   @ApiBearerAuth()

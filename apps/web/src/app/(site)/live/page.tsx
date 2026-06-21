@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { PageHero } from '@/components/ui/PageHero';
+import { ConfigurablePageHero } from '@/components/ui/ConfigurablePageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Icon } from '@/components/Icon';
 import { recordings, events } from '@/lib/content';
@@ -45,7 +45,7 @@ export default async function LivePage() {
 
   return (
     <>
-      <PageHero
+      <ConfigurablePageHero page="live"
         eyebrow="City Parents Live"
         title="Be there, wherever you are."
         intro="Our school-owned streaming platform brings assemblies, sports days, graduations and special events directly to your screen, live and on demand."

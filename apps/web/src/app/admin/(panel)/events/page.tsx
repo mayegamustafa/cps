@@ -10,7 +10,7 @@ const config: ResourceConfig = {
   itemUrl: (row) => `/api/events/${row.id}`,
   fields: [
     { key: 'title', label: 'Title', required: true, table: true },
-    { key: 'category', label: 'Category', table: true, placeholder: 'Sports, Academics…' },
+    { key: 'category', label: 'Category', type: 'category', taxonomy: 'eventCategories', table: true },
     { key: 'startsAt', label: 'Starts', type: 'datetime', required: true, table: true },
     { key: 'endsAt', label: 'Ends', type: 'datetime' },
     { key: 'location', label: 'Location', table: true },

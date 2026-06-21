@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { PageHero } from '@/components/ui/PageHero';
+import { ConfigurablePageHero } from '@/components/ui/ConfigurablePageHero';
 import { Icon } from '@/components/Icon';
 import { downloads as fallbackDownloads } from '@/lib/content';
 import { serverApi } from '@/lib/api-base';
@@ -57,7 +57,7 @@ export default async function DownloadsPage() {
 
   return (
     <>
-      <PageHero
+      <ConfigurablePageHero page="downloads"
         eyebrow="Downloads Center"
         title="Everything you need, in one place."
         intro="Access our prospectus, forms, policies and calendars. All documents are kept up to date for the current academic year."

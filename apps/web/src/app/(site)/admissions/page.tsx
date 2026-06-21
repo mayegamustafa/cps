@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { PageHero } from '@/components/ui/PageHero';
+import { ConfigurablePageHero } from '@/components/ui/ConfigurablePageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Button } from '@/components/ui/Button';
 import { Accordion } from '@/components/ui/Accordion';
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default function AdmissionsPage() {
   return (
     <>
-      <PageHero
+      <ConfigurablePageHero page="admissions"
         eyebrow="Admissions 2026 / 2027"
         title="Begin your child’s journey with us."
         intro="Our online admissions process makes it simple to apply, upload documents and track your application, from anywhere, at any time."
