@@ -19,6 +19,9 @@ type Integrations = {
     instagram?: { accessToken?: string; userId?: string };
     facebook?: { pageId?: string; accessToken?: string };
   };
+  media?: {
+    cloudinary?: { cloudName?: string; apiKey?: string; apiSecret?: string };
+  };
 };
 
 function authHeaders(): Record<string, string> {
@@ -37,7 +40,7 @@ function Card({ title, desc, children }: { title: string; desc: string; children
 }
 
 export function IntegrationsForm() {
-  const [cfg, setCfg] = useState<Integrations>({ smtp: {}, social: { youtube: {}, instagram: {}, facebook: {} } });
+  const [cfg, setCfg] = useState<Integrations>({ smtp: {}, social: { youtube: {}, instagram: {}, facebook: {} }, media: { cloudinary: {} } });
   const [status, setStatus] = useState<'idle' | 'loading' | 'saving' | 'saved' | 'error'>('loading');
   const [note, setNote] = useState('');
 
@@ -54,6 +57,7 @@ export function IntegrationsForm() {
             instagram: data.social?.instagram ?? {},
             facebook: data.social?.facebook ?? {},
           },
+          media: { cloudinary: data.media?.cloudinary ?? {} },
         });
         setStatus('idle');
       } else {
@@ -168,6 +172,13 @@ export function IntegrationsForm() {
 
           <Button variant="outline" onClick={syncNow}>Sync now</Button>
           <p className="text-xs text-ink-muted">Posts pulled in are published to the wall automatically. You can still hide or delete any post under Social Wall.</p>
+        </Card>
+
+        <Card title="Media storage (Cloudinary — free)" desc="Free image/video/document hosting for uploads (photos, cover images, CVs). Create a free account at cloudinary.com and paste the credentials from your dashboard.">
+          <Field label="Cloud name" id="cl-name" value={cfg.media?.cloudinary?.cloudName ?? ''} placeholder="your-cloud-name" onChange={(e) => patch((d) => { d.media!.cloudinary = { ...d.media!.cloudinary, cloudName: e.target.value }; })} />
+          <Field label="API key" id="cl-key" value={cfg.media?.cloudinary?.apiKey ?? ''} placeholder="123456789012345" onChange={(e) => patch((d) => { d.media!.cloudinary = { ...d.media!.cloudinary, apiKey: e.target.value }; })} />
+          <Field label="API secret" id="cl-secret" type="password" value={cfg.media?.cloudinary?.apiSecret ?? ''} placeholder="leave blank to keep current" onChange={(e) => patch((d) => { d.media!.cloudinary = { ...d.media!.cloudinary, apiSecret: e.target.value }; })} />
+          <p className="text-xs text-ink-muted">Once saved, the Upload buttons across the admin (gallery photos, cover images, CVs) store files here. Until then, you can paste URLs.</p>
         </Card>
       </div>
     </>

@@ -37,6 +37,10 @@ export type IntegrationsConfig = {
     instagram?: { accessToken?: string; userId?: string };
     facebook?: { pageId?: string; accessToken?: string };
   };
+  media?: {
+    // Free media storage/CDN (images, video, documents).
+    cloudinary?: { cloudName?: string; apiKey?: string; apiSecret?: string };
+  };
 };
 
 /**
@@ -92,6 +96,13 @@ function maskConfig(c: IntegrationsConfig): IntegrationsConfig {
             : undefined,
         }
       : undefined,
+    media: c.media
+      ? {
+          cloudinary: c.media.cloudinary
+            ? { ...c.media.cloudinary, apiSecret: mask(c.media.cloudinary.apiSecret) }
+            : undefined,
+        }
+      : undefined,
   };
 }
 
@@ -124,6 +135,13 @@ function mergeSecrets(stored: IntegrationsConfig, incoming: IntegrationsConfig):
         ...stored.social?.facebook,
         ...incoming.social?.facebook,
         accessToken: keep(incoming.social?.facebook?.accessToken, stored.social?.facebook?.accessToken),
+      },
+    },
+    media: {
+      cloudinary: {
+        ...stored.media?.cloudinary,
+        ...incoming.media?.cloudinary,
+        apiSecret: keep(incoming.media?.cloudinary?.apiSecret, stored.media?.cloudinary?.apiSecret),
       },
     },
   };
