@@ -31,6 +31,8 @@ export async function generateMetadata(): Promise<Metadata> {
     twitter: { card: 'summary_large_image', title: c.brand.name, description: c.description },
     robots: { index: true, follow: true },
     alternates: { canonical: c.url },
+    // Favicon follows the school badge chosen in admin (defaults to /cps.png).
+    icons: { icon: c.brand.logoUrl, shortcut: c.brand.logoUrl, apple: c.brand.logoUrl },
   };
 }
 
