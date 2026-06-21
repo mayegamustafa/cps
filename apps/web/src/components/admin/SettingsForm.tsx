@@ -38,9 +38,9 @@ const PAGE_HEADS: { key: PageHeadKey; label: string }[] = [
   { key: 'downloads', label: 'Downloads' },
 ];
 
-function Card({ title, desc, onSave, children }: { title: string; desc?: string; onSave?: () => Promise<void> | void; children: React.ReactNode }) {
-  const [done, setDone] = useState(false);
+function Card({ title, desc, onSave, children }: { title: string; desc?: string; onSave?: () => Promise<boolean> | boolean | void; children: React.ReactNode }) {
   const [saving, setSaving] = useState(false);
+  const [result, setResult] = useState<'idle' | 'ok' | 'fail'>('idle');
   return (
     <section className="rounded-2xl border border-line bg-white p-6">
       <div className="flex items-start justify-between gap-4">
@@ -52,10 +52,16 @@ function Card({ title, desc, onSave, children }: { title: string; desc?: string;
           <button
             type="button"
             disabled={saving}
-            onClick={async () => { setSaving(true); await onSave(); setSaving(false); setDone(true); setTimeout(() => setDone(false), 2000); }}
-            className="shrink-0 rounded-full bg-maroon-700 px-4 py-2 text-sm font-medium text-white hover:bg-maroon-800 disabled:opacity-50"
+            onClick={async () => {
+              setSaving(true);
+              const ok = await onSave();
+              setSaving(false);
+              setResult(ok === false ? 'fail' : 'ok');
+              setTimeout(() => setResult('idle'), 3000);
+            }}
+            className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium text-white disabled:opacity-50 ${result === 'fail' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-maroon-700 hover:bg-maroon-800'}`}
           >
-            {saving ? 'Saving…' : done ? 'Saved ✓' : 'Save'}
+            {saving ? 'Saving…' : result === 'ok' ? 'Saved ✓' : result === 'fail' ? 'Failed — sign in again' : 'Save'}
           </button>
         ) : null}
       </div>
@@ -170,7 +176,7 @@ export function SettingsForm() {
     });
   }
 
-  async function save() {
+  async function save(): Promise<boolean> {
     setStatus('saving');
     try {
       const token = typeof window !== 'undefined' ? sessionStorage.getItem('cps_token') : null;
@@ -179,9 +185,17 @@ export function SettingsForm() {
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify(cfg),
       });
-      setStatus(res.ok ? 'saved' : 'error');
+      if (res.ok) {
+        setStatus('saved');
+        // Refresh the public site's cached config so changes appear immediately.
+        fetch('/api/revalidate', { method: 'POST' }).catch(() => {});
+        return true;
+      }
+      setStatus('error');
+      return false;
     } catch {
       setStatus('error');
+      return false;
     }
   }
 

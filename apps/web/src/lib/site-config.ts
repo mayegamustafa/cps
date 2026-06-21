@@ -36,7 +36,9 @@ export async function getSiteConfig(): Promise<SiteConfig> {
   if (process.env.NEXT_PHASE === 'phase-production-build') return siteDefaults;
   try {
     const res = await fetch(`${API}/api/settings`, {
-      next: { revalidate: 60, tags: ['site-settings'] },
+      // Short safety-net window; the admin save also triggers on-demand
+      // revalidation of this tag, so edits appear within seconds.
+      next: { revalidate: 15, tags: ['site-settings'] },
       // Fail fast so builds/SSR never hang when the API is unreachable.
       signal: AbortSignal.timeout(4000),
     });

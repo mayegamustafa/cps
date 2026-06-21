@@ -458,6 +458,8 @@ function CategorySelect({
         headers: authHeaders(),
         body: JSON.stringify({ ...cur, taxonomies }),
       });
+      // Refresh the public site's cached config.
+      fetch(`${API}/api/revalidate`, { method: 'POST' }).catch(() => {});
     } catch {
       /* best-effort; the value is still applied to this item */
     }
