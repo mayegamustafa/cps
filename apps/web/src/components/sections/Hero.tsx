@@ -4,6 +4,7 @@ import { siteDefaults, type SiteConfig } from '@/lib/site';
 
 export function Hero({ config = siteDefaults }: { config?: SiteConfig }) {
   const { hero, contact } = config;
+  const heroImage = hero.backgroundImage || siteDefaults.hero.backgroundImage;
 
   return (
     <section className="relative isolate overflow-hidden bg-maroon-950 text-white">
@@ -16,7 +17,7 @@ export function Hero({ config = siteDefaults }: { config?: SiteConfig }) {
           loop
           playsInline
           preload="auto"
-          poster="https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=2000&q=70"
+          poster={heroImage}
           className="absolute inset-0 -z-10 h-full w-full object-cover"
         >
           <source src={hero.backgroundVideo} />
@@ -25,10 +26,7 @@ export function Hero({ config = siteDefaults }: { config?: SiteConfig }) {
         <div
           aria-hidden
           className="absolute inset-0 -z-10 bg-cover bg-center"
-          style={{
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=2000&q=70')",
-          }}
+          style={{ backgroundImage: `url('${heroImage}')` }}
         />
       )}
       {/* Lighter scrim: darker on the left for text legibility, fading right so

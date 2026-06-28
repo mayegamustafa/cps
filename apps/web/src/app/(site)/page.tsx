@@ -8,6 +8,8 @@ import { getSiteConfig } from '@/lib/site-config';
 import { getStats } from '@/lib/stats';
 import { getNews } from '@/lib/public-data';
 
+export const revalidate = 30;
+
 export default async function HomePage() {
   const config = await getSiteConfig();
   const stats = await getStats();

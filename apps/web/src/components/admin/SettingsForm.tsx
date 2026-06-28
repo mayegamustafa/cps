@@ -271,7 +271,8 @@ export function SettingsForm() {
               <Field label="Headline line 2 (accent)" id="ta" value={cfg.hero.titleAccent} onChange={(e) => patch((d) => { d.hero.titleAccent = e.target.value; })} />
             </div>
             <TextAreaField label="Intro" id="hintro" value={cfg.hero.intro} onChange={(e) => patch((d) => { d.hero.intro = e.target.value; })} />
-            <FileUpload label="Background video (upload an mp4 or paste a URL — autoplays, muted, looped; leave empty to use the image)" accept="video/*" value={cfg.hero.backgroundVideo} onChange={(url) => patch((d) => { d.hero.backgroundVideo = url; })} />
+            <ImageInput label="Hero background image (shown when no video is set)" value={cfg.hero.backgroundImage} onChange={(url) => patch((d) => { d.hero.backgroundImage = url; })} />
+            <FileUpload label="Hero background video (optional — autoplays muted & looped; overrides the image when set)" accept="video/*" value={cfg.hero.backgroundVideo} onChange={(url) => patch((d) => { d.hero.backgroundVideo = url; })} />
             <div className="grid grid-cols-2 gap-4">
               <Field label="Primary button" id="hpc" value={cfg.hero.primaryCta.label} onChange={(e) => patch((d) => { d.hero.primaryCta.label = e.target.value; })} />
               <Field label="Primary link" id="hpl" value={cfg.hero.primaryCta.href} onChange={(e) => patch((d) => { d.hero.primaryCta.href = e.target.value; })} />

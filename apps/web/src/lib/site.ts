@@ -64,6 +64,8 @@ export type SiteConfig = {
     intro: string;
     /** Optional background video URL (mp4/webm). Autoplays muted + looped when set. */
     backgroundVideo: string;
+    /** Background image shown when no video is set (also the video poster). */
+    backgroundImage: string;
     primaryCta: CtaLink;
     secondaryCta: CtaLink;
     stats: { value: string; label: string }[];
@@ -174,6 +176,8 @@ export const siteDefaults: SiteConfig = {
     intro:
       'A premier institution shaping confident, curious and compassionate learners from Pre-Primary through Upper Primary, in day and boarding sections, in the heart of Kampala.',
     backgroundVideo: '',
+    backgroundImage:
+      'https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=2000&q=70',
     primaryCta: { label: 'Begin Admission', href: '/admissions' },
     secondaryCta: { label: 'Take the Virtual Tour', href: '/virtual-tour' },
     stats: [

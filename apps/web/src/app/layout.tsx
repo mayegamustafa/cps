@@ -42,6 +42,11 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+// Revalidate every page at least this often so admin-saved settings (contact,
+// hero, footer, etc.) appear without waiting on the long static cache. The
+// admin save also triggers on-demand revalidation for near-instant updates.
+export const revalidate = 30;
+
 export default async function RootLayout({
   children,
 }: {
