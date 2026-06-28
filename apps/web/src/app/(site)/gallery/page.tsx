@@ -5,8 +5,7 @@ import { ConfigurablePageHero } from '@/components/ui/ConfigurablePageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Icon } from '@/components/Icon';
 import { recordings } from '@/lib/content';
-import { getAlbums, getSocialWall } from '@/lib/public-data';
-import type { IconName } from '@/components/Icon';
+import { getAlbums } from '@/lib/public-data';
 
 export const metadata: Metadata = {
   title: 'Gallery & Media',
@@ -16,7 +15,7 @@ export const metadata: Metadata = {
 
 export default async function GalleryPage() {
   await assertPageEnabled('gallery');
-  const [galleryAlbums, social] = await Promise.all([getAlbums(), getSocialWall()]);
+  const galleryAlbums = await getAlbums();
   return (
     <>
       <ConfigurablePageHero page="gallery"
@@ -79,37 +78,6 @@ export default async function GalleryPage() {
           </div>
         </div>
       </section>
-
-      {/* Social wall */}
-      {social.length > 0 ? (
-        <section className="py-24">
-          <div className="container-page">
-            <SectionHeading align="center" eyebrow="Social wall" title="Follow our journey" intro="The latest from our social channels." />
-            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {social.map((p) => (
-                <a key={p.id} href={p.permalink} target="_blank" rel="noopener noreferrer" className="group overflow-hidden rounded-2xl border border-line bg-paper transition-all hover:-translate-y-1 hover:shadow-lift">
-                  {p.thumbnailUrl ? (
-                    <div className="relative aspect-square overflow-hidden">
-                      <div className="h-full w-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: `url('${p.thumbnailUrl}')` }} />
-                      {p.isVideo ? (
-                        <span className="absolute inset-0 flex items-center justify-center">
-                          <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-white/80 text-maroon-800"><Icon name="play" size={22} /></span>
-                        </span>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  <div className="p-4">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-maroon-600">
-                      <Icon name={p.network as IconName} size={14} /> {p.network}
-                    </span>
-                    <p className="mt-1.5 line-clamp-2 text-sm text-ink-soft">{p.caption}</p>
-                  </div>
-                </a>
-              ))}
-            </div>
-          </div>
-        </section>
-      ) : null}
     </>
   );
 }

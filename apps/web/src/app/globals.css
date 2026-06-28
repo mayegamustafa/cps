@@ -208,3 +208,16 @@ html[data-theme='plain'] {
 .animate-rise {
   animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
+/* Auto-scrolling marquee (social wall). Pauses on hover; respects reduced motion. */
+@keyframes cps-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: cps-marquee 50s linear infinite;
+  will-change: transform;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
+}

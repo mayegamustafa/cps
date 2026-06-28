@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { ConfigurablePageHero } from '@/components/ui/ConfigurablePageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Icon } from '@/components/Icon';
-import { getNews, getEvents } from '@/lib/public-data';
+import { SocialWall } from '@/components/sections/SocialWall';
+import { getNews, getEvents, getSocialWall } from '@/lib/public-data';
 
 export const metadata: Metadata = {
   title: 'News & Events',
@@ -17,7 +18,7 @@ const monthName = (iso: string) =>
 
 export default async function NewsPage() {
   await assertPageEnabled('news');
-  const [articles, events] = await Promise.all([getNews(), getEvents()]);
+  const [articles, events, social] = await Promise.all([getNews(), getEvents(), getSocialWall()]);
   return (
     <>
       <ConfigurablePageHero page="news"
@@ -81,6 +82,18 @@ export default async function NewsPage() {
           </ul>
         </div>
       </section>
+
+      {/* Social wall — auto-scrolling */}
+      {social.length ? (
+        <section className="py-24">
+          <div className="container-page">
+            <SectionHeading align="center" eyebrow="Social wall" title="Follow our journey" intro="The latest from our social channels — updated as we post." />
+          </div>
+          <div className="mt-12">
+            <SocialWall posts={social} />
+          </div>
+        </section>
+      ) : null}
     </>
   );
 }
