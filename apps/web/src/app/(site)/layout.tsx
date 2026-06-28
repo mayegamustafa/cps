@@ -2,6 +2,8 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { AnnouncementBar } from '@/components/AnnouncementBar';
 import { AnnouncementPopup } from '@/components/AnnouncementPopup';
+import { ApplyNowFab } from '@/components/ApplyNowFab';
+import { AnalyticsBeacon } from '@/components/AnalyticsBeacon';
 import { getSiteConfig } from '@/lib/site-config';
 
 // Keep public pages fresh: re-render with live settings at least every 30s
@@ -22,6 +24,8 @@ export default async function SiteLayout({
       <main id="main">{children}</main>
       <Footer config={config} />
       <AnnouncementPopup />
+      <ApplyNowFab />
+      <AnalyticsBeacon />
     </>
   );
 }

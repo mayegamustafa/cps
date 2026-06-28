@@ -217,15 +217,19 @@ model AuditLog {
   id         String   @id @default(cuid())
   userId     String?
   user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  action     String   // e.g. "news.publish"
+  actorEmail String?
+  action     String   // e.g. "POST /api/news", "auth.login_failed"
+  status     String   @default("ok") // ok | error
   entityType String?
   entityId   String?
   metadata   Json?
   ip         String?
+  userAgent  String?
   createdAt  DateTime @default(now())
 
   @@index([entityType, entityId])
   @@index([userId])
+  @@index([createdAt])
   @@map("audit_logs")
 }
 
@@ -904,6 +908,28 @@ model FormSubmission {
 
   @@index([formId, createdAt])
   @@map("form_submissions")
+}
+
+// Privacy-conscious, first-party visitor analytics (no third-party cookies).
+model PageView {
+  id           String   @id @default(cuid())
+  path         String
+  referrer     String?
+  source       String   @default("direct") // search | facebook | instagram | tiktok | youtube | referral | direct
+  device       String   @default("desktop") // mobile | tablet | desktop
+  browser      String   @default("Unknown")
+  os           String   @default("Unknown")
+  country      String?
+  visitorId    String
+  sessionId    String
+  isNewVisitor Boolean  @default(true)
+  durationMs   Int?
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([path])
+  @@index([sessionId])
+  @@map("page_views")
 }
 
 // ─────────────────────────────────────────────────────────────

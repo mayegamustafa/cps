@@ -2,6 +2,7 @@ import type { IconName } from '@/components/Icon';
 
 export const adminNav: { label: string; href: string; icon: IconName }[] = [
   { label: 'Dashboard', href: '/admin', icon: 'grid' },
+  { label: 'Analytics', href: '/admin/analytics', icon: 'eye' },
   { label: 'Announcements', href: '/admin/announcements', icon: 'megaphone' },
   { label: 'Statistics', href: '/admin/statistics', icon: 'sparkle' },
   { label: 'News', href: '/admin/news', icon: 'bell' },
@@ -17,6 +18,7 @@ export const adminNav: { label: string; href: string; icon: IconName }[] = [
   { label: 'Forms', href: '/admin/forms', icon: 'inbox' },
   { label: 'Messages', href: '/admin/contact', icon: 'mail' },
   { label: 'Integrations', href: '/admin/integrations', icon: 'link' },
+  { label: 'Audit Trail', href: '/admin/audit', icon: 'shield-check' },
   { label: 'Settings & SEO', href: '/admin/settings', icon: 'settings' },
 ];
 

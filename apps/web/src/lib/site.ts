@@ -41,8 +41,8 @@ export type SiteConfig = {
     name: string;
     locality: string;
     foundingYear: string;
-    /** Active colour theme: 'slate' (maroon/white/grey) or 'gold' (maroon/gold/white). */
-    theme: 'slate' | 'gold';
+    /** Active colour theme: 'slate' (maroon/white/grey), 'gold' (maroon/gold/white) or 'plain' (maroon/white). */
+    theme: 'slate' | 'gold' | 'plain';
   };
   tagline: string;
   description: string;

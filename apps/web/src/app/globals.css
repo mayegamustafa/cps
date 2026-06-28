@@ -84,6 +84,28 @@ html[data-theme='gold'] {
   --color-line: #e7ddd0;
 }
 
+/* ── Theme: Maroon · White (admin-switchable) ──
+   Pure white surfaces with a refined maroon/blush accent (no grey, no gold). */
+html[data-theme='plain'] {
+  --color-gold-50: #fdf7f7;
+  --color-gold-100: #fbeeef;
+  --color-gold-200: #f5dadc;
+  --color-gold-300: #f0e2e3; /* light accent on maroon (eyebrows, hero) */
+  --color-gold-400: #e7c9cc; /* accent fill on light surfaces (dark text readable) */
+  --color-gold-500: #d9a6ab;
+  --color-gold-600: #9c3640; /* accent text on light surfaces = maroon */
+  --color-gold-700: #832530;
+  --color-gold-800: #571a1c;
+  --color-gold-900: #421515;
+
+  --color-paper: #ffffff;
+  --color-paper-dark: #faf4f4;
+  --color-ink: #2a0c0d;
+  --color-ink-soft: #4a3a3b;
+  --color-ink-muted: #8a7375;
+  --color-line: #f0e3e3;
+}
+
 @layer base {
   :root {
     color-scheme: light;

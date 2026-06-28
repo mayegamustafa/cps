@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { NewsModule } from './modules/news/news.module';
@@ -22,6 +22,8 @@ import { MediaModule } from './modules/media/media.module';
 import { IntegrationsModule } from './modules/integrations/integrations.module';
 import { MailModule } from './modules/mail/mail.module';
 import { FormsModule } from './modules/forms/forms.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { AuditModule, AuditInterceptor } from './modules/audit/audit.module';
 
 @Module({
   imports: [
@@ -47,8 +49,13 @@ import { FormsModule } from './modules/forms/forms.module';
     IntegrationsModule,
     MailModule,
     FormsModule,
+    AnalyticsModule,
+    AuditModule,
     // Further modules (staff, seo) follow the same controller→Prisma pattern.
   ],
-  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+  providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
+  ],
 })
 export class AppModule {}

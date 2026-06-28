@@ -248,6 +248,7 @@ export function SettingsForm() {
               <SelectField label="Colour theme" id="theme" value={cfg.brand.theme} onChange={(e) => patch((d) => { d.brand.theme = e.target.value as SiteConfig['brand']['theme']; })}>
                 <option value="slate">Maroon, White &amp; Grey (default)</option>
                 <option value="gold">Maroon, Gold &amp; White (classic)</option>
+                <option value="plain">Maroon &amp; White (minimal)</option>
               </SelectField>
             </Card>
 
