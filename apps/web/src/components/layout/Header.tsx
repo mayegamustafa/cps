@@ -79,7 +79,8 @@ export function Header({ config = siteDefaults }: { config?: SiteConfig }) {
           </nav>
 
           <div className="flex items-center gap-3">
-            <Button href="/admissions" size="md" icon="arrow-right" className="hidden sm:inline-flex">
+            {/* Desktop only — on mobile/tablet the floating Apply capsule covers this. */}
+            <Button href="/admissions" size="md" icon="arrow-right" className="hidden lg:inline-flex">
               Apply Now
             </Button>
             <button
