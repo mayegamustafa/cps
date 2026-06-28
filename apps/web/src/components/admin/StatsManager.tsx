@@ -14,6 +14,11 @@ function authHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
 }
 
+// Refresh the public site's cached stats so edits appear immediately.
+function revalidatePublic() {
+  fetch(`${API}/api/revalidate`, { method: 'POST' }).catch(() => {});
+}
+
 export function StatsManager() {
   const [stats, setStats] = useState<Stat[]>([]);
   const [msg, setMsg] = useState('');
@@ -43,7 +48,8 @@ export function StatsManager() {
       headers: authHeaders(),
       body: JSON.stringify({ label: s.label, value: s.value, order: s.order ?? 0 }),
     }).catch(() => null);
-    setMsg(res && res.ok ? `Saved "${s.label}"` : 'Save failed (sign in again)');
+    if (res && res.ok) { setMsg(`Saved "${s.label}"`); revalidatePublic(); }
+    else setMsg('Save failed (sign in again)');
   }
 
   async function add() {
@@ -52,13 +58,13 @@ export function StatsManager() {
       headers: authHeaders(),
       body: JSON.stringify({ label: 'New statistic', value: '0', order: stats.length + 1 }),
     }).catch(() => null);
-    if (res && res.ok) load();
+    if (res && res.ok) { load(); revalidatePublic(); }
     else setMsg('Add failed (sign in again)');
   }
 
   async function remove(id: string) {
     const res = await fetch(`${API}/api/stats/${id}`, { method: 'DELETE', headers: authHeaders() }).catch(() => null);
-    if (res && res.ok) setStats((prev) => prev.filter((s) => s.id !== id));
+    if (res && res.ok) { setStats((prev) => prev.filter((s) => s.id !== id)); revalidatePublic(); }
     else setMsg('Delete failed (sign in again)');
   }
 
@@ -68,7 +74,7 @@ export function StatsManager() {
         <div>
           <h1 className="font-display text-2xl text-maroon-900">School Statistics</h1>
           <p className="mt-1 text-sm text-ink-soft">
-            These values display on the homepage with animated counters. Changes appear within a minute.
+            These values display on the homepage with animated counters. Changes appear within a few seconds.
           </p>
         </div>
         <div className="flex items-center gap-3">

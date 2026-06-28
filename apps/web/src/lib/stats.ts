@@ -21,7 +21,9 @@ export async function getStats(): Promise<SchoolStat[]> {
   const API = serverApi();
   try {
     const res = await fetch(`${API}/api/stats`, {
-      next: { revalidate: 60 },
+      // Tagged so an admin edit can refresh it on demand (see /api/revalidate);
+      // short window as a safety net.
+      next: { revalidate: 15, tags: ['site-settings'] },
       signal: AbortSignal.timeout(4000),
     });
     if (!res.ok) return FALLBACK;
