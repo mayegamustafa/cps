@@ -6,6 +6,7 @@ import { Logo } from '@/components/Logo';
 import { Field } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
+import { setSession } from '@/lib/admin-auth';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -39,8 +40,11 @@ export default function AdminLoginPage() {
         setLoading(false);
         return;
       }
-      if (body.accessToken) sessionStorage.setItem('cps_token', body.accessToken);
-      router.push('/admin');
+      if (body.accessToken) {
+        setSession({ accessToken: body.accessToken, refreshToken: body.refreshToken, expiresIn: body.expiresIn });
+      }
+      const next = new URLSearchParams(window.location.search).get('next');
+      router.push(next && next.startsWith('/admin') ? next : '/admin');
     } catch {
       setError('Cannot reach the server. Make sure the API is running (pnpm dev:api).');
       setLoading(false);
@@ -75,7 +79,7 @@ export default function AdminLoginPage() {
           <p className="mt-1 text-sm text-ink-soft">Use your administrator credentials.</p>
 
           <form onSubmit={onSubmit} className="mt-8 space-y-5">
-            <Field label="Email" id="email" name="email" type="email" required defaultValue="admin@cityparents.sc.ug" />
+            <Field label="Email" id="email" name="email" type="email" required placeholder="you@cityparentsschool.co.ug" />
             <Field label="Password" id="password" name="password" type="password" required defaultValue="" placeholder="••••••••" />
             {needs2fa ? (
               <Field label="Two-factor code" id="totp" name="totp" inputMode="numeric" required hint="Enter the 6-digit code from your authenticator app." />

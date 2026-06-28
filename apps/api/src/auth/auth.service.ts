@@ -50,13 +50,35 @@ export class AuthService {
     );
   }
 
+  /**
+   * Exchange a valid refresh token for a new access+refresh pair (rotation).
+   * The old refresh token is revoked so it can't be reused.
+   */
+  async refresh(rawToken: string, ctx: { ip?: string; userAgent?: string }) {
+    const tokenHash = createHash('sha256').update(rawToken).digest('hex');
+    const existing = await this.prisma.refreshToken.findFirst({
+      where: { tokenHash, revokedAt: null, expiresAt: { gt: new Date() } },
+    });
+    if (!existing) throw new UnauthorizedException('Session expired');
+    const user = await this.prisma.user.findUnique({ where: { id: existing.userId } });
+    if (!user || !user.isActive) throw new UnauthorizedException('Session expired');
+
+    // Rotate: revoke the presented token before issuing a new pair.
+    await this.prisma.refreshToken.update({
+      where: { id: existing.id },
+      data: { revokedAt: new Date() },
+    });
+    return this.issueTokens({ sub: user.id, email: user.email, roles: user.roles }, ctx);
+  }
+
   private async issueTokens(
     payload: JwtPayload,
     ctx: { ip?: string; userAgent?: string },
   ) {
+    const accessTtl = Number(process.env.JWT_ACCESS_TTL ?? 900);
     const accessToken = await this.jwt.signAsync(payload, {
       secret: process.env.JWT_ACCESS_SECRET ?? 'dev-access-secret',
-      expiresIn: Number(process.env.JWT_ACCESS_TTL ?? 900),
+      expiresIn: accessTtl,
     });
 
     const rawRefresh = randomBytes(40).toString('hex');
@@ -73,7 +95,7 @@ export class AuthService {
       },
     });
 
-    return { accessToken, refreshToken: rawRefresh, tokenType: 'Bearer' };
+    return { accessToken, refreshToken: rawRefresh, tokenType: 'Bearer', expiresIn: accessTtl };
   }
 
   /**

@@ -4,6 +4,7 @@ import type { Request } from 'express';
 import { AuthService } from './auth.service';
 import {
   LoginDto,
+  RefreshDto,
   ForgotPasswordDto,
   ResetPasswordDto,
   ChangePasswordDto,
@@ -18,6 +19,15 @@ export class AuthController {
   @Post('login')
   login(@Body() dto: LoginDto, @Req() req: Request) {
     return this.auth.login(dto, {
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+  }
+
+  @Post('refresh')
+  @HttpCode(200)
+  refresh(@Body() dto: RefreshDto, @Req() req: Request) {
+    return this.auth.refresh(dto.refreshToken, {
       ip: req.ip,
       userAgent: req.headers['user-agent'],
     });

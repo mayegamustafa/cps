@@ -1,47 +1,84 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-
-const API = ''; // same-origin; proxied to the backend
+import { useEffect, useRef, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import {
+  installAuthFetch,
+  ensureFreshToken,
+  refreshSession,
+  getAccessToken,
+  hasRefresh,
+  clearSession,
+  msUntilRefresh,
+} from '@/lib/admin-auth';
 
 /**
- * Client-side gate for the admin panel: requires a valid session token and
- * verifies it against the API. Redirects to /admin/login otherwise. (The API
- * also enforces RBAC on every mutating endpoint — this is the UX layer.)
+ * Admin session gate + keeper. Installs the auth-aware fetch interceptor,
+ * hydrates/refreshes the session, proactively renews the access token before it
+ * expires, and synchronizes login/logout across tabs. Redirects to login only
+ * when there is genuinely no valid session — never mid-session.
  */
 export function AdminGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [state, setState] = useState<'checking' | 'ok'>('checking');
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const token = sessionStorage.getItem('cps_token');
-    if (!token) {
-      router.replace('/admin/login');
-      return;
-    }
+    const uninstall = installAuthFetch();
     let cancelled = false;
+
+    const toLogin = () => {
+      clearSession();
+      const next = encodeURIComponent(pathname || '/admin');
+      router.replace(`/admin/login?next=${next}`);
+    };
+
+    const scheduleRenew = () => {
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(async () => {
+        await refreshSession();
+        if (!cancelled) scheduleRenew();
+      }, msUntilRefresh());
+    };
+
     (async () => {
+      // Establish a valid access token (refresh if needed).
+      if (!getAccessToken() && hasRefresh()) await refreshSession();
+      else await ensureFreshToken();
+      if (cancelled) return;
+      if (!getAccessToken()) { toLogin(); return; }
+
+      // Confirm with the server (also catches revoked sessions).
       try {
-        const res = await fetch(`${API}/api/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch('/api/auth/me');
         if (cancelled) return;
-        if (res.ok) {
-          setState('ok');
-        } else {
-          sessionStorage.removeItem('cps_token');
-          router.replace('/admin/login');
-        }
+        if (res.ok) { setState('ok'); scheduleRenew(); }
+        else toLogin();
       } catch {
-        // API unreachable: don't expose the panel.
-        if (!cancelled) router.replace('/admin/login');
+        // Network blip — don't lock the user out if we already have a token.
+        if (!cancelled) setState('ok');
       }
     })();
+
+    // Renew when the tab regains focus (covers laptop sleep / long idle).
+    const onFocus = () => { void ensureFreshToken(); };
+    // Cross-tab logout: if the refresh token is cleared elsewhere, sign out here too.
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'cps_refresh' && !e.newValue) toLogin();
+    };
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('storage', onStorage);
+
     return () => {
       cancelled = true;
+      if (timer.current) clearTimeout(timer.current);
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('storage', onStorage);
+      uninstall();
     };
-  }, [router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (state === 'checking') {
     return (
