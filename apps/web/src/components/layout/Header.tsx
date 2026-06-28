@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Logo } from '@/components/Logo';
 import { Icon } from '@/components/Icon';
 import { Button } from '@/components/ui/Button';
@@ -10,6 +11,8 @@ import { primaryNav, siteDefaults, isHrefEnabled, type SiteConfig } from '@/lib/
 export function Header({ config = siteDefaults }: { config?: SiteConfig }) {
   const { brand, contact } = config;
   const nav = primaryNav.filter((item) => isHrefEnabled(config, item.href));
+  const pathname = usePathname();
+  const isActive = (href: string) => pathname === href || (href !== '/' && pathname?.startsWith(href + '/'));
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -69,7 +72,8 @@ export function Header({ config = siteDefaults }: { config?: SiteConfig }) {
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className="rounded-full px-3.5 py-2 text-sm font-medium text-ink-soft transition-colors hover:bg-maroon-50 hover:text-maroon-800"
+                    aria-current={isActive(item.href) ? 'page' : undefined}
+                    className={`rounded-full px-3.5 py-2 text-sm font-medium transition-colors hover:bg-maroon-50 hover:text-maroon-800 ${isActive(item.href) ? 'bg-maroon-50 text-maroon-800' : 'text-ink-soft'}`}
                   >
                     {item.label}
                   </Link>
@@ -119,12 +123,23 @@ export function Header({ config = siteDefaults }: { config?: SiteConfig }) {
               </button>
             </div>
             <ul className="flex flex-col gap-1">
+              <li>
+                <Link
+                  href="/"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-between rounded-xl px-4 py-3 text-base font-medium text-maroon-800 hover:bg-maroon-50"
+                >
+                  Home
+                  <Icon name="home" size={18} />
+                </Link>
+              </li>
               {nav.map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}
                     onClick={() => setOpen(false)}
-                    className="flex items-center justify-between rounded-xl px-4 py-3 text-base font-medium text-ink hover:bg-maroon-50"
+                    aria-current={isActive(item.href) ? 'page' : undefined}
+                    className={`flex items-center justify-between rounded-xl px-4 py-3 text-base font-medium hover:bg-maroon-50 ${isActive(item.href) ? 'bg-maroon-50 text-maroon-800' : 'text-ink'}`}
                   >
                     {item.label}
                     <Icon name="chevron-right" size={18} />
@@ -132,9 +147,9 @@ export function Header({ config = siteDefaults }: { config?: SiteConfig }) {
                 </li>
               ))}
             </ul>
-            <div className="mt-6 flex flex-col gap-3">
-              <Button href="/admissions" size="lg" icon="arrow-right">Apply Now</Button>
-              <Button href="/portal" variant="outline" size="lg">Parent Portal</Button>
+            {/* Apply is handled by the floating capsule on mobile — no duplicate CTA here. */}
+            <div className="mt-6">
+              <Button href="/portal" variant="outline" size="lg" className="w-full">Parent Portal</Button>
             </div>
           </nav>
         </div>

@@ -6,6 +6,7 @@ import type { SVGProps } from 'react';
  */
 
 export type IconName =
+  | 'home'
   | 'arrow-right'
   | 'arrow-up-right'
   | 'chevron-right'
@@ -69,6 +70,7 @@ const paths: Record<IconName, React.ReactNode> = {
   'chevron-down': <path d="m6 9 6 6 6-6" />,
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
   close: <path d="M6 6l12 12M18 6 6 18" />,
+  home: <path d="M4 11.5 12 4l8 7.5M6 10v10h12V10M10 20v-6h4v6" />,
   phone: (
     <path d="M5 4h3l2 5-2.5 1.5a11 11 0 0 0 5 5L16 13l5 2v3a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z" />
   ),
