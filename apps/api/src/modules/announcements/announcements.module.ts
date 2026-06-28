@@ -9,7 +9,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { IsBoolean, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsArray, IsBoolean, IsDateString, IsEnum, IsInt, IsOptional, IsString, MinLength } from 'class-validator';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { AlertSeverity, Role } from '@cps/database';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -17,23 +17,54 @@ import { JwtAuthGuard, RolesGuard } from '../../auth/guards';
 import { Roles } from '../../auth/roles.decorator';
 
 class CreateAnnouncementDto {
+  @IsOptional() @IsString() title?: string;
   @IsString() @MinLength(2) message: string;
   @IsOptional() @IsEnum(AlertSeverity) severity?: AlertSeverity;
+  @IsOptional() @IsString() category?: string;
   @IsOptional() @IsString() link?: string;
   @IsOptional() @IsString() linkLabel?: string;
   @IsOptional() @IsString() imageUrl?: string;
+  @IsOptional() @IsDateString() eventDate?: string;
+  @IsOptional() @IsInt() priority?: number;
   @IsOptional() @IsBoolean() popup?: boolean;
   @IsOptional() @IsBoolean() isActive?: boolean;
+  @IsOptional() @IsDateString() startsAt?: string;
+  @IsOptional() @IsDateString() endsAt?: string;
+  @IsOptional() @IsString() audience?: string;
+  @IsOptional() @IsArray() @IsString({ each: true }) pages?: string[];
+  @IsOptional() @IsString() device?: string;
+  @IsOptional() @IsString() frequency?: string;
 }
 
 class UpdateAnnouncementDto {
+  @IsOptional() @IsString() title?: string;
   @IsOptional() @IsString() @MinLength(2) message?: string;
   @IsOptional() @IsEnum(AlertSeverity) severity?: AlertSeverity;
+  @IsOptional() @IsString() category?: string;
   @IsOptional() @IsString() link?: string;
   @IsOptional() @IsString() linkLabel?: string;
   @IsOptional() @IsString() imageUrl?: string;
+  @IsOptional() @IsDateString() eventDate?: string;
+  @IsOptional() @IsInt() priority?: number;
   @IsOptional() @IsBoolean() popup?: boolean;
   @IsOptional() @IsBoolean() isActive?: boolean;
+  @IsOptional() @IsDateString() startsAt?: string;
+  @IsOptional() @IsDateString() endsAt?: string;
+  @IsOptional() @IsString() audience?: string;
+  @IsOptional() @IsArray() @IsString({ each: true }) pages?: string[];
+  @IsOptional() @IsString() device?: string;
+  @IsOptional() @IsString() frequency?: string;
+}
+
+// Normalises date strings → Date and keeps Prisma happy with the JSON-ish DTO.
+function toData<T extends Partial<CreateAnnouncementDto>>(dto: T) {
+  const { eventDate, startsAt, endsAt, ...rest } = dto;
+  return {
+    ...rest,
+    ...(eventDate !== undefined ? { eventDate: eventDate ? new Date(eventDate) : null } : {}),
+    ...(startsAt !== undefined ? { startsAt: startsAt ? new Date(startsAt) : null } : {}),
+    ...(endsAt !== undefined ? { endsAt: endsAt ? new Date(endsAt) : null } : {}),
+  };
 }
 
 const MANAGER_ROLES = [Role.SUPER_ADMIN, Role.MARKETING_ADMIN, Role.CONTENT_EDITOR];
@@ -55,7 +86,7 @@ export class AnnouncementsController {
           { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
         ],
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
     });
   }
 
@@ -74,7 +105,7 @@ export class AnnouncementsController {
   @Post()
   create(@Body() dto: CreateAnnouncementDto) {
     return this.prisma.emergencyAlert.create({
-      data: { ...dto, isActive: dto.isActive ?? true },
+      data: { ...toData(dto), message: dto.message, isActive: dto.isActive ?? true },
     });
   }
 
@@ -83,7 +114,7 @@ export class AnnouncementsController {
   @Roles(...MANAGER_ROLES)
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateAnnouncementDto) {
-    return this.prisma.emergencyAlert.update({ where: { id }, data: dto });
+    return this.prisma.emergencyAlert.update({ where: { id }, data: toData(dto) });
   }
 
   @ApiBearerAuth()

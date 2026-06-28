@@ -4,6 +4,7 @@ import { AnnouncementBar } from '@/components/AnnouncementBar';
 import { AnnouncementPopup } from '@/components/AnnouncementPopup';
 import { ApplyNowFab } from '@/components/ApplyNowFab';
 import { AnalyticsBeacon } from '@/components/AnalyticsBeacon';
+import { MaintenanceScreen } from '@/components/MaintenanceScreen';
 import { getSiteConfig } from '@/lib/site-config';
 
 // Keep public pages fresh: re-render with live settings at least every 30s
@@ -16,6 +17,13 @@ export default async function SiteLayout({
   children: React.ReactNode;
 }) {
   const config = await getSiteConfig();
+
+  // Maintenance mode: public site shows a branded screen; /admin is a separate
+  // route group and stays accessible.
+  if (config.maintenance?.enabled) {
+    return <MaintenanceScreen config={config} />;
+  }
+
   return (
     <>
       <a href="#main" className="skip-link">Skip to content</a>

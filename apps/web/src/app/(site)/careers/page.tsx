@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { assertPageEnabled } from '@/lib/page-guard';
 import Link from 'next/link';
 import { ConfigurablePageHero } from '@/components/ui/ConfigurablePageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CareersPage() {
+  await assertPageEnabled('careers');
   const jobs = await getVacancies();
   return (
     <>

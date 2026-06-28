@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { assertPageEnabled } from '@/lib/page-guard';
 import { ConfigurablePageHero } from '@/components/ui/ConfigurablePageHero';
 import { Icon } from '@/components/Icon';
 import { downloads as fallbackDownloads } from '@/lib/content';
@@ -52,6 +53,7 @@ async function getDownloads(): Promise<DownloadItem[]> {
 }
 
 export default async function DownloadsPage() {
+  await assertPageEnabled('downloads');
   const items = await getDownloads();
   const categories = Array.from(new Set(items.map((d) => d.category)));
 

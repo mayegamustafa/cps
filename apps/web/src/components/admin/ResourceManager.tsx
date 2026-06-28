@@ -519,14 +519,15 @@ function MultiImageInput({
   const add = (url: string) => onChange([...urls, url].join('\n'));
   const removeAt = (i: number) => onChange(urls.filter((_, j) => j !== i).join('\n'));
 
-  async function onPick(file: File) {
+  // Upload one or many files at once, appending every successful URL.
+  async function onPick(files: File[]) {
     setBusy(true);
     setError('');
-    try {
-      add(await uploadFile(file));
-    } catch (e) {
-      setError((e as Error).message + ' Paste a URL instead.');
-    }
+    const results = await Promise.allSettled(files.map((f) => uploadFile(f)));
+    const ok = results.filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled').map((r) => r.value);
+    if (ok.length) onChange([...urls, ...ok].join('\n'));
+    const failed = results.length - ok.length;
+    if (failed) setError(`${failed} file(s) could not be uploaded. Paste a URL instead.`);
     setBusy(false);
   }
 
@@ -535,9 +536,9 @@ function MultiImageInput({
       <label className="mb-1.5 block text-sm font-medium text-ink">{label}</label>
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" onClick={() => fileRef.current?.click()} disabled={busy} className="inline-flex items-center gap-1.5 rounded-full border border-maroon-700/30 px-3.5 py-2 text-sm font-medium text-maroon-800 hover:bg-maroon-50 disabled:opacity-50">
-          <Icon name="image" size={16} /> {busy ? 'Uploading…' : 'Upload photo'}
+          <Icon name="image" size={16} /> {busy ? 'Uploading…' : 'Upload photos'}
         </button>
-        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onPick(f); }} />
+        <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { const files = e.target.files; if (files?.length) onPick(Array.from(files)); e.target.value = ''; }} />
         <input type="url" value={paste} placeholder="…or paste an image URL" onChange={(e) => setPaste(e.target.value)} className="min-w-48 flex-1 rounded-xl border border-line bg-white px-4 py-2 text-sm focus:border-maroon-500 focus:outline-none" />
         <button type="button" onClick={() => { if (paste.trim()) { add(paste.trim()); setPaste(''); } }} className="rounded-full border border-line px-3 py-2 text-sm hover:bg-maroon-50">Add</button>
       </div>

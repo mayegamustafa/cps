@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { assertPageEnabled } from '@/lib/page-guard';
 import { ConfigurablePageHero } from '@/components/ui/ConfigurablePageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Button } from '@/components/ui/Button';
@@ -14,6 +15,7 @@ export const metadata: Metadata = {
 };
 
 export default async function AdmissionsPage() {
+  await assertPageEnabled('admissions');
   const config = await getSiteConfig();
   return (
     <>

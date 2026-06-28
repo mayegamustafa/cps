@@ -842,15 +842,23 @@ model MagazineIssue {
 
 model EmergencyAlert {
   id        String        @id @default(cuid())
+  title     String?
   message   String
   severity  AlertSeverity @default(INFO)
+  category  String        @default("general") // event|emergency|admission|holiday|maintenance|general
   link      String?
   linkLabel String?
   imageUrl  String?
+  eventDate DateTime?
+  priority  Int           @default(0)
   popup     Boolean       @default(false)
   isActive  Boolean       @default(false)
   startsAt  DateTime?
   endsAt    DateTime?
+  audience  String        @default("all") // all | homepage | specific
+  pages     String[]      @default([]) // when audience = specific
+  device    String        @default("all") // all | mobile | desktop
+  frequency String        @default("session") // session | always
   createdAt DateTime      @default(now())
 
   @@map("emergency_alerts")

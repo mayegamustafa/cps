@@ -16,12 +16,14 @@ export default async function HomePage() {
   const news = (await getNews()).slice(0, 3);
   const { welcome, pathways, why, admissionsCta, news: newsHeading, testimonials, visit } = config.home;
   const { address, contact } = config;
+  const s = config.sections;
   return (
     <>
       <Hero config={config} />
       <StatsBand stats={stats} />
 
       {/* Welcome */}
+      {s.welcome !== false ? (
       <section className="py-24">
         <div className="container-page grid items-center gap-14 lg:grid-cols-2">
           <div className="relative">
@@ -56,9 +58,10 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      ) : null}
 
       {/* Academic pathways */}
-      {pathways.items.length ? (
+      {s.pathways !== false && pathways.items.length ? (
         <section className="bg-paper-dark py-24">
           <div className="container-page">
             <SectionHeading eyebrow={pathways.eyebrow} title={pathways.title} intro={pathways.intro} />
@@ -87,7 +90,7 @@ export default async function HomePage() {
       ) : null}
 
       {/* Why choose us */}
-      {why.items.length ? (
+      {s.why !== false && why.items.length ? (
         <section className="py-24">
           <div className="container-page">
             <SectionHeading align="center" eyebrow={why.eyebrow} title={why.title} />
@@ -109,6 +112,7 @@ export default async function HomePage() {
       ) : null}
 
       {/* Admissions CTA */}
+      {s.admissionsCta !== false ? (
       <section className="py-12">
         <div className="container-page">
           <div className="relative overflow-hidden rounded-3xl bg-maroon-900 px-8 py-16 text-white sm:px-16">
@@ -144,8 +148,10 @@ export default async function HomePage() {
         </div>
       </section>
 
+      ) : null}
+
       {/* Latest news */}
-      {news.length ? (
+      {s.news !== false && news.length ? (
         <section className="py-24">
           <div className="container-page">
             <div className="flex flex-wrap items-end justify-between gap-6">
@@ -182,7 +188,7 @@ export default async function HomePage() {
       ) : null}
 
       {/* Testimonials */}
-      {testimonials.items.length ? (
+      {s.testimonials !== false && testimonials.items.length ? (
         <section className="bg-maroon-950 py-24 text-white">
           <div className="container-page">
             <SectionHeading tone="dark" align="center" eyebrow={testimonials.eyebrow} title={testimonials.title} />
@@ -203,6 +209,7 @@ export default async function HomePage() {
       ) : null}
 
       {/* Visit / location */}
+      {s.visit !== false ? (
       <section className="py-24">
         <div className="container-page grid items-center gap-12 lg:grid-cols-2">
           <div>
@@ -246,6 +253,7 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      ) : null}
     </>
   );
 }

@@ -134,7 +134,58 @@ export type SiteConfig = {
   };
   /** Extra questions appended to the public admissions application form. */
   admissionsFields: FormField[];
+  /** Website maintenance / shutdown mode. */
+  maintenance: {
+    enabled: boolean;
+    message: string;
+    returnAt?: string;
+  };
+  /** Homepage block visibility toggles. */
+  sections: {
+    welcome: boolean;
+    pathways: boolean;
+    why: boolean;
+    admissionsCta: boolean;
+    news: boolean;
+    testimonials: boolean;
+    visit: boolean;
+  };
+  /** Page/feature enable flags — disabled pages drop out of navigation and 404. */
+  pages: {
+    about: boolean;
+    academics: boolean;
+    admissions: boolean;
+    news: boolean;
+    gallery: boolean;
+    alumni: boolean;
+    careers: boolean;
+    contact: boolean;
+    virtualTour: boolean;
+    live: boolean;
+    downloads: boolean;
+  };
 };
+
+/** Maps a nav/footer href to its page-visibility flag. */
+export const NAV_PAGE_KEY: Record<string, keyof SiteConfig['pages']> = {
+  '/about': 'about',
+  '/academics': 'academics',
+  '/admissions': 'admissions',
+  '/news': 'news',
+  '/gallery': 'gallery',
+  '/alumni': 'alumni',
+  '/careers': 'careers',
+  '/contact': 'contact',
+  '/virtual-tour': 'virtualTour',
+  '/live': 'live',
+  '/downloads': 'downloads',
+};
+
+/** Whether a given href is enabled (true when it maps to no toggle). */
+export function isHrefEnabled(config: SiteConfig, href: string): boolean {
+  const key = NAV_PAGE_KEY[href];
+  return !key || config.pages?.[key] !== false;
+}
 
 export const siteDefaults: SiteConfig = {
   brand: {
@@ -313,6 +364,15 @@ export const siteDefaults: SiteConfig = {
     eventCategories: ['Academic', 'Sports', 'Cultural', 'Parents', 'Holiday', 'Ceremony'],
   },
   admissionsFields: [],
+  maintenance: {
+    enabled: false,
+    message: 'Our website is undergoing scheduled maintenance and will be back shortly. Thank you for your patience.',
+  },
+  sections: { welcome: true, pathways: true, why: true, admissionsCta: true, news: true, testimonials: true, visit: true },
+  pages: {
+    about: true, academics: true, admissions: true, news: true, gallery: true,
+    alumni: true, careers: true, contact: true, virtualTour: true, live: true, downloads: true,
+  },
 };
 
 // Backwards-compatible alias used by components that only need static values.

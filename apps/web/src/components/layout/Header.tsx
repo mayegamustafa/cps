@@ -5,10 +5,11 @@ import { useEffect, useState } from 'react';
 import { Logo } from '@/components/Logo';
 import { Icon } from '@/components/Icon';
 import { Button } from '@/components/ui/Button';
-import { primaryNav, siteDefaults, type SiteConfig } from '@/lib/site';
+import { primaryNav, siteDefaults, isHrefEnabled, type SiteConfig } from '@/lib/site';
 
 export function Header({ config = siteDefaults }: { config?: SiteConfig }) {
   const { brand, contact } = config;
+  const nav = primaryNav.filter((item) => isHrefEnabled(config, item.href));
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -64,7 +65,7 @@ export function Header({ config = siteDefaults }: { config?: SiteConfig }) {
 
           <nav aria-label="Primary" className="hidden lg:block">
             <ul className="flex items-center gap-1">
-              {primaryNav.map((item) => (
+              {nav.map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}
@@ -117,7 +118,7 @@ export function Header({ config = siteDefaults }: { config?: SiteConfig }) {
               </button>
             </div>
             <ul className="flex flex-col gap-1">
-              {primaryNav.map((item) => (
+              {nav.map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}

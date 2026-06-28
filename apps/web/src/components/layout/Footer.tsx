@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
 import { Icon, type IconName } from '@/components/Icon';
-import { siteDefaults, type SiteConfig } from '@/lib/site';
+import { siteDefaults, isHrefEnabled, type SiteConfig } from '@/lib/site';
 
 export function Footer({ config = siteDefaults }: { config?: SiteConfig }) {
   const { brand, contact, address, social, description } = config;
@@ -55,7 +55,7 @@ export function Footer({ config = siteDefaults }: { config?: SiteConfig }) {
                   {col.heading}
                 </h3>
                 <ul className="mt-4 space-y-2.5 text-sm">
-                  {col.links.map((l) => (
+                  {col.links.filter((l) => isHrefEnabled(config, l.href)).map((l) => (
                     <li key={l.href + l.label}>
                       <Link href={l.href} className="transition-colors hover:text-white">
                         {l.label}

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { assertPageEnabled } from '@/lib/page-guard';
 import Link from 'next/link';
 import { ConfigurablePageHero } from '@/components/ui/ConfigurablePageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
@@ -15,6 +16,7 @@ const monthName = (iso: string) =>
   new Date(iso).toLocaleDateString('en-GB', { month: 'short' }).toUpperCase();
 
 export default async function NewsPage() {
+  await assertPageEnabled('news');
   const [articles, events] = await Promise.all([getNews(), getEvents()]);
   return (
     <>

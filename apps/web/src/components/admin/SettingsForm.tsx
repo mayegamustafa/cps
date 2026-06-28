@@ -21,7 +21,31 @@ const ICONS: IconName[] = [
   'mail', 'image', 'video', 'briefcase', 'download', 'megaphone', 'calendar', 'bell',
 ];
 
-const TABS = ['Brand', 'Hero', 'Homepage', 'Page heads', 'Footer', 'Categories', 'Admissions form', 'Contact'] as const;
+const TABS = ['Brand', 'Hero', 'Homepage', 'Page heads', 'Website control', 'Footer', 'Categories', 'Admissions form', 'Contact'] as const;
+
+const HOMEPAGE_SECTIONS: { key: keyof SiteConfig['sections']; label: string }[] = [
+  { key: 'welcome', label: 'Welcome' },
+  { key: 'pathways', label: 'Academic pathways' },
+  { key: 'why', label: 'Why City Parents' },
+  { key: 'admissionsCta', label: 'Admissions banner' },
+  { key: 'news', label: 'Latest news' },
+  { key: 'testimonials', label: 'Testimonials' },
+  { key: 'visit', label: 'Plan a visit' },
+];
+
+const PAGE_TOGGLES: { key: keyof SiteConfig['pages']; label: string }[] = [
+  { key: 'about', label: 'About' },
+  { key: 'academics', label: 'Academics' },
+  { key: 'admissions', label: 'Admissions' },
+  { key: 'news', label: 'News & Events' },
+  { key: 'gallery', label: 'Gallery' },
+  { key: 'alumni', label: 'Alumni' },
+  { key: 'careers', label: 'Careers' },
+  { key: 'contact', label: 'Contact' },
+  { key: 'virtualTour', label: 'Virtual Tour' },
+  { key: 'live', label: 'Live TV' },
+  { key: 'downloads', label: 'Downloads' },
+];
 type Tab = (typeof TABS)[number];
 
 const PAGE_HEADS: { key: PageHeadKey; label: string }[] = [
@@ -430,6 +454,41 @@ export function SettingsForm() {
               );
             })}
           </Card>
+        ) : null}
+
+        {tab === 'Website control' ? (
+          <>
+            <Card onSave={save} title="Maintenance mode" desc="When ON, public visitors see a branded maintenance screen. The admin dashboard stays accessible.">
+              <label className="flex items-center gap-2 rounded-xl border border-line p-3 text-sm font-medium text-ink">
+                <input type="checkbox" checked={cfg.maintenance.enabled} onChange={(e) => patch((d) => { d.maintenance.enabled = e.target.checked; })} />
+                Enable maintenance mode {cfg.maintenance.enabled ? <span className="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">LIVE — site is down for visitors</span> : null}
+              </label>
+              <TextAreaField label="Message" id="mt-msg" value={cfg.maintenance.message} onChange={(e) => patch((d) => { d.maintenance.message = e.target.value; })} />
+              <Field label="Estimated return (optional — shows a countdown)" id="mt-ret" type="datetime-local" value={cfg.maintenance.returnAt ? cfg.maintenance.returnAt.slice(0, 16) : ''} onChange={(e) => patch((d) => { d.maintenance.returnAt = e.target.value ? new Date(e.target.value).toISOString() : undefined; })} />
+            </Card>
+
+            <Card onSave={save} title="Homepage sections" desc="Show or hide individual blocks on the homepage.">
+              <div className="grid gap-2 sm:grid-cols-2">
+                {HOMEPAGE_SECTIONS.map((s) => (
+                  <label key={s.key} className="flex items-center justify-between rounded-xl border border-line px-4 py-2.5 text-sm text-ink">
+                    {s.label}
+                    <input type="checkbox" checked={cfg.sections[s.key] !== false} onChange={(e) => patch((d) => { d.sections[s.key] = e.target.checked; })} />
+                  </label>
+                ))}
+              </div>
+            </Card>
+
+            <Card onSave={save} title="Pages & features" desc="Disabled pages are removed from the menus and show a 'not found' page if visited directly.">
+              <div className="grid gap-2 sm:grid-cols-2">
+                {PAGE_TOGGLES.map((p) => (
+                  <label key={p.key} className="flex items-center justify-between rounded-xl border border-line px-4 py-2.5 text-sm text-ink">
+                    {p.label}
+                    <input type="checkbox" checked={cfg.pages[p.key] !== false} onChange={(e) => patch((d) => { d.pages[p.key] = e.target.checked; })} />
+                  </label>
+                ))}
+              </div>
+            </Card>
+          </>
         ) : null}
 
         {tab === 'Footer' ? (

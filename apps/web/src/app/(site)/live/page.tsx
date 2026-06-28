@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { assertPageEnabled } from '@/lib/page-guard';
 import { ConfigurablePageHero } from '@/components/ui/ConfigurablePageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Icon } from '@/components/Icon';
@@ -41,6 +42,7 @@ function autoplaySrc(url: string) {
 }
 
 export default async function LivePage() {
+  await assertPageEnabled('live');
   const live = await getActiveStream();
 
   return (
