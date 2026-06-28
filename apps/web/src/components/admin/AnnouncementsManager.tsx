@@ -18,16 +18,37 @@ type Announcement = {
   link?: string | null;
   linkLabel?: string | null;
   imageUrl?: string | null;
+  eventDate?: string | null;
+  priority?: number;
   popup: boolean;
   isActive: boolean;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  audience?: string | null;
+  pages?: string[];
+  device?: string | null;
+  frequency?: string | null;
   createdAt: string;
 };
 
 const iso = (v: string) => (v ? new Date(v).toISOString() : undefined);
 
+// ISO → value for <input type="datetime-local"> in the admin's local time.
+function toLocalInput(v?: string | null): string {
+  if (!v) return '';
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return '';
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
 function authHeaders(): Record<string, string> {
   const t = typeof window !== 'undefined' ? sessionStorage.getItem('cps_token') : null;
   return { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) };
+}
+
+// Refresh the public banner/popup cache so changes appear immediately.
+function revalidatePublic() {
+  fetch(`${API}/api/revalidate`, { method: 'POST' }).catch(() => {});
 }
 
 const blank = {
@@ -41,6 +62,7 @@ export function AnnouncementsManager() {
   const [items, setItems] = useState<Announcement[]>([]);
   const [msg, setMsg] = useState('');
   const [form, setForm] = useState(blank);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   async function load() {
     const res = await fetch(`${API}/api/announcements/all`, { headers: authHeaders() }).catch(() => null);
@@ -51,36 +73,54 @@ export function AnnouncementsManager() {
     load();
   }, []);
 
-  async function publish(e: React.FormEvent) {
+  function resetForm() { setForm(blank); setEditingId(null); }
+
+  function startEdit(a: Announcement) {
+    setEditingId(a.id);
+    setForm({
+      title: a.title ?? '', message: a.message, severity: a.severity, category: a.category ?? 'general',
+      link: a.link ?? '', linkLabel: a.linkLabel ?? '', imageUrl: a.imageUrl ?? '',
+      eventDate: toLocalInput(a.eventDate), priority: a.priority ?? 0,
+      popup: a.popup, startsAt: toLocalInput(a.startsAt), endsAt: toLocalInput(a.endsAt),
+      audience: a.audience ?? 'all', pages: (a.pages ?? []).join(', '),
+      device: a.device ?? 'all', frequency: a.frequency ?? 'session',
+    });
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
-    const res = await fetch(`${API}/api/announcements`, {
-      method: 'POST',
+    const payload: Record<string, unknown> = {
+      title: form.title || undefined,
+      message: form.message,
+      severity: form.severity,
+      category: form.category,
+      link: form.link || undefined,
+      linkLabel: form.linkLabel || undefined,
+      imageUrl: form.imageUrl || undefined,
+      eventDate: iso(form.eventDate),
+      priority: Number(form.priority) || 0,
+      popup: form.popup,
+      startsAt: iso(form.startsAt),
+      endsAt: iso(form.endsAt),
+      audience: form.audience,
+      pages: form.pages.split(/[\n,]/).map((s) => s.trim()).filter(Boolean),
+      device: form.device,
+      frequency: form.frequency,
+    };
+    if (!editingId) payload.isActive = true;
+    const url = editingId ? `${API}/api/announcements/${editingId}` : `${API}/api/announcements`;
+    const res = await fetch(url, {
+      method: editingId ? 'PATCH' : 'POST',
       headers: authHeaders(),
-      body: JSON.stringify({
-        title: form.title || undefined,
-        message: form.message,
-        severity: form.severity,
-        category: form.category,
-        link: form.link || undefined,
-        linkLabel: form.linkLabel || undefined,
-        imageUrl: form.imageUrl || undefined,
-        eventDate: iso(form.eventDate),
-        priority: Number(form.priority) || 0,
-        popup: form.popup,
-        startsAt: iso(form.startsAt),
-        endsAt: iso(form.endsAt),
-        audience: form.audience,
-        pages: form.pages.split(/[\n,]/).map((s) => s.trim()).filter(Boolean),
-        device: form.device,
-        frequency: form.frequency,
-        isActive: true,
-      }),
+      body: JSON.stringify(payload),
     }).catch(() => null);
     if (res && res.ok) {
-      setForm(blank);
-      setMsg('Announcement published.');
+      resetForm();
+      setMsg(editingId ? 'Announcement updated.' : 'Announcement published.');
+      revalidatePublic();
       load();
-    } else setMsg('Publish failed (sign in again).');
+    } else setMsg('Save failed (sign in again).');
   }
 
   async function toggle(a: Announcement) {
@@ -89,13 +129,14 @@ export function AnnouncementsManager() {
       headers: authHeaders(),
       body: JSON.stringify({ isActive: !a.isActive }),
     }).catch(() => null);
-    if (res && res.ok) load();
+    if (res && res.ok) { revalidatePublic(); load(); }
     else setMsg('Update failed (sign in again).');
   }
 
   async function remove(id: string) {
+    if (!confirm('Delete this announcement?')) return;
     const res = await fetch(`${API}/api/announcements/${id}`, { method: 'DELETE', headers: authHeaders() }).catch(() => null);
-    if (res && res.ok) setItems((p) => p.filter((x) => x.id !== id));
+    if (res && res.ok) { setItems((p) => p.filter((x) => x.id !== id)); revalidatePublic(); if (editingId === id) resetForm(); }
     else setMsg('Delete failed (sign in again).');
   }
 
@@ -111,7 +152,7 @@ export function AnnouncementsManager() {
         {msg ? <span className="text-sm font-medium text-maroon-700">{msg}</span> : null}
       </div>
 
-      <form onSubmit={publish} className="mb-8 grid gap-4 rounded-2xl border border-line bg-white p-6 md:grid-cols-2">
+      <form onSubmit={submit} className="mb-8 grid gap-4 rounded-2xl border border-line bg-white p-6 md:grid-cols-2">
         <Field label="Title (optional)" id="t" value={form.title} placeholder="e.g. Term 2 Begins" onChange={(e) => setForm({ ...form, title: e.target.value })} />
         <SelectField label="Type" id="cat" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
           <option value="general">General information</option>
@@ -169,8 +210,11 @@ export function AnnouncementsManager() {
           </>
         ) : null}
 
-        <div className="md:col-span-2">
-          <Button type="submit" icon="megaphone">Publish announcement</Button>
+        <div className="flex items-center gap-3 md:col-span-2">
+          <Button type="submit" icon="megaphone">{editingId ? 'Update announcement' : 'Publish announcement'}</Button>
+          {editingId ? (
+            <Button type="button" variant="ghost" onClick={resetForm}>Cancel edit</Button>
+          ) : null}
         </div>
       </form>
 
@@ -195,10 +239,13 @@ export function AnnouncementsManager() {
                   <p className={a.title ? 'text-sm text-ink-soft' : 'mt-1 text-ink'}>{a.message}</p>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <Button size="md" variant={a.isActive ? 'outline' : 'primary'} onClick={() => toggle(a)}>
                   {a.isActive ? 'Unpublish' : 'Publish'}
                 </Button>
+                <button onClick={() => startEdit(a)} aria-label="Edit" className="rounded-xl p-2.5 text-ink-muted hover:bg-maroon-50 hover:text-maroon-700">
+                  <Icon name="edit" size={18} />
+                </button>
                 <button onClick={() => remove(a.id)} aria-label="Delete" className="rounded-xl p-2.5 text-ink-muted hover:bg-rose-50 hover:text-rose-600">
                   <Icon name="trash" size={18} />
                 </button>

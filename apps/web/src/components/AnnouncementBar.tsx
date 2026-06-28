@@ -23,7 +23,8 @@ export async function AnnouncementBar() {
   let items: Announcement[] = [];
   try {
     const res = await fetch(`${API}/api/announcements`, {
-      next: { revalidate: 30 },
+      // Tagged so admin changes refresh it on demand (see /api/revalidate).
+      next: { revalidate: 15, tags: ['site-settings'] },
       signal: AbortSignal.timeout(4000),
     });
     if (res.ok) items = await res.json();
