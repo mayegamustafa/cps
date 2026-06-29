@@ -4,6 +4,7 @@ import { StatsBand } from '@/components/sections/StatsBand';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
+import { SocialFeeds } from '@/components/sections/SocialFeeds';
 import { getSiteConfig } from '@/lib/site-config';
 import { getStats } from '@/lib/stats';
 import { getNews } from '@/lib/public-data';
@@ -14,7 +15,7 @@ export default async function HomePage() {
   const config = await getSiteConfig();
   const stats = await getStats();
   const news = (await getNews()).slice(0, 3);
-  const { welcome, pathways, why, admissionsCta, news: newsHeading, testimonials, visit } = config.home;
+  const { welcome, pathways, why, admissionsCta, news: newsHeading, testimonials, visit, headTeacher: ht, feeds } = config.home;
   const { address, contact } = config;
   const s = config.sections;
   return (
@@ -58,6 +59,35 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      ) : null}
+
+      {/* Head Teacher's message */}
+      {s.headTeacher !== false && ht.message ? (
+        <section className="bg-paper-dark py-24">
+          <div className="container-page grid items-center gap-12 lg:grid-cols-[0.8fr_1.2fr]">
+            <div className="mx-auto w-full max-w-xs">
+              {ht.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={ht.image} alt={ht.name} className="aspect-[4/5] w-full rounded-2xl object-cover shadow-lift" />
+              ) : (
+                <div className="flex aspect-[4/5] w-full items-center justify-center rounded-2xl bg-maroon-900 text-gold-300 shadow-lift">
+                  <Icon name="graduation-cap" size={56} />
+                </div>
+              )}
+            </div>
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-600">{ht.eyebrow}</span>
+              <blockquote className="mt-5 font-display text-2xl leading-relaxed text-maroon-900">
+                <span className="text-gold-400"><Icon name="quote" size={30} /></span>
+                <p className="mt-3">{ht.message}</p>
+              </blockquote>
+              <div className="mt-6">
+                <p className="font-semibold text-ink">{ht.name}</p>
+                <p className="text-sm text-ink-muted">{ht.title}</p>
+              </div>
+            </div>
+          </div>
+        </section>
       ) : null}
 
       {/* Academic pathways */}
@@ -203,6 +233,18 @@ export default async function HomePage() {
                   </figcaption>
                 </figure>
               ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {/* Social feeds */}
+      {s.feeds !== false ? (
+        <section className="py-24">
+          <div className="container-page">
+            <SectionHeading align="center" eyebrow="Connect with us" title={feeds.heading || 'Follow us on social media'} />
+            <div className="mt-12">
+              <SocialFeeds feeds={feeds} />
             </div>
           </div>
         </section>

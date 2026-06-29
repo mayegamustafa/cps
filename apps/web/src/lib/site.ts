@@ -120,6 +120,22 @@ export type SiteConfig = {
       intro: string;
       officeHours: string;
     };
+    headTeacher: {
+      eyebrow: string;
+      name: string;
+      title: string;
+      message: string;
+      image: string;
+    };
+    feeds: {
+      heading: string;
+      /** TikTok @username or profile URL */
+      tiktok: string;
+      /** Facebook page URL */
+      facebook: string;
+      /** YouTube video or playlist URL/ID */
+      youtube: string;
+    };
   };
   footer: {
     columns: { heading: string; links: CtaLink[] }[];
@@ -149,6 +165,8 @@ export type SiteConfig = {
     news: boolean;
     testimonials: boolean;
     visit: boolean;
+    headTeacher: boolean;
+    feeds: boolean;
   };
   /** Page/feature enable flags — disabled pages drop out of navigation and 404. */
   pages: {
@@ -310,6 +328,20 @@ export const siteDefaults: SiteConfig = {
         'We warmly welcome prospective families to tour our campus, meet our teachers and experience the City Parents difference first-hand.',
       officeHours: 'Monday to Friday, 8:00am to 5:00pm',
     },
+    headTeacher: {
+      eyebrow: "Head Teacher's Message",
+      name: 'Sekiganda Robert',
+      title: 'Head Teacher, City Parents School',
+      message:
+        'It is my pleasure to welcome you to City Parents School. I thank our parents and partners for the support they render to this school, which I treasure deeply. Together we continue to nurture confident, disciplined and accomplished learners, and to drive the steady growth of this great school.',
+      image: '',
+    },
+    feeds: {
+      heading: 'Connect with us',
+      tiktok: '',
+      facebook: '',
+      youtube: '',
+    },
   },
   footer: {
     columns: [
@@ -368,7 +400,7 @@ export const siteDefaults: SiteConfig = {
     enabled: false,
     message: 'Our website is undergoing scheduled maintenance and will be back shortly. Thank you for your patience.',
   },
-  sections: { welcome: true, pathways: true, why: true, admissionsCta: true, news: true, testimonials: true, visit: true },
+  sections: { welcome: true, pathways: true, why: true, admissionsCta: true, news: true, testimonials: true, visit: true, headTeacher: true, feeds: true },
   pages: {
     about: true, academics: true, admissions: true, news: true, gallery: true,
     alumni: true, careers: true, contact: true, virtualTour: true, live: true, downloads: true,

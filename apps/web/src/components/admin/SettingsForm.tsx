@@ -31,6 +31,8 @@ const HOMEPAGE_SECTIONS: { key: keyof SiteConfig['sections']; label: string }[] 
   { key: 'news', label: 'Latest news' },
   { key: 'testimonials', label: 'Testimonials' },
   { key: 'visit', label: 'Plan a visit' },
+  { key: 'headTeacher', label: "Head Teacher's message" },
+  { key: 'feeds', label: 'Social feeds (TikTok/Facebook/YouTube)' },
 ];
 
 const PAGE_TOGGLES: { key: keyof SiteConfig['pages']; label: string }[] = [
@@ -425,6 +427,23 @@ export function SettingsForm() {
               <Field label="Title" id="v-t" value={h.visit.title} onChange={(e) => patch((d) => { d.home.visit.title = e.target.value; })} />
               <TextAreaField label="Intro" id="v-i" value={h.visit.intro} onChange={(e) => patch((d) => { d.home.visit.intro = e.target.value; })} />
               <Field label="Office hours" id="v-oh" value={h.visit.officeHours} onChange={(e) => patch((d) => { d.home.visit.officeHours = e.target.value; })} />
+            </Card>
+
+            <Card onSave={save} title="Head Teacher's message" desc="Shown on the homepage with the head teacher's portrait.">
+              <Field label="Eyebrow / section label" id="ht-eb" value={h.headTeacher.eyebrow} onChange={(e) => patch((d) => { d.home.headTeacher.eyebrow = e.target.value; })} />
+              <TextAreaField label="Message" id="ht-msg" value={h.headTeacher.message} onChange={(e) => patch((d) => { d.home.headTeacher.message = e.target.value; })} />
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Name" id="ht-name" value={h.headTeacher.name} onChange={(e) => patch((d) => { d.home.headTeacher.name = e.target.value; })} />
+                <Field label="Title" id="ht-title" value={h.headTeacher.title} onChange={(e) => patch((d) => { d.home.headTeacher.title = e.target.value; })} />
+              </div>
+              <ImageInput label="Portrait photo" value={h.headTeacher.image} onChange={(v) => patch((d) => { d.home.headTeacher.image = v; })} />
+            </Card>
+
+            <Card onSave={save} title="Social feeds" desc="Live embeds shown on the homepage. Leave a field blank to hide that feed.">
+              <Field label="Section heading" id="fd-h" value={h.feeds.heading} onChange={(e) => patch((d) => { d.home.feeds.heading = e.target.value; })} />
+              <Field label="TikTok username or profile URL" id="fd-tt" value={h.feeds.tiktok} placeholder="@sirapollokaggwaschools" onChange={(e) => patch((d) => { d.home.feeds.tiktok = e.target.value; })} />
+              <Field label="Facebook page URL" id="fd-fb" value={h.feeds.facebook} placeholder="https://www.facebook.com/YourSchoolPage" onChange={(e) => patch((d) => { d.home.feeds.facebook = e.target.value; })} />
+              <Field label="YouTube video or playlist URL" id="fd-yt" value={h.feeds.youtube} placeholder="https://www.youtube.com/watch?v=…" onChange={(e) => patch((d) => { d.home.feeds.youtube = e.target.value; })} />
             </Card>
           </>
         ) : null}
