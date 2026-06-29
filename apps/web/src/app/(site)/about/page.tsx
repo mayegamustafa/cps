@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { ConfigurablePageHero } from '@/components/ui/ConfigurablePageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
-import { Icon } from '@/components/Icon';
-import { leadership, values } from '@/lib/content';
+import { Icon, type IconName } from '@/components/Icon';
+import { getSiteConfig } from '@/lib/site-config';
 
 export const metadata: Metadata = {
   title: 'About School',
@@ -10,7 +10,9 @@ export const metadata: Metadata = {
     'The history, vision, mission, values and leadership behind City Parents School, Kampala.',
 };
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const { about } = await getSiteConfig();
+  const { story, vision, mission, values, leadership } = about;
   return (
     <>
       <ConfigurablePageHero page="about"
@@ -26,19 +28,11 @@ export default function AboutPage() {
         <div className="container-page grid items-center gap-14 lg:grid-cols-2">
           <div
             className="aspect-[4/3] rounded-2xl bg-cover bg-center shadow-lift"
-            style={{ backgroundImage: "url('https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1000&q=70')" }}
+            style={{ backgroundImage: `url('${story.image}')` }}
           />
           <div>
-            <SectionHeading
-              eyebrow="Our Story"
-              title="From a small classroom to a beacon of learning."
-              intro="What began as a handful of pupils and a bold vision has become a thriving community of over 2,400 learners. Through every chapter, our commitment has remained unchanged: to know, challenge and champion every child."
-            />
-            <p className="mt-5 text-ink-soft">
-              Today, our graduates lead in medicine, law, technology, business and
-              public service across Uganda and the world, a living testament to
-              the foundation laid on Kabaka Anjagala Road.
-            </p>
+            <SectionHeading eyebrow={story.eyebrow} title={story.title} intro={story.intro} />
+            {story.body ? <p className="mt-5 text-ink-soft">{story.body}</p> : null}
           </div>
         </div>
       </section>
@@ -47,12 +41,12 @@ export default function AboutPage() {
       <section className="bg-paper-dark py-24">
         <div className="container-page grid gap-6 md:grid-cols-2">
           {[
-            { icon: 'globe', title: 'Our Vision', body: 'To be the leading school in the region, nurturing confident, principled and globally-minded citizens.' },
-            { icon: 'graduation-cap', title: 'Our Mission', body: 'To provide a holistic, values-driven education that empowers every learner to achieve academic excellence and lead with character.' },
+            { icon: 'globe' as IconName, title: vision.title, body: vision.body },
+            { icon: 'graduation-cap' as IconName, title: mission.title, body: mission.body },
           ].map((c) => (
             <div key={c.title} className="rounded-2xl border border-line bg-paper p-8">
               <span className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-maroon-700 text-gold-300">
-                <Icon name={c.icon as 'globe'} size={26} />
+                <Icon name={c.icon} size={26} />
               </span>
               <h2 className="mt-6 text-2xl">{c.title}</h2>
               <p className="mt-3 text-ink-soft">{c.body}</p>
@@ -86,9 +80,14 @@ export default function AboutPage() {
           <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {leadership.map((p) => (
               <div key={p.name} className="rounded-2xl border border-white/10 bg-white/5 p-6">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gold-400 font-display text-2xl text-maroon-900">
-                  {p.name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
-                </div>
+                {p.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={p.image} alt={p.name} className="h-16 w-16 rounded-full object-cover ring-2 ring-gold-400/40" />
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gold-400 font-display text-2xl text-maroon-900">
+                    {p.name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+                  </div>
+                )}
                 <h3 className="mt-5 text-lg !text-white">{p.name}</h3>
                 <p className="text-sm font-semibold text-gold-300">{p.title}</p>
                 <p className="mt-3 text-sm text-paper/70">{p.bio}</p>

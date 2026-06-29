@@ -137,6 +137,14 @@ export type SiteConfig = {
       youtube: string;
     };
   };
+  /** Editable About-page content. */
+  about: {
+    story: { eyebrow: string; title: string; intro: string; body: string; image: string };
+    vision: { title: string; body: string };
+    mission: { title: string; body: string };
+    values: { title: string; icon: IconName; body: string }[];
+    leadership: { name: string; title: string; bio: string; image: string }[];
+  };
   footer: {
     columns: { heading: string; links: CtaLink[] }[];
   };
@@ -342,6 +350,37 @@ export const siteDefaults: SiteConfig = {
       facebook: '',
       youtube: '',
     },
+  },
+  about: {
+    story: {
+      eyebrow: 'Our Story',
+      title: 'From a small classroom to a beacon of learning.',
+      intro:
+        'What began as a handful of pupils and a bold vision has become a thriving community of over 2,400 learners. Through every chapter, our commitment has remained unchanged: to know, challenge and champion every child.',
+      body:
+        'Today, our graduates lead in medicine, law, technology, business and public service across Uganda and the world — a living testament to the foundation laid on Kabaka Anjagala Road.',
+      image: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1000&q=70',
+    },
+    vision: {
+      title: 'Our Vision',
+      body: 'To be the leading school in the region, nurturing confident, principled and globally-minded citizens.',
+    },
+    mission: {
+      title: 'Our Mission',
+      body: 'To provide a holistic, values-driven education that empowers every learner to achieve academic excellence and lead with character.',
+    },
+    values: [
+      { title: 'Integrity', icon: 'shield-check', body: 'We do what is right, especially when no one is watching.' },
+      { title: 'Excellence', icon: 'trophy', body: 'We pursue our personal best in every endeavour.' },
+      { title: 'Compassion', icon: 'heart-hand', body: 'We lead with empathy and serve our community.' },
+      { title: 'Curiosity', icon: 'sparkle', body: 'We ask questions and love to learn.' },
+    ],
+    leadership: [
+      { name: 'Dr. Margaret Nakato', title: 'Head Teacher', bio: 'A career educator with over 25 years of experience leading high-performing schools across East Africa.', image: '' },
+      { name: 'Mr. Joseph Mwangi', title: 'Deputy Head, Academics', bio: 'Oversees curriculum, assessment and teacher development across all three sections.', image: '' },
+      { name: 'Mrs. Aisha Namusoke', title: 'Head of Admissions', bio: 'Guides every family through a warm, transparent admissions journey.', image: '' },
+      { name: 'Mr. Daniel Okello', title: 'Head of Pastoral Care', bio: 'Leads our house system, counselling and the wellbeing of every pupil.', image: '' },
+    ],
   },
   footer: {
     columns: [

@@ -21,7 +21,7 @@ const ICONS: IconName[] = [
   'mail', 'image', 'video', 'briefcase', 'download', 'megaphone', 'calendar', 'bell',
 ];
 
-const TABS = ['Brand', 'Hero', 'Homepage', 'Page heads', 'Website control', 'Footer', 'Categories', 'Admissions form', 'Contact'] as const;
+const TABS = ['Brand', 'Hero', 'Homepage', 'About page', 'Page heads', 'Website control', 'Footer', 'Categories', 'Admissions form', 'Contact'] as const;
 
 const HOMEPAGE_SECTIONS: { key: keyof SiteConfig['sections']; label: string }[] = [
   { key: 'welcome', label: 'Welcome' },
@@ -444,6 +444,70 @@ export function SettingsForm() {
               <Field label="TikTok username or profile URL" id="fd-tt" value={h.feeds.tiktok} placeholder="@sirapollokaggwaschools" onChange={(e) => patch((d) => { d.home.feeds.tiktok = e.target.value; })} />
               <Field label="Facebook page URL" id="fd-fb" value={h.feeds.facebook} placeholder="https://www.facebook.com/YourSchoolPage" onChange={(e) => patch((d) => { d.home.feeds.facebook = e.target.value; })} />
               <Field label="YouTube video or playlist URL" id="fd-yt" value={h.feeds.youtube} placeholder="https://www.youtube.com/watch?v=…" onChange={(e) => patch((d) => { d.home.feeds.youtube = e.target.value; })} />
+            </Card>
+          </>
+        ) : null}
+
+        {tab === 'About page' ? (
+          <>
+            <Card onSave={save} title="Our Story" desc="The opening section of the About page.">
+              <Field label="Eyebrow" id="ab-eb" value={cfg.about.story.eyebrow} onChange={(e) => patch((d) => { d.about.story.eyebrow = e.target.value; })} />
+              <Field label="Title" id="ab-t" value={cfg.about.story.title} onChange={(e) => patch((d) => { d.about.story.title = e.target.value; })} />
+              <TextAreaField label="Intro" id="ab-i" value={cfg.about.story.intro} onChange={(e) => patch((d) => { d.about.story.intro = e.target.value; })} />
+              <TextAreaField label="Body paragraph" id="ab-b" value={cfg.about.story.body} onChange={(e) => patch((d) => { d.about.story.body = e.target.value; })} />
+              <ImageInput label="Story image" value={cfg.about.story.image} onChange={(v) => patch((d) => { d.about.story.image = v; })} />
+            </Card>
+
+            <Card onSave={save} title="Vision & Mission">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-3">
+                  <Field label="Vision title" id="ab-vt" value={cfg.about.vision.title} onChange={(e) => patch((d) => { d.about.vision.title = e.target.value; })} />
+                  <TextAreaField label="Vision" id="ab-vb" value={cfg.about.vision.body} onChange={(e) => patch((d) => { d.about.vision.body = e.target.value; })} />
+                </div>
+                <div className="space-y-3">
+                  <Field label="Mission title" id="ab-mt" value={cfg.about.mission.title} onChange={(e) => patch((d) => { d.about.mission.title = e.target.value; })} />
+                  <TextAreaField label="Mission" id="ab-mb" value={cfg.about.mission.body} onChange={(e) => patch((d) => { d.about.mission.body = e.target.value; })} />
+                </div>
+              </div>
+            </Card>
+
+            <Card onSave={save} title="Core values">
+              <Repeater
+                items={cfg.about.values}
+                onChange={(v) => patch((d) => { d.about.values = v; })}
+                blank={() => ({ title: '', icon: 'sparkle' as IconName, body: '' })}
+                addLabel="+ Add value"
+              >
+                {(item, update) => (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Title" id={`av-t-${item.title}`} value={item.title} onChange={(e) => update({ title: e.target.value })} />
+                      <IconSelect value={item.icon} onChange={(v) => update({ icon: v as IconName })} />
+                    </div>
+                    <TextAreaField label="Description" id={`av-b-${item.title}`} value={item.body} onChange={(e) => update({ body: e.target.value })} />
+                  </>
+                )}
+              </Repeater>
+            </Card>
+
+            <Card onSave={save} title="Leadership team">
+              <Repeater
+                items={cfg.about.leadership}
+                onChange={(v) => patch((d) => { d.about.leadership = v; })}
+                blank={() => ({ name: '', title: '', bio: '', image: '' })}
+                addLabel="+ Add leader"
+              >
+                {(item, update) => (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Name" id={`ld-n-${item.name}`} value={item.name} onChange={(e) => update({ name: e.target.value })} />
+                      <Field label="Title / role" id={`ld-t-${item.name}`} value={item.title} onChange={(e) => update({ title: e.target.value })} />
+                    </div>
+                    <TextAreaField label="Bio" id={`ld-b-${item.name}`} value={item.bio} onChange={(e) => update({ bio: e.target.value })} />
+                    <ImageInput label="Photo (optional — initials shown if empty)" value={item.image} onChange={(v) => update({ image: v })} />
+                  </>
+                )}
+              </Repeater>
             </Card>
           </>
         ) : null}
