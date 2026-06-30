@@ -2,11 +2,23 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { site } from '@/lib/site';
 import { getSiteConfig } from '@/lib/site-config';
+import { normalizeOrigin } from '@/lib/api-base';
+
+// `new URL()` throws on a value with no scheme (e.g. "cityparentsschool.co.ug"
+// set via env). Normalize first, then fall back to the default — so a
+// mis-entered NEXT_PUBLIC_SITE_URL can never crash the build/metadata.
+function safeUrl(raw: string | undefined): URL {
+  try {
+    return new URL(normalizeOrigin(raw) || 'https://cityparentsschool.co.ug');
+  } catch {
+    return new URL('https://cityparentsschool.co.ug');
+  }
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   const c = await getSiteConfig();
   return {
-    metadataBase: new URL(c.url || site.url),
+    metadataBase: safeUrl(c.url || site.url),
     title: {
       default: `${c.brand.name}, ${c.tagline}`,
       template: `%s · ${c.brand.name}`,
