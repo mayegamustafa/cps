@@ -21,7 +21,7 @@ const ICONS: IconName[] = [
   'mail', 'image', 'video', 'briefcase', 'download', 'megaphone', 'calendar', 'bell',
 ];
 
-const TABS = ['Brand', 'Hero', 'Homepage', 'About page', 'Page heads', 'Website control', 'Footer', 'Categories', 'Admissions form', 'Contact'] as const;
+const TABS = ['Brand', 'Hero', 'Homepage', 'About page', 'Talent (TDP)', 'Page heads', 'Website control', 'Footer', 'Categories', 'Admissions form', 'Contact'] as const;
 
 const HOMEPAGE_SECTIONS: { key: keyof SiteConfig['sections']; label: string }[] = [
   { key: 'welcome', label: 'Welcome' },
@@ -47,6 +47,7 @@ const PAGE_TOGGLES: { key: keyof SiteConfig['pages']; label: string }[] = [
   { key: 'virtualTour', label: 'Virtual Tour' },
   { key: 'live', label: 'Live TV' },
   { key: 'downloads', label: 'Downloads' },
+  { key: 'talent', label: 'Talent (TDP)' },
 ];
 type Tab = (typeof TABS)[number];
 
@@ -62,6 +63,7 @@ const PAGE_HEADS: { key: PageHeadKey; label: string }[] = [
   { key: 'virtual-tour', label: 'Virtual Tour' },
   { key: 'live', label: 'Live TV' },
   { key: 'downloads', label: 'Downloads' },
+  { key: 'talent', label: 'Talent (TDP)' },
 ];
 
 function Card({ title, desc, onSave, children }: { title: string; desc?: string; onSave?: () => Promise<boolean> | boolean | void; children: React.ReactNode }) {
@@ -507,6 +509,66 @@ export function SettingsForm() {
                     </div>
                     <TextAreaField label="Bio" id={`ld-b-${item.name}`} value={item.bio} onChange={(e) => update({ bio: e.target.value })} />
                     <ImageInput label="Photo (optional — initials shown if empty)" value={item.image} onChange={(v) => update({ image: v })} />
+                  </>
+                )}
+              </Repeater>
+            </Card>
+          </>
+        ) : null}
+
+        {tab === 'Talent (TDP)' ? (
+          <>
+            <Card onSave={save} title="Talent Development Program — intro">
+              <Field label="Eyebrow" id="tp-eb" value={cfg.talent.intro.eyebrow} onChange={(e) => patch((d) => { d.talent.intro.eyebrow = e.target.value; })} />
+              <Field label="Title" id="tp-t" value={cfg.talent.intro.title} onChange={(e) => patch((d) => { d.talent.intro.title = e.target.value; })} />
+              <TextAreaField label="Intro paragraph" id="tp-b" value={cfg.talent.intro.body} onChange={(e) => patch((d) => { d.talent.intro.body = e.target.value; })} />
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="CTA button label" id="tp-cl" value={cfg.talent.cta.label} onChange={(e) => patch((d) => { d.talent.cta.label = e.target.value; })} />
+                <Field label="CTA link" id="tp-ch" value={cfg.talent.cta.href} onChange={(e) => patch((d) => { d.talent.cta.href = e.target.value; })} />
+              </div>
+            </Card>
+
+            <Card onSave={save} title="Talent areas">
+              <Repeater
+                items={cfg.talent.areas}
+                onChange={(v) => patch((d) => { d.talent.areas = v; })}
+                blank={() => ({ title: '', icon: 'sparkle' as IconName, body: '' })}
+                addLabel="+ Add area"
+              >
+                {(item, update) => (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Title" id={`ta-t-${item.title}`} value={item.title} onChange={(e) => update({ title: e.target.value })} />
+                      <IconSelect value={item.icon} onChange={(v) => update({ icon: v as IconName })} />
+                    </div>
+                    <TextAreaField label="Description" id={`ta-b-${item.title}`} value={item.body} onChange={(e) => update({ body: e.target.value })} />
+                  </>
+                )}
+              </Repeater>
+            </Card>
+
+            <Card onSave={save} title="Media (photos & videos)" desc="Each item shows on the Talent page with its description. Use an image, or a YouTube/MP4 link for video.">
+              <Repeater
+                items={cfg.talent.media}
+                onChange={(v) => patch((d) => { d.talent.media = v; })}
+                blank={() => ({ type: 'image' as const, url: '', title: '', description: '' })}
+                addLabel="+ Add media"
+              >
+                {(item, update) => (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <SelectField label="Type" id={`tm-ty-${item.url}`} value={item.type} onChange={(e) => update({ type: e.target.value as 'image' | 'video' })}>
+                        <option value="image">Photo</option>
+                        <option value="video">Video</option>
+                      </SelectField>
+                      <Field label="Title" id={`tm-t-${item.url}`} value={item.title} onChange={(e) => update({ title: e.target.value })} />
+                    </div>
+                    {item.type === 'image' ? (
+                      <ImageInput label="Photo" value={item.url} onChange={(v) => update({ url: v })} />
+                    ) : (
+                      <Field label="Video URL (YouTube or .mp4)" id={`tm-u-${item.url}`} value={item.url} placeholder="https://www.youtube.com/watch?v=…" onChange={(e) => update({ url: e.target.value })} />
+                    )}
+                    <TextAreaField label="Description" id={`tm-d-${item.url}`} value={item.description} onChange={(e) => update({ description: e.target.value })} />
                   </>
                 )}
               </Repeater>

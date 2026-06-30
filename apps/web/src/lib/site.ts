@@ -32,7 +32,8 @@ export type PageHeadKey =
   | 'contact'
   | 'virtual-tour'
   | 'live'
-  | 'downloads';
+  | 'downloads'
+  | 'talent';
 
 export type SiteConfig = {
   brand: {
@@ -138,6 +139,13 @@ export type SiteConfig = {
       youtube: string;
     };
   };
+  /** Talent Development Program (TDP) page — media-led showcase. */
+  talent: {
+    intro: { eyebrow: string; title: string; body: string };
+    areas: { title: string; icon: IconName; body: string }[];
+    media: { type: 'image' | 'video'; url: string; title: string; description: string }[];
+    cta: CtaLink;
+  };
   /** Editable About-page content. */
   about: {
     story: { eyebrow: string; title: string; intro: string; body: string; image: string };
@@ -190,6 +198,7 @@ export type SiteConfig = {
     virtualTour: boolean;
     live: boolean;
     downloads: boolean;
+    talent: boolean;
   };
 };
 
@@ -206,6 +215,7 @@ export const NAV_PAGE_KEY: Record<string, keyof SiteConfig['pages']> = {
   '/virtual-tour': 'virtualTour',
   '/live': 'live',
   '/downloads': 'downloads',
+  '/talent': 'talent',
 };
 
 /** Whether a given href is enabled (true when it maps to no toggle). */
@@ -363,6 +373,22 @@ export const siteDefaults: SiteConfig = {
       youtube: '',
     },
   },
+  talent: {
+    intro: {
+      eyebrow: 'Talent Development Program',
+      title: 'Where every talent finds its stage.',
+      body: 'Our Talent Development Program nurtures each child’s gifts — in music, sport, the arts, debate, technology and more — through dedicated coaching, performances and competitions.',
+    },
+    areas: [
+      { title: 'Music & Performing Arts', icon: 'music', body: 'Choir, instruments, drama and dance, with regular showcases.' },
+      { title: 'Sports & Athletics', icon: 'trophy', body: 'Football, athletics, swimming and more, with inter-house competition.' },
+      { title: 'Creative Arts', icon: 'palette', body: 'Drawing, painting and design that build confidence and expression.' },
+      { title: 'Debate & Leadership', icon: 'users', body: 'Public speaking, debate and clubs that grow tomorrow’s leaders.' },
+      { title: 'Science & Innovation', icon: 'flask', body: 'STEM clubs, coding and projects that turn curiosity into creation.' },
+    ],
+    media: [],
+    cta: { label: 'Enquire about the programme', href: '/contact' },
+  },
   about: {
     story: {
       eyebrow: 'Our Story',
@@ -440,6 +466,7 @@ export const siteDefaults: SiteConfig = {
     'virtual-tour': { show: true, eyebrow: 'Virtual Tour', title: 'Explore our campus from anywhere.', intro: 'Take a guided look around our classrooms, laboratories and grounds.' },
     live: { show: true, eyebrow: 'Live TV', title: 'Watch City Parents live.', intro: 'Assemblies, events and ceremonies streamed to families wherever they are.' },
     downloads: { show: true, eyebrow: 'Downloads', title: 'Forms, prospectus and resources.', intro: 'Everything you need to download in one place.' },
+    talent: { show: true, eyebrow: 'Talent Development Program', title: 'Where every talent finds its stage.', intro: 'Discover how we nurture each child’s gifts — in music, sport, the arts, debate, science and more.' },
   },
   taxonomies: {
     galleryCategories: ['Sports', 'Graduation', 'Trips', 'Academics', 'Arts', 'Events', 'Campus'],
@@ -454,7 +481,7 @@ export const siteDefaults: SiteConfig = {
   sections: { welcome: true, pathways: true, why: true, admissionsCta: true, news: true, testimonials: true, visit: true, headTeacher: true, feeds: true },
   pages: {
     about: true, academics: true, admissions: true, news: true, gallery: true,
-    alumni: true, careers: true, contact: true, virtualTour: true, live: true, downloads: true,
+    alumni: true, careers: true, contact: true, virtualTour: true, live: true, downloads: true, talent: true,
   },
 };
 
@@ -464,6 +491,7 @@ export const site = siteDefaults;
 export const primaryNav = [
   { label: 'About', href: '/about' },
   { label: 'Academics', href: '/academics' },
+  { label: 'Talent', href: '/talent' },
   { label: 'Admissions', href: '/admissions' },
   { label: 'News & Events', href: '/news' },
   { label: 'Media', href: '/gallery' },
