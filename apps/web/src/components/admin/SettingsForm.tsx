@@ -272,8 +272,9 @@ export function SettingsForm() {
               </div>
               <ImageInput label="Logo image" value={cfg.brand.logoUrl} onChange={(v) => patch((d) => { d.brand.logoUrl = v; d.brand.logoLightUrl = v; })} />
               <SelectField label="Colour theme" id="theme" value={cfg.brand.theme} onChange={(e) => patch((d) => { d.brand.theme = e.target.value as SiteConfig['brand']['theme']; })}>
-                <option value="slate">Maroon, White &amp; Grey (default)</option>
+                <option value="sun">Maroon, Yellow &amp; White (brand)</option>
                 <option value="gold">Maroon, Gold &amp; White (classic)</option>
+                <option value="slate">Maroon, White &amp; Grey</option>
                 <option value="plain">Maroon &amp; White (minimal)</option>
                 <option value="noir">Maroon, White &amp; Black (noir)</option>
               </SelectField>

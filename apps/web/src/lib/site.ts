@@ -41,8 +41,9 @@ export type SiteConfig = {
     name: string;
     locality: string;
     foundingYear: string;
-    /** Active colour theme: slate (maroon/white/grey), gold (maroon/gold/white), plain (maroon/white) or noir (maroon/white/black). */
-    theme: 'slate' | 'gold' | 'plain' | 'noir';
+    /** Active colour theme. sun = maroon/yellow/white (brand), gold = maroon/gold/white,
+     *  slate = maroon/white/grey, plain = maroon/white, noir = maroon/white/black. */
+    theme: 'slate' | 'gold' | 'plain' | 'noir' | 'sun';
   };
   tagline: string;
   description: string;
@@ -231,14 +232,14 @@ export const siteDefaults: SiteConfig = {
     name: 'City Parents School',
     locality: 'Kampala',
     foundingYear: '1999',
-    theme: 'slate',
+    theme: 'sun',
   },
   tagline: 'Nurturing brilliance, building character.',
   description:
     'City Parents School, Kampala is a premier institution shaping confident, curious and compassionate learners from Pre-Primary through Upper Primary, in day and boarding sections.',
   url: 'https://cityparents.sc.ug',
   address: {
-    line1: 'Kabaka Anjagala Road',
+    line1: 'Kabaka Njagala Road',
     poBox: 'P.O. Box 26811',
     city: 'Kampala',
     country: 'Uganda',
@@ -290,7 +291,7 @@ export const siteDefaults: SiteConfig = {
         'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=1000&q=70',
       bullets: [
         'Experienced, qualified and caring teaching staff',
-        'A safe, modern campus on Kabaka Anjagala Road',
+        'A safe, modern campus on Kabaka Njagala Road',
         'Strong pastoral care and house system',
       ],
       statValue: '98%',
@@ -369,7 +370,7 @@ export const siteDefaults: SiteConfig = {
       intro:
         'What began as a handful of pupils and a bold vision has become a thriving community of over 2,400 learners. Through every chapter, our commitment has remained unchanged: to know, challenge and champion every child.',
       body:
-        'Today, our graduates lead in medicine, law, technology, business and public service across Uganda and the world — a living testament to the foundation laid on Kabaka Anjagala Road.',
+        'Today, our graduates lead in medicine, law, technology, business and public service across Uganda and the world — a living testament to the foundation laid on Kabaka Njagala Road.',
       image: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1000&q=70',
     },
     vision: {

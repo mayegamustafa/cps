@@ -34,7 +34,8 @@ export function Logo({
       >
         <Image
           src={logoUrl}
-          alt={`${name} crest`}
+          alt=""
+          aria-hidden
           width={44}
           height={44}
           className="h-full w-full object-contain"

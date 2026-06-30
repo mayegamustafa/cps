@@ -106,6 +106,28 @@ html[data-theme='plain'] {
   --color-line: #f0e3e3;
 }
 
+/* ── Theme: Maroon · Yellow · White (brand) ──
+   Maroon primary, vivid sun-yellow accent, white surfaces, near-black ink. */
+html[data-theme='sun'] {
+  --color-gold-50: #fefce8;
+  --color-gold-100: #fef9c3;
+  --color-gold-200: #fef08a;
+  --color-gold-300: #fde047; /* bright accent on maroon (eyebrows, hero) */
+  --color-gold-400: #facc15; /* sun-yellow fill; dark text readable */
+  --color-gold-500: #eab308;
+  --color-gold-600: #a16207; /* accent text on white surfaces (readable amber) */
+  --color-gold-700: #854d0e;
+  --color-gold-800: #713f12;
+  --color-gold-900: #422006;
+
+  --color-paper: #ffffff;
+  --color-paper-dark: #fffdf3;
+  --color-ink: #1a1207;
+  --color-ink-soft: #44403c;
+  --color-ink-muted: #78716c;
+  --color-line: #f1e9d6;
+}
+
 /* ── Theme: Maroon · White · Black (admin-switchable) ──
    Maroon primary, white surfaces, black ink/accents, neutral silver fills. */
 html[data-theme='noir'] {

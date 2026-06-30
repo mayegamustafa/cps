@@ -9,7 +9,7 @@ import { getSiteConfig } from '@/lib/site-config';
 export const metadata: Metadata = {
   title: 'Contact',
   description:
-    'Get in touch with City Parents School, visit us on Kabaka Anjagala Road, Kampala, or send us a message.',
+    'Get in touch with City Parents School, visit us on Kabaka Njagala Road, Kampala, or send us a message.',
 };
 
 export default async function ContactPage() {
