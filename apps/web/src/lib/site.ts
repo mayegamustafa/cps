@@ -248,7 +248,11 @@ export const siteDefaults: SiteConfig = {
   tagline: 'Nurturing brilliance, building character.',
   description:
     'City Parents School, Kampala is a premier institution shaping confident, curious and compassionate learners from Pre-Primary through Upper Primary, in day and boarding sections.',
-  url: 'https://cityparents.sc.ug',
+  // Canonical public URL — used for sitemap.xml, robots.txt, canonical tags
+  // and Open Graph. MUST match the domain registered in Google Search Console,
+  // or Google ignores the sitemap URLs as cross-domain (0 pages discovered).
+  // Override per-environment with NEXT_PUBLIC_SITE_URL without editing code.
+  url: process.env.NEXT_PUBLIC_SITE_URL || 'https://cityparentsschool.co.ug',
   address: {
     line1: 'Kabaka Njagala Road',
     poBox: 'P.O. Box 26811',
