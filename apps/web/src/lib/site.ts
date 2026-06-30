@@ -491,7 +491,7 @@ export const site = siteDefaults;
 export const primaryNav = [
   { label: 'About', href: '/about' },
   { label: 'Academics', href: '/academics' },
-  { label: 'Talent', href: '/talent' },
+  { label: 'TDP', href: '/talent' },
   { label: 'Admissions', href: '/admissions' },
   { label: 'News & Events', href: '/news' },
   { label: 'Media', href: '/gallery' },

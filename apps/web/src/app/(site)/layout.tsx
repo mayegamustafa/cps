@@ -7,9 +7,12 @@ import { AnalyticsBeacon } from '@/components/AnalyticsBeacon';
 import { MaintenanceScreen } from '@/components/MaintenanceScreen';
 import { getSiteConfig } from '@/lib/site-config';
 
-// Keep public pages fresh: re-render with live settings at least every 30s
-// (admin saves also trigger on-demand revalidation for near-instant updates).
-export const revalidate = 30;
+// Render the public site dynamically so pages are built with the LIVE admin
+// settings/content on every request — never the build-time defaults. This
+// removes the brief "demo content" flash that static pre-rendering caused.
+// (getSiteConfig and the content fetches still use a short data-cache window,
+// so this stays fast and doesn't hammer the API.)
+export const dynamic = 'force-dynamic';
 
 export default async function SiteLayout({
   children,
