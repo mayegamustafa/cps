@@ -65,14 +65,14 @@
 /* ── Alternate theme: original Maroon · Gold · White (admin-switchable) ──
    Higher specificity than :root so it overrides the default tokens. */
 html[data-theme='gold'] {
-  --color-gold-50: #fdf9ec;
-  --color-gold-100: #f8edca;
-  --color-gold-200: #f0d98e;
-  --color-gold-300: #e7c155;
-  --color-gold-400: #d4af37;
-  --color-gold-500: #c8a24b;
-  --color-gold-600: #a37e2f;
-  --color-gold-700: #7e5f25;
+  --color-gold-50: #fefae7;
+  --color-gold-100: #fdf0b3;
+  --color-gold-200: #fbe27a;
+  --color-gold-300: #f7d23a; /* brighter accent on maroon */
+  --color-gold-400: #f5c518; /* brighter, more vivid gold-yellow */
+  --color-gold-500: #e3ad11;
+  --color-gold-600: #9a7610; /* readable amber text on white */
+  --color-gold-700: #7a5d10;
   --color-gold-800: #5f4720;
   --color-gold-900: #4a3a1f;
 
