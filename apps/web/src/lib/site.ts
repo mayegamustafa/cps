@@ -43,8 +43,9 @@ export type SiteConfig = {
     locality: string;
     foundingYear: string;
     /** Active colour theme. sun = maroon/yellow/white (brand), gold = maroon/gold/white,
-     *  slate = maroon/white/grey, plain = maroon/white, noir = maroon/white/black. */
-    theme: 'slate' | 'gold' | 'plain' | 'noir' | 'sun';
+     *  crest = maroon/black/gold, slate = maroon/white/grey, plain = maroon/white,
+     *  noir = maroon/white/black. */
+    theme: 'slate' | 'gold' | 'crest' | 'plain' | 'noir' | 'sun';
   };
   tagline: string;
   description: string;

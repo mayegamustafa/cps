@@ -128,6 +128,29 @@ html[data-theme='sun'] {
   --color-line: #f1e9d6;
 }
 
+/* ── Theme: Maroon · Black · Gold (crest) ──
+   The school-crest look: maroon primary, rich gold/yellow accent, true-black
+   ink on white surfaces. Distinct from "gold" (which uses warm brown ink). */
+html[data-theme='crest'] {
+  --color-gold-50: #fdf9e7;
+  --color-gold-100: #faf0b8;
+  --color-gold-200: #f5e285;
+  --color-gold-300: #f2d34a; /* bright gold accent on maroon (eyebrows, hero) */
+  --color-gold-400: #e7be1b; /* rich gold fill; dark text readable */
+  --color-gold-500: #c99f10;
+  --color-gold-600: #8a6d08; /* readable gold text on white surfaces */
+  --color-gold-700: #6b5407;
+  --color-gold-800: #4d3d06;
+  --color-gold-900: #332803;
+
+  --color-paper: #ffffff;
+  --color-paper-dark: #f4f1ea; /* warm parchment section background */
+  --color-ink: #0a0a0a;        /* true black headings/body */
+  --color-ink-soft: #262626;
+  --color-ink-muted: #525252;
+  --color-line: #e6e1d6;
+}
+
 /* ── Theme: Maroon · White · Black (admin-switchable) ──
    Maroon primary, white surfaces, black ink/accents, neutral silver fills. */
 html[data-theme='noir'] {

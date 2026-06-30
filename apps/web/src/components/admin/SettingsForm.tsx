@@ -276,6 +276,7 @@ export function SettingsForm() {
               <SelectField label="Colour theme" id="theme" value={cfg.brand.theme} onChange={(e) => patch((d) => { d.brand.theme = e.target.value as SiteConfig['brand']['theme']; })}>
                 <option value="sun">Maroon, Yellow &amp; White (brand)</option>
                 <option value="gold">Maroon, Gold &amp; White (classic)</option>
+                <option value="crest">Maroon, Black &amp; Gold (crest)</option>
                 <option value="slate">Maroon, White &amp; Grey</option>
                 <option value="plain">Maroon &amp; White (minimal)</option>
                 <option value="noir">Maroon, White &amp; Black (noir)</option>
