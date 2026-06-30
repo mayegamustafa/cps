@@ -41,8 +41,8 @@ export type SiteConfig = {
     name: string;
     locality: string;
     foundingYear: string;
-    /** Active colour theme: 'slate' (maroon/white/grey), 'gold' (maroon/gold/white) or 'plain' (maroon/white). */
-    theme: 'slate' | 'gold' | 'plain';
+    /** Active colour theme: slate (maroon/white/grey), gold (maroon/gold/white), plain (maroon/white) or noir (maroon/white/black). */
+    theme: 'slate' | 'gold' | 'plain' | 'noir';
   };
   tagline: string;
   description: string;
@@ -211,6 +211,17 @@ export const NAV_PAGE_KEY: Record<string, keyof SiteConfig['pages']> = {
 export function isHrefEnabled(config: SiteConfig, href: string): boolean {
   const key = NAV_PAGE_KEY[href];
   return !key || config.pages?.[key] !== false;
+}
+
+/**
+ * Builds a WhatsApp deep link with a pre-filled message that is tagged so the
+ * school can tell, at a glance, that the enquiry came from the website.
+ */
+export function waLink(number: string, message?: string): string {
+  const digits = (number || '').replace(/[^\d]/g, '');
+  const body = message?.trim() || 'Hello City Parents School, I’m reaching out from your website.';
+  const marked = `[City Parents Website] ${body}`;
+  return `https://wa.me/${digits}?text=${encodeURIComponent(marked)}`;
 }
 
 export const siteDefaults: SiteConfig = {

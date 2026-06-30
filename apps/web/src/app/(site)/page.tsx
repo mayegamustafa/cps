@@ -5,6 +5,7 @@ import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
 import { SocialFeeds } from '@/components/sections/SocialFeeds';
+import { waLink } from '@/lib/site';
 import { getSiteConfig } from '@/lib/site-config';
 import { getStats } from '@/lib/stats';
 import { getNews } from '@/lib/public-data';
@@ -277,7 +278,9 @@ export default async function HomePage() {
             <div className="mt-8 flex flex-wrap gap-3">
               <Button href="/contact" icon="arrow-right">Contact Us</Button>
               <a
-                href={`https://wa.me/${contact.whatsapp}`}
+                href={waLink(contact.whatsapp, 'Hello, I would like to plan a visit to City Parents School.')}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-full border border-maroon-700/30 px-5 py-2.5 text-sm font-medium text-maroon-800 hover:bg-maroon-50"
               >
                 <Icon name="whatsapp" size={18} /> WhatsApp

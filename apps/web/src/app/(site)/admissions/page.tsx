@@ -3,9 +3,11 @@ import { assertPageEnabled } from '@/lib/page-guard';
 import { ConfigurablePageHero } from '@/components/ui/ConfigurablePageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Button } from '@/components/ui/Button';
+import { Icon } from '@/components/Icon';
 import { Accordion } from '@/components/ui/Accordion';
 import { AdmissionForm } from '@/components/forms/AdmissionForm';
-import { admissionSteps, feeStructure, faqs } from '@/lib/content';
+import { admissionSteps, faqs } from '@/lib/content';
+import { waLink } from '@/lib/site';
 import { getSiteConfig } from '@/lib/site-config';
 
 export const metadata: Metadata = {
@@ -52,46 +54,40 @@ export default async function AdmissionsPage() {
               title="Start your application"
               intro="Complete the form and we will create a secure tracking reference for your child’s application."
             />
-            <div className="mt-8 space-y-4">
-              {feeStructure.length ? (
-                <Button href="/downloads" variant="outline" icon="arrow-right">
-                  Download prospectus & forms
-                </Button>
-              ) : null}
+            <div className="mt-8">
+              <Button href="/downloads" variant="outline" icon="arrow-right">
+                Download prospectus & forms
+              </Button>
             </div>
           </div>
           <AdmissionForm extraFields={config.admissionsFields ?? []} />
         </div>
       </section>
 
-      {/* Fees */}
+      {/* Fees — request via WhatsApp / admissions office */}
       <section className="py-24">
         <div className="container-page">
-          <SectionHeading eyebrow="Investment" title="Fee structure 2026" />
-          <div className="mt-10 overflow-hidden rounded-2xl border border-line">
-            <table className="w-full text-left">
-              <thead className="bg-maroon-900 text-white">
-                <tr>
-                  <th className="px-6 py-4 text-sm font-semibold">Level</th>
-                  <th className="px-6 py-4 text-sm font-semibold">Termly</th>
-                  <th className="px-6 py-4 text-sm font-semibold">Annual</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line bg-paper">
-                {feeStructure.map((f) => (
-                  <tr key={f.level}>
-                    <td className="px-6 py-4 font-medium text-ink">{f.level}</td>
-                    <td className="px-6 py-4 text-ink-soft">{f.termly}</td>
-                    <td className="px-6 py-4 text-ink-soft">{f.annual}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="mx-auto max-w-3xl rounded-3xl border border-line bg-paper-dark/40 p-8 text-center sm:p-12">
+            <span className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-maroon-700 text-gold-300">
+              <Icon name="mail" size={26} />
+            </span>
+            <h2 className="mt-6 text-2xl">Request the fee structure</h2>
+            <p className="mx-auto mt-3 max-w-xl text-ink-soft">
+              For our current fees and a detailed schedule, please reach out to the admissions
+              office and we&rsquo;ll share it with you right away.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <a
+                href={waLink(config.contact.whatsapp, 'Hello, I would like to request the fee structure for City Parents School.')}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-full bg-maroon-700 px-6 py-3 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-maroon-800"
+              >
+                <Icon name="whatsapp" size={18} /> Request via WhatsApp
+              </a>
+              <Button href="/contact" variant="outline" icon="arrow-right">Contact admissions</Button>
+            </div>
           </div>
-          <p className="mt-4 text-sm text-ink-muted">
-            Fees are indicative and exclude optional transport, meals and uniform.
-            Contact admissions for a detailed schedule.
-          </p>
         </div>
       </section>
 

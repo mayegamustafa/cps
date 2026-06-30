@@ -1,9 +1,10 @@
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
-import { siteDefaults, type SiteConfig } from '@/lib/site';
+import { siteDefaults, waLink, type SiteConfig } from '@/lib/site';
 
 export function Hero({ config = siteDefaults }: { config?: SiteConfig }) {
   const { hero, contact } = config;
+  // Image layer falls back to the default only when nothing is configured.
   const heroImage = hero.backgroundImage || siteDefaults.hero.backgroundImage;
 
   return (
@@ -17,8 +18,8 @@ export function Hero({ config = siteDefaults }: { config?: SiteConfig }) {
           loop
           playsInline
           preload="auto"
-          poster={heroImage}
-          className="absolute inset-0 -z-10 h-full w-full object-cover"
+          poster={hero.backgroundImage || undefined}
+          className="absolute inset-0 -z-10 h-full w-full bg-maroon-950 object-cover"
         >
           <source src={hero.backgroundVideo} />
         </video>
@@ -91,7 +92,9 @@ export function Hero({ config = siteDefaults }: { config?: SiteConfig }) {
               {hero.live.ctaLabel}
             </Button>
             <a
-              href={`https://wa.me/${contact.whatsapp}`}
+              href={waLink(contact.whatsapp, 'Hello, I would like to chat with Admissions.')}
+              target="_blank"
+              rel="noopener noreferrer"
               className="mt-3 flex items-center justify-center gap-2 rounded-full border border-white/20 px-5 py-2.5 text-sm font-medium text-white hover:bg-white/10"
             >
               <Icon name="whatsapp" size={18} /> {hero.live.chatLabel}

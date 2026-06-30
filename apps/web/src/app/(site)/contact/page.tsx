@@ -3,6 +3,7 @@ import { ConfigurablePageHero } from '@/components/ui/ConfigurablePageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Icon } from '@/components/Icon';
 import { ContactForm } from '@/components/forms/ContactForm';
+import { waLink } from '@/lib/site';
 import { getSiteConfig } from '@/lib/site-config';
 
 export const metadata: Metadata = {
@@ -31,7 +32,7 @@ export default async function ContactPage() {
                 { icon: 'map-pin', label: 'Visit', value: `${site.address.line1}, ${site.address.poBox}, ${site.address.city}, ${site.address.country}` },
                 { icon: 'phone', label: 'Call', value: site.contact.phone, href: `tel:${site.contact.phone}` },
                 { icon: 'mail', label: 'Email', value: site.contact.email, href: `mailto:${site.contact.email}` },
-                { icon: 'whatsapp', label: 'WhatsApp', value: 'Chat with us', href: `https://wa.me/${site.contact.whatsapp}` },
+                { icon: 'whatsapp', label: 'WhatsApp', value: 'Chat with us', href: waLink(site.contact.whatsapp) },
                 { icon: 'clock', label: 'Office hours', value: site.home.visit.officeHours },
               ].map((c) => (
                 <div key={c.label} className="flex items-start gap-4">

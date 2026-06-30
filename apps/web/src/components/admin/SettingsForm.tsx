@@ -275,6 +275,7 @@ export function SettingsForm() {
                 <option value="slate">Maroon, White &amp; Grey (default)</option>
                 <option value="gold">Maroon, Gold &amp; White (classic)</option>
                 <option value="plain">Maroon &amp; White (minimal)</option>
+                <option value="noir">Maroon, White &amp; Black (noir)</option>
               </SelectField>
             </Card>
 
