@@ -148,6 +148,22 @@ export type SiteConfig = {
     media: { type: 'image' | 'video'; url: string; title: string; description: string }[];
     cta: CtaLink;
   };
+  /** Editable Academics-page content. `image` is optional on every card —
+   *  when set it replaces the icon; when empty the icon is used. */
+  academics: {
+    stages: { name: string; age: string; icon: IconName; image?: string; summary: string; subjects: string[]; href: string }[];
+    dayBoarding: {
+      eyebrow: string;
+      title: string;
+      intro: string;
+      options: { name: string; icon: IconName; image?: string; summary: string; features: string[] }[];
+    };
+    resources: {
+      eyebrow: string;
+      title: string;
+      items: { title: string; icon: IconName; image?: string; body: string }[];
+    };
+  };
   /** Editable About-page content. */
   about: {
     story: { eyebrow: string; title: string; intro: string; body: string; image: string };
@@ -394,6 +410,69 @@ export const siteDefaults: SiteConfig = {
     ],
     media: [],
     cta: { label: 'Enquire about the programme', href: '/contact' },
+  },
+  academics: {
+    stages: [
+      {
+        name: 'Pre-Primary',
+        age: 'KG1 to KG3 · Ages 3 to 5',
+        icon: 'heart-hand',
+        summary:
+          'A nurturing, play-based foundation across KG1, KG2 and KG3 that develops language, motor skills, social confidence and a lifelong love of learning.',
+        subjects: ['Early Literacy', 'Numeracy', 'Creative Play', 'Music and Movement', 'Social Skills'],
+        href: '/admissions',
+      },
+      {
+        name: 'Lower Primary',
+        age: 'P.1 to P.3 · Ages 6 to 8',
+        icon: 'book-open',
+        summary:
+          'The building blocks of formal learning from Primary One to Primary Three, growing strong reading, writing and numeracy alongside curiosity and confidence.',
+        subjects: ['English', 'Mathematics', 'Reading', 'Science', 'Social Studies', 'Religious Education', 'Physical Education'],
+        href: '/admissions',
+      },
+      {
+        name: 'Upper Primary',
+        age: 'P.4 to P.7 · Ages 9 to 12',
+        icon: 'graduation-cap',
+        summary:
+          'A rigorous programme from Primary Four to Primary Seven that deepens academic mastery and prepares pupils for the Primary Leaving Examinations.',
+        subjects: ['English', 'Mathematics', 'Integrated Science', 'Social Studies', 'ICT', 'Religious Education', 'Creative Arts'],
+        href: '/admissions',
+      },
+    ],
+    dayBoarding: {
+      eyebrow: 'Day & Boarding',
+      title: 'Two ways to belong at City Parents',
+      intro:
+        'Every family chooses the arrangement that suits them best, with the same standard of care and academic excellence in both.',
+      options: [
+        {
+          name: 'Day Section',
+          icon: 'globe',
+          summary:
+            'For families who prefer their children to learn with us by day and return home each evening, with safe, GPS-tracked transport across Kampala.',
+          features: ['Flexible drop-off and pick-up', 'Supervised lunch and breaks', 'After-school clubs', 'GPS-tracked bus routes'],
+        },
+        {
+          name: 'Boarding Section',
+          icon: 'shield-check',
+          summary:
+            'A nurturing, well-supervised boarding environment for upper Primary classes, with structured study, balanced meals and round-the-clock pastoral care.',
+          features: ['Caring resident matrons', 'Structured evening preps', 'Balanced, nutritious meals', '24-hour security and care'],
+        },
+      ],
+    },
+    resources: {
+      eyebrow: 'Beyond the classroom',
+      title: 'Resources that bring learning to life',
+      items: [
+        { title: 'Science Laboratories', icon: 'flask', body: 'Modern physics, chemistry and biology labs.' },
+        { title: 'Library & Resource Centre', icon: 'book-open', body: 'Thousands of titles and digital resources.' },
+        { title: 'Arts & Music Studios', icon: 'palette', body: 'Spaces for creativity, performance and design.' },
+        { title: 'Sports Facilities', icon: 'trophy', body: 'Fields, courts and a vibrant house system.' },
+      ],
+    },
   },
   about: {
     story: {

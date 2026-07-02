@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
@@ -12,9 +13,11 @@ import { clearSession } from '@/lib/admin-auth';
  *  (the fixed sidebar is desktop-only). */
 export function AdminMobileNav() {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
+  useEffect(() => { setMounted(true); }, []);
   useEffect(() => { setOpen(false); }, [pathname]);
   useEffect(() => {
     if (!open) return;
@@ -44,8 +47,11 @@ export function AdminMobileNav() {
         <Icon name="menu" size={22} />
       </button>
 
-      {open ? (
-        <div className="fixed inset-0 z-[70] lg:hidden">
+      {/* Portal the drawer to <body> so it escapes the topbar's backdrop-blur
+          containing block (which otherwise traps a fixed child in the 64px
+          header strip and hides it behind the page content). */}
+      {open && mounted ? createPortal(
+        <div className="fixed inset-0 z-[100] lg:hidden">
           <button aria-label="Close menu" onClick={() => setOpen(false)} className="absolute inset-0 bg-maroon-950/50 backdrop-blur-sm" />
           <nav aria-label="Admin" className="absolute left-0 top-0 flex h-full w-[82%] max-w-xs flex-col bg-maroon-950 text-paper/80 shadow-lift">
             <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
@@ -82,7 +88,8 @@ export function AdminMobileNav() {
               </button>
             </div>
           </nav>
-        </div>
+        </div>,
+        document.body,
       ) : null}
     </>
   );

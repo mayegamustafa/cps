@@ -21,7 +21,7 @@ const ICONS: IconName[] = [
   'mail', 'image', 'video', 'briefcase', 'download', 'megaphone', 'calendar', 'bell',
 ];
 
-const TABS = ['Brand', 'Hero', 'Homepage', 'About page', 'Talent (TDP)', 'Page heads', 'Website control', 'Footer', 'Categories', 'Admissions form', 'Contact'] as const;
+const TABS = ['Brand', 'Hero', 'Homepage', 'About page', 'Academics page', 'Talent (TDP)', 'Page heads', 'Website control', 'Footer', 'Categories', 'Admissions form', 'Contact'] as const;
 
 const HOMEPAGE_SECTIONS: { key: keyof SiteConfig['sections']; label: string }[] = [
   { key: 'welcome', label: 'Welcome' },
@@ -511,6 +511,79 @@ export function SettingsForm() {
                     </div>
                     <TextAreaField label="Bio" id={`ld-b-${item.name}`} value={item.bio} onChange={(e) => update({ bio: e.target.value })} />
                     <ImageInput label="Photo (optional — initials shown if empty)" value={item.image} onChange={(v) => update({ image: v })} />
+                  </>
+                )}
+              </Repeater>
+            </Card>
+          </>
+        ) : null}
+
+        {tab === 'Academics page' ? (
+          <>
+            <Card onSave={save} title="Programme stages" desc="Pre-Primary, Lower & Upper Primary. Set an image to replace the icon on any card. Leave the list empty to hide the section.">
+              <Repeater
+                items={cfg.academics.stages}
+                onChange={(v) => patch((d) => { d.academics.stages = v; })}
+                blank={() => ({ name: '', age: '', icon: 'book-open' as IconName, image: '', summary: '', subjects: [], href: '/admissions' })}
+                addLabel="+ Add stage"
+              >
+                {(item, update) => (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Name" id={`ac-n-${item.name}`} value={item.name} onChange={(e) => update({ name: e.target.value })} />
+                      <IconSelect value={item.icon} onChange={(v) => update({ icon: v as IconName })} />
+                    </div>
+                    <ImageInput label="Image (optional — replaces the icon when set)" value={item.image ?? ''} onChange={(v) => update({ image: v })} />
+                    <Field label="Age range / subtitle" id={`ac-a-${item.name}`} value={item.age} onChange={(e) => update({ age: e.target.value })} />
+                    <TextAreaField label="Summary" id={`ac-s-${item.name}`} value={item.summary} onChange={(e) => update({ summary: e.target.value })} />
+                    <StringList label="Subjects" items={item.subjects} placeholder="e.g. Mathematics" onChange={(v) => update({ subjects: v })} />
+                    <Field label="Apply link" id={`ac-h-${item.name}`} value={item.href} onChange={(e) => update({ href: e.target.value })} />
+                  </>
+                )}
+              </Repeater>
+            </Card>
+
+            <Card onSave={save} title="Day & Boarding" desc="The two arrangement cards. Set an image to replace the icon on any card. Leave the list empty to hide the section.">
+              <Field label="Eyebrow" id="ac-db-eb" value={cfg.academics.dayBoarding.eyebrow} onChange={(e) => patch((d) => { d.academics.dayBoarding.eyebrow = e.target.value; })} />
+              <Field label="Title" id="ac-db-t" value={cfg.academics.dayBoarding.title} onChange={(e) => patch((d) => { d.academics.dayBoarding.title = e.target.value; })} />
+              <TextAreaField label="Intro" id="ac-db-i" value={cfg.academics.dayBoarding.intro} onChange={(e) => patch((d) => { d.academics.dayBoarding.intro = e.target.value; })} />
+              <Repeater
+                items={cfg.academics.dayBoarding.options}
+                onChange={(v) => patch((d) => { d.academics.dayBoarding.options = v; })}
+                blank={() => ({ name: '', icon: 'globe' as IconName, image: '', summary: '', features: [] })}
+                addLabel="+ Add option"
+              >
+                {(item, update) => (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Name" id={`ac-db-n-${item.name}`} value={item.name} onChange={(e) => update({ name: e.target.value })} />
+                      <IconSelect value={item.icon} onChange={(v) => update({ icon: v as IconName })} />
+                    </div>
+                    <ImageInput label="Image (optional — replaces the icon when set)" value={item.image ?? ''} onChange={(v) => update({ image: v })} />
+                    <TextAreaField label="Summary" id={`ac-db-s-${item.name}`} value={item.summary} onChange={(e) => update({ summary: e.target.value })} />
+                    <StringList label="Features" items={item.features} placeholder="e.g. GPS-tracked bus routes" onChange={(v) => update({ features: v })} />
+                  </>
+                )}
+              </Repeater>
+            </Card>
+
+            <Card onSave={save} title="Learning resources" desc="The 'Beyond the classroom' cards. Set an image to replace the icon on any card. Leave the list empty to hide the section.">
+              <Field label="Eyebrow" id="ac-r-eb" value={cfg.academics.resources.eyebrow} onChange={(e) => patch((d) => { d.academics.resources.eyebrow = e.target.value; })} />
+              <Field label="Title" id="ac-r-t" value={cfg.academics.resources.title} onChange={(e) => patch((d) => { d.academics.resources.title = e.target.value; })} />
+              <Repeater
+                items={cfg.academics.resources.items}
+                onChange={(v) => patch((d) => { d.academics.resources.items = v; })}
+                blank={() => ({ title: '', icon: 'sparkle' as IconName, image: '', body: '' })}
+                addLabel="+ Add resource"
+              >
+                {(item, update) => (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Title" id={`ac-r-n-${item.title}`} value={item.title} onChange={(e) => update({ title: e.target.value })} />
+                      <IconSelect value={item.icon} onChange={(v) => update({ icon: v as IconName })} />
+                    </div>
+                    <ImageInput label="Image (optional — replaces the icon when set)" value={item.image ?? ''} onChange={(v) => update({ image: v })} />
+                    <TextAreaField label="Description" id={`ac-r-b-${item.title}`} value={item.body} onChange={(e) => update({ body: e.target.value })} />
                   </>
                 )}
               </Repeater>
