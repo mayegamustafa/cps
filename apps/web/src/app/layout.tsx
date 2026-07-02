@@ -17,6 +17,9 @@ function safeUrl(raw: string | undefined): URL {
 
 export async function generateMetadata(): Promise<Metadata> {
   const c = await getSiteConfig();
+  // Default share/preview image for every page that doesn't set its own
+  // (news & gallery pages override this). Helps link previews and search.
+  const ogImage = c.hero?.backgroundImage || c.brand.logoUrl;
   return {
     metadataBase: safeUrl(c.url || site.url),
     title: {
@@ -39,8 +42,9 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: c.brand.name,
       title: `${c.brand.name}, ${c.tagline}`,
       description: c.description,
+      images: ogImage ? [{ url: ogImage }] : undefined,
     },
-    twitter: { card: 'summary_large_image', title: c.brand.name, description: c.description },
+    twitter: { card: 'summary_large_image', title: c.brand.name, description: c.description, images: ogImage ? [ogImage] : undefined },
     robots: { index: true, follow: true },
     alternates: { canonical: c.url },
     // Favicon follows the school badge chosen in admin (defaults to /cps.png).

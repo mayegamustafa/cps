@@ -39,7 +39,19 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const a = await getAlbum(slug);
-  return { title: a ? `${a.title} · Gallery` : 'Gallery' };
+  if (!a) return { title: 'Gallery' };
+  const imgs = (a.images?.length ? a.images : a.coverImage ? [a.coverImage] : []).filter(Boolean) as string[];
+  return {
+    title: `${a.title} · Gallery`,
+    description: a.description ?? undefined,
+    openGraph: {
+      type: 'article',
+      title: `${a.title} · Gallery`,
+      description: a.description ?? undefined,
+      images: imgs.map((url) => ({ url })),
+    },
+    twitter: { card: 'summary_large_image', title: a.title, images: imgs.slice(0, 1) },
+  };
 }
 
 export default async function AlbumPage({
