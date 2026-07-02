@@ -113,6 +113,8 @@ export type SiteConfig = {
       secondaryCta: CtaLink;
     };
     news: { eyebrow: string; title: string };
+    /** "Captured moments" — a visual strip of recent gallery photos on the home page. */
+    gallery: { eyebrow: string; title: string; intro: string };
     testimonials: {
       eyebrow: string;
       title: string;
@@ -198,6 +200,7 @@ export type SiteConfig = {
     why: boolean;
     admissionsCta: boolean;
     news: boolean;
+    gallery: boolean;
     testimonials: boolean;
     visit: boolean;
     headTeacher: boolean;
@@ -365,6 +368,7 @@ export const siteDefaults: SiteConfig = {
       secondaryCta: { label: 'Download Prospectus', href: '/downloads' },
     },
     news: { eyebrow: 'News & Events', title: 'The latest from our community' },
+    gallery: { eyebrow: 'Life at City Parents', title: 'Captured moments', intro: 'A glimpse of everyday life, celebrations and achievements across the school.' },
     testimonials: {
       eyebrow: 'In their words',
       title: 'Trusted by families and alumni',
@@ -563,7 +567,7 @@ export const siteDefaults: SiteConfig = {
     enabled: false,
     message: 'Our website is undergoing scheduled maintenance and will be back shortly. Thank you for your patience.',
   },
-  sections: { welcome: true, pathways: true, why: true, admissionsCta: true, news: true, testimonials: true, visit: true, headTeacher: true, feeds: true },
+  sections: { welcome: true, pathways: true, why: true, admissionsCta: true, news: true, gallery: true, testimonials: true, visit: true, headTeacher: true, feeds: true },
   pages: {
     about: true, academics: true, admissions: true, news: true, gallery: true,
     alumni: true, careers: true, contact: true, virtualTour: true, live: true, downloads: true, talent: true,

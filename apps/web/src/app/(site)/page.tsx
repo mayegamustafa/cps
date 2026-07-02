@@ -8,7 +8,7 @@ import { SocialFeeds } from '@/components/sections/SocialFeeds';
 import { waLink } from '@/lib/site';
 import { getSiteConfig } from '@/lib/site-config';
 import { getStats } from '@/lib/stats';
-import { getNews } from '@/lib/public-data';
+import { getNews, getAlbums } from '@/lib/public-data';
 
 export const revalidate = 30;
 
@@ -16,7 +16,8 @@ export default async function HomePage() {
   const config = await getSiteConfig();
   const stats = await getStats();
   const news = (await getNews()).slice(0, 3);
-  const { welcome, pathways, why, admissionsCta, news: newsHeading, testimonials, visit, headTeacher: ht, feeds } = config.home;
+  const albums = (await getAlbums()).slice(0, 6);
+  const { welcome, pathways, why, admissionsCta, news: newsHeading, gallery: galleryHeading, testimonials, visit, headTeacher: ht, feeds } = config.home;
   const { address, contact } = config;
   const s = config.sections;
   return (
@@ -215,6 +216,37 @@ export default async function HomePage() {
                       <Icon name="calendar" size={14} /> {n.date}
                     </p>
                     <h3 className="mt-3 text-xl leading-snug group-hover:text-maroon-700">{n.title}</h3>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {/* Captured moments (gallery preview) */}
+      {s.gallery !== false && albums.length ? (
+        <section className="bg-paper-dark py-24">
+          <div className="container-page">
+            <div className="flex flex-wrap items-end justify-between gap-6">
+              <SectionHeading eyebrow={galleryHeading.eyebrow} title={galleryHeading.title} intro={galleryHeading.intro} />
+              <Button href="/gallery" variant="outline" icon="arrow-right">View gallery</Button>
+            </div>
+            <div className="mt-12 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+              {albums.map((a, i) => (
+                <Link
+                  key={a.slug ?? a.title}
+                  href={a.slug ? `/gallery/${a.slug}` : '/gallery'}
+                  className={`group relative overflow-hidden rounded-2xl ${i === 0 ? 'col-span-2 row-span-2' : ''}`}
+                >
+                  <div
+                    className={`w-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105 ${i === 0 ? 'aspect-square' : 'aspect-[4/3]'}`}
+                    style={{ backgroundImage: `url('${a.image}')` }}
+                  />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-maroon-950/80 via-maroon-950/10 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gold-300">{a.category}</p>
+                    <h3 className="mt-0.5 text-sm font-semibold leading-snug !text-white sm:text-base">{a.title}</h3>
                   </div>
                 </Link>
               ))}

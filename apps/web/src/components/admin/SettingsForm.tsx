@@ -29,6 +29,7 @@ const HOMEPAGE_SECTIONS: { key: keyof SiteConfig['sections']; label: string }[] 
   { key: 'why', label: 'Why City Parents' },
   { key: 'admissionsCta', label: 'Admissions banner' },
   { key: 'news', label: 'Latest news' },
+  { key: 'gallery', label: 'Captured moments (gallery)' },
   { key: 'testimonials', label: 'Testimonials' },
   { key: 'visit', label: 'Plan a visit' },
   { key: 'headTeacher', label: "Head Teacher's message" },
@@ -401,6 +402,12 @@ export function SettingsForm() {
                 <Field label="Secondary button" id="a-sc" value={h.admissionsCta.secondaryCta.label} onChange={(e) => patch((d) => { d.home.admissionsCta.secondaryCta.label = e.target.value; })} />
                 <Field label="Secondary link" id="a-sl" value={h.admissionsCta.secondaryCta.href} onChange={(e) => patch((d) => { d.home.admissionsCta.secondaryCta.href = e.target.value; })} />
               </div>
+            </Card>
+
+            <Card onSave={save} title="Captured moments (gallery)" desc="Heading for the homepage photo strip. The photos come automatically from your latest gallery albums.">
+              <Field label="Eyebrow" id="g-eb" value={h.gallery.eyebrow} onChange={(e) => patch((d) => { d.home.gallery.eyebrow = e.target.value; })} />
+              <Field label="Title" id="g-t" value={h.gallery.title} onChange={(e) => patch((d) => { d.home.gallery.title = e.target.value; })} />
+              <TextAreaField label="Intro" id="g-i" value={h.gallery.intro} onChange={(e) => patch((d) => { d.home.gallery.intro = e.target.value; })} />
             </Card>
 
             <Card onSave={save} title="News heading & Testimonials">
