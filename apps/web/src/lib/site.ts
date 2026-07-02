@@ -166,6 +166,17 @@ export type SiteConfig = {
       items: { title: string; icon: IconName; image?: string; body: string }[];
     };
   };
+  /** Editable Virtual Tour page content (the hero is set via pageHeads). */
+  virtualTour: {
+    /** 360°/Matterport/Google/YouTube embed URL. When set, it shows in the viewer. */
+    embedUrl: string;
+    /** Poster image shown in the viewer when there is no embed (or before launch). */
+    viewerImage: string;
+    caption: string;
+    stopsHeading: { eyebrow: string; title: string };
+    stops: { title: string; image: string }[];
+    cta: { eyebrow: string; title: string; primary: CtaLink; secondary: CtaLink };
+  };
   /** Editable About-page content. */
   about: {
     story: { eyebrow: string; title: string; intro: string; body: string; image: string };
@@ -476,6 +487,26 @@ export const siteDefaults: SiteConfig = {
         { title: 'Arts & Music Studios', icon: 'palette', body: 'Spaces for creativity, performance and design.' },
         { title: 'Sports Facilities', icon: 'trophy', body: 'Fields, courts and a vibrant house system.' },
       ],
+    },
+  },
+  virtualTour: {
+    embedUrl: '',
+    viewerImage: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=2000&q=70',
+    caption: 'Drag to look around · Click hotspots to move between locations',
+    stopsHeading: { eyebrow: 'Explore', title: 'Tour highlights' },
+    stops: [
+      { title: 'Main Entrance & Reception', image: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=900&q=70' },
+      { title: 'Classrooms & Learning Spaces', image: 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&w=900&q=70' },
+      { title: 'Science & Innovation Block', image: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=900&q=70' },
+      { title: 'Library & Resource Centre', image: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=900&q=70' },
+      { title: 'Sports Fields & Courts', image: 'https://images.unsplash.com/photo-1551958219-acbc608c6377?auto=format&fit=crop&w=900&q=70' },
+      { title: 'Dining Hall & Boarding', image: 'https://images.unsplash.com/photo-1567521464027-f127ff144326?auto=format&fit=crop&w=900&q=70' },
+    ],
+    cta: {
+      eyebrow: 'Prefer to visit in person?',
+      title: 'Book a guided campus tour',
+      primary: { label: 'Schedule a visit', href: '/contact' },
+      secondary: { label: 'Start application', href: '/admissions' },
     },
   },
   about: {

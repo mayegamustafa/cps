@@ -21,7 +21,7 @@ const ICONS: IconName[] = [
   'mail', 'image', 'video', 'briefcase', 'download', 'megaphone', 'calendar', 'bell',
 ];
 
-const TABS = ['Brand', 'Hero', 'Homepage', 'About page', 'Academics page', 'Talent (TDP)', 'Page heads', 'Website control', 'Footer', 'Categories', 'Admissions form', 'Contact'] as const;
+const TABS = ['Brand', 'Hero', 'Homepage', 'About page', 'Academics page', 'Talent (TDP)', 'Virtual Tour', 'Page heads', 'Website control', 'Footer', 'Categories', 'Admissions form', 'Contact'] as const;
 
 const HOMEPAGE_SECTIONS: { key: keyof SiteConfig['sections']; label: string }[] = [
   { key: 'welcome', label: 'Welcome' },
@@ -654,6 +654,47 @@ export function SettingsForm() {
                   </>
                 )}
               </Repeater>
+            </Card>
+          </>
+        ) : null}
+
+        {tab === 'Virtual Tour' ? (
+          <>
+            <Card onSave={save} title="360° viewer" desc="Paste a tour embed link (Matterport, Google Street View, YouTube 360, etc.) to show the live tour. Leave it blank to show a poster image and a 'coming soon' badge. The page banner is edited under 'Page heads'.">
+              <Field label="Tour embed URL" id="vt-embed" value={cfg.virtualTour.embedUrl} placeholder="https://my.matterport.com/show/?m=…" onChange={(e) => patch((d) => { d.virtualTour.embedUrl = e.target.value; })} />
+              <ImageInput label="Poster image (shown when no embed URL is set)" value={cfg.virtualTour.viewerImage} onChange={(v) => patch((d) => { d.virtualTour.viewerImage = v; })} />
+              <Field label="Caption under the viewer" id="vt-cap" value={cfg.virtualTour.caption} onChange={(e) => patch((d) => { d.virtualTour.caption = e.target.value; })} />
+            </Card>
+
+            <Card onSave={save} title="Tour highlights" desc="The photo tiles below the viewer. Leave the list empty to hide the section.">
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Eyebrow" id="vt-se" value={cfg.virtualTour.stopsHeading.eyebrow} onChange={(e) => patch((d) => { d.virtualTour.stopsHeading.eyebrow = e.target.value; })} />
+                <Field label="Title" id="vt-st" value={cfg.virtualTour.stopsHeading.title} onChange={(e) => patch((d) => { d.virtualTour.stopsHeading.title = e.target.value; })} />
+              </div>
+              <Repeater
+                items={cfg.virtualTour.stops}
+                onChange={(v) => patch((d) => { d.virtualTour.stops = v; })}
+                blank={() => ({ title: '', image: '' })}
+                addLabel="+ Add highlight"
+              >
+                {(item, update) => (
+                  <>
+                    <Field label="Title" id={`vt-h-${item.title}`} value={item.title} onChange={(e) => update({ title: e.target.value })} />
+                    <ImageInput label="Photo" value={item.image} onChange={(v) => update({ image: v })} />
+                  </>
+                )}
+              </Repeater>
+            </Card>
+
+            <Card onSave={save} title="Call to action" desc="The 'book a visit' band at the bottom. Clear the title to hide it.">
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Eyebrow" id="vt-ce" value={cfg.virtualTour.cta.eyebrow} onChange={(e) => patch((d) => { d.virtualTour.cta.eyebrow = e.target.value; })} />
+                <Field label="Title" id="vt-ct" value={cfg.virtualTour.cta.title} onChange={(e) => patch((d) => { d.virtualTour.cta.title = e.target.value; })} />
+                <Field label="Primary button label" id="vt-pl" value={cfg.virtualTour.cta.primary.label} onChange={(e) => patch((d) => { d.virtualTour.cta.primary.label = e.target.value; })} />
+                <Field label="Primary button link" id="vt-ph" value={cfg.virtualTour.cta.primary.href} onChange={(e) => patch((d) => { d.virtualTour.cta.primary.href = e.target.value; })} />
+                <Field label="Secondary button label" id="vt-sl" value={cfg.virtualTour.cta.secondary.label} onChange={(e) => patch((d) => { d.virtualTour.cta.secondary.label = e.target.value; })} />
+                <Field label="Secondary button link" id="vt-sh" value={cfg.virtualTour.cta.secondary.href} onChange={(e) => patch((d) => { d.virtualTour.cta.secondary.href = e.target.value; })} />
+              </div>
             </Card>
           </>
         ) : null}
