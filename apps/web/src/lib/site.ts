@@ -177,6 +177,15 @@ export type SiteConfig = {
     stops: { title: string; image: string }[];
     cta: { eyebrow: string; title: string; primary: CtaLink; secondary: CtaLink };
   };
+  /** Live TV page — copy shown when nothing is streaming. A live stream or
+   *  recordings (managed in Admin → Live) automatically take over the page. */
+  live: {
+    badge: string;
+    title: string;
+    message: string;
+    primary: CtaLink;
+    secondary: CtaLink;
+  };
   /** Editable About-page content. */
   about: {
     story: { eyebrow: string; title: string; intro: string; body: string; image: string };
@@ -508,6 +517,14 @@ export const siteDefaults: SiteConfig = {
       primary: { label: 'Schedule a visit', href: '/contact' },
       secondary: { label: 'Start application', href: '/admissions' },
     },
+  },
+  live: {
+    badge: 'Coming soon',
+    title: 'Live TV is on its way',
+    message:
+      'We’re building a premium live-streaming experience so parents, alumni and friends of City Parents can watch our biggest moments in real time — and catch every recording afterwards.',
+    primary: { label: 'See what’s happening', href: '/news' },
+    secondary: { label: 'Contact us', href: '/contact' },
   },
   about: {
     story: {

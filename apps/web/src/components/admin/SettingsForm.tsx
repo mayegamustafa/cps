@@ -21,7 +21,7 @@ const ICONS: IconName[] = [
   'mail', 'image', 'video', 'briefcase', 'download', 'megaphone', 'calendar', 'bell',
 ];
 
-const TABS = ['Brand', 'Hero', 'Homepage', 'About page', 'Academics page', 'Talent (TDP)', 'Virtual Tour', 'Page heads', 'Website control', 'Footer', 'Categories', 'Admissions form', 'Contact'] as const;
+const TABS = ['Brand', 'Hero', 'Homepage', 'About page', 'Academics page', 'Talent (TDP)', 'Virtual Tour', 'Live TV', 'Page heads', 'Website control', 'Footer', 'Categories', 'Admissions form', 'Contact'] as const;
 
 const HOMEPAGE_SECTIONS: { key: keyof SiteConfig['sections']; label: string }[] = [
   { key: 'welcome', label: 'Welcome' },
@@ -697,6 +697,20 @@ export function SettingsForm() {
               </div>
             </Card>
           </>
+        ) : null}
+
+        {tab === 'Live TV' ? (
+          <Card onSave={save} title="Live TV — idle message" desc="Shown when nothing is streaming. When you start a stream in Admin → Live (or a recording exists), it automatically takes over the page. The page banner is edited under 'Page heads'.">
+            <Field label="Badge" id="lv-b" value={cfg.live.badge} onChange={(e) => patch((d) => { d.live.badge = e.target.value; })} />
+            <Field label="Title" id="lv-t" value={cfg.live.title} onChange={(e) => patch((d) => { d.live.title = e.target.value; })} />
+            <TextAreaField label="Message" id="lv-m" value={cfg.live.message} onChange={(e) => patch((d) => { d.live.message = e.target.value; })} />
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Primary button label" id="lv-pl" value={cfg.live.primary.label} onChange={(e) => patch((d) => { d.live.primary.label = e.target.value; })} />
+              <Field label="Primary button link" id="lv-ph" value={cfg.live.primary.href} onChange={(e) => patch((d) => { d.live.primary.href = e.target.value; })} />
+              <Field label="Secondary button label" id="lv-sl" value={cfg.live.secondary.label} onChange={(e) => patch((d) => { d.live.secondary.label = e.target.value; })} />
+              <Field label="Secondary button link" id="lv-sh" value={cfg.live.secondary.href} onChange={(e) => patch((d) => { d.live.secondary.href = e.target.value; })} />
+            </div>
+          </Card>
         ) : null}
 
         {tab === 'Page heads' ? (
