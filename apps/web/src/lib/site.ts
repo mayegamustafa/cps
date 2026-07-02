@@ -96,7 +96,8 @@ export type SiteConfig = {
       eyebrow: string;
       title: string;
       intro: string;
-      items: { name: string; icon: IconName; age: string; blurb: string; href: string }[];
+      /** `image` is optional — when set, the card shows that photo instead of the icon. */
+      items: { name: string; icon: IconName; image?: string; age: string; blurb: string; href: string }[];
     };
     why: {
       eyebrow: string;

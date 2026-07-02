@@ -103,9 +103,14 @@ export default async function HomePage() {
                   href={p.href}
                   className="group flex flex-col rounded-2xl border border-line bg-paper p-8 transition-all duration-300 hover:-translate-y-1 hover:border-maroon-700/30 hover:shadow-lift"
                 >
-                  <span className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-maroon-700 text-gold-300 transition-colors group-hover:bg-maroon-800">
-                    <Icon name={p.icon} size={26} />
-                  </span>
+                  {p.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.image} alt="" aria-hidden className="h-16 w-16 rounded-xl object-cover" loading="lazy" />
+                  ) : (
+                    <span className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-maroon-700 text-gold-300 transition-colors group-hover:bg-maroon-800">
+                      <Icon name={p.icon} size={26} />
+                    </span>
+                  )}
                   <p className="mt-6 text-xs font-semibold uppercase tracking-[0.18em] text-gold-600">{p.age}</p>
                   <h3 className="mt-2 text-2xl">{p.name}</h3>
                   <p className="mt-3 flex-1 text-ink-soft">{p.blurb}</p>

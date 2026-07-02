@@ -351,7 +351,7 @@ export function SettingsForm() {
               <Repeater
                 items={h.pathways.items}
                 onChange={(v) => patch((d) => { d.home.pathways.items = v; })}
-                blank={() => ({ name: '', icon: 'book-open' as IconName, age: '', blurb: '', href: '/academics' })}
+                blank={() => ({ name: '', icon: 'book-open' as IconName, image: '', age: '', blurb: '', href: '/academics' })}
                 addLabel="+ Add pathway"
               >
                 {(item, update) => (
@@ -360,6 +360,7 @@ export function SettingsForm() {
                       <Field label="Name" id={`pn-${item.name}`} value={item.name} onChange={(e) => update({ name: e.target.value })} />
                       <IconSelect value={item.icon} onChange={(v) => update({ icon: v as IconName })} />
                     </div>
+                    <ImageInput label="Image (optional — replaces the icon when set)" value={item.image ?? ''} onChange={(v) => update({ image: v })} />
                     <Field label="Age range / subtitle" id={`pa-${item.name}`} value={item.age} onChange={(e) => update({ age: e.target.value })} />
                     <TextAreaField label="Blurb" id={`pb-${item.name}`} value={item.blurb} onChange={(e) => update({ blurb: e.target.value })} />
                     <Field label="Link" id={`ph-${item.name}`} value={item.href} onChange={(e) => update({ href: e.target.value })} />
