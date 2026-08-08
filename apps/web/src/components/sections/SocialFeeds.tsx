@@ -24,50 +24,129 @@ function tiktokUser(input: string): string {
   return v.replace(/^@/, '');
 }
 
-function fbPlugin(pageUrl: string): string {
-  const v = pageUrl?.trim();
-  if (!v) return '';
-  const href = encodeURIComponent(v);
-  return `https://www.facebook.com/plugins/page.php?href=${href}&tabs=timeline&width=400&height=520&small_header=true&adapt_container_width=true&hide_cover=false&show_facepile=false`;
+/**
+ * Measures the element the ref is attached to and re-measures on resize and
+ * orientation change. Both platform widgets need a real pixel width — they
+ * cannot be sized with CSS alone.
+ */
+function useElementWidth<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => setWidth(Math.round(el.getBoundingClientRect().width));
+    measure();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', measure);
+      return () => window.removeEventListener('resize', measure);
+    }
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  return [ref, width] as const;
 }
 
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
+function Card({
+  title,
+  href,
+  linkLabel,
+  network,
+  children,
+}: {
+  title: string;
+  href: string;
+  linkLabel: string;
+  network: IconName;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-line bg-paper p-5">
-      <h3 className="mb-4 text-lg">{title}</h3>
+    <div className="overflow-hidden rounded-2xl border border-line bg-paper p-3 sm:p-5">
+      <div className="mb-3 flex items-center justify-between gap-3 px-1 sm:mb-4 sm:px-0">
+        <h3 className="flex items-center gap-2 text-base sm:text-lg">
+          <span className="text-maroon-700"><Icon name={network} size={18} /></span>
+          {title}
+        </h3>
+        {/* Always reachable, even if the platform's own widget fails to load. */}
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-maroon-700 hover:text-maroon-800"
+        >
+          {linkLabel}
+          <Icon name="arrow-up-right" size={14} />
+        </a>
+      </div>
       {children}
     </div>
   );
 }
 
-/** A compact, on-brand link tile — what phones get instead of a platform widget. */
-function FollowTile({
-  href,
-  network,
-  label,
-  handle,
-}: {
-  href: string;
-  network: IconName;
-  label: string;
-  handle: string;
-}) {
+/**
+ * The Facebook page plugin renders at whatever pixel width you ask it for and
+ * then refuses to shrink, which is why it used to burst out of its card on a
+ * phone: the URL hard-coded `width=400` on a ~340px container. Measuring the
+ * container first and passing that width (inside Facebook's supported 180-500
+ * range) is the only way to make it fit.
+ */
+function FacebookFeed({ pageUrl }: { pageUrl: string }) {
+  const [ref, width] = useElementWidth<HTMLDivElement>();
+  const w = Math.max(180, Math.min(500, Math.floor(width) || 340));
+  const h = w < 380 ? 460 : 520;
+  const src =
+    `https://www.facebook.com/plugins/page.php?href=${encodeURIComponent(pageUrl)}` +
+    `&tabs=timeline&width=${w}&height=${h}&small_header=true` +
+    `&adapt_container_width=true&hide_cover=false&show_facepile=false`;
+
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex items-center gap-3 rounded-2xl border border-line bg-paper p-4 transition-colors hover:border-maroon-700/40 hover:bg-maroon-50"
-    >
-      <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-maroon-700 text-gold-300">
-        <Icon name={network} size={20} />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold text-ink">{label}</span>
-        <span className="block truncate text-xs text-ink-muted">{handle}</span>
-      </span>
-      <Icon name="arrow-up-right" size={18} className="shrink-0 text-maroon-700" />
-    </a>
+    <div ref={ref} className="overflow-hidden rounded-xl">
+      {width ? (
+        <iframe
+          title="Facebook page"
+          src={src}
+          width={w}
+          height={h}
+          className="block"
+          style={{ border: 'none', overflow: 'hidden' }}
+          allow="encrypted-media; clipboard-write; web-share"
+          loading="lazy"
+        />
+      ) : (
+        <div style={{ height: h }} />
+      )}
+    </div>
+  );
+}
+
+/**
+ * TikTok's creator widget replaces this blockquote with an iframe sized from
+ * the `max-width` it finds. It has a hard 288px floor, so on the narrowest
+ * phones the card drops its padding rather than letting the widget overflow.
+ */
+function TikTokFeed({ user }: { user: string }) {
+  const [ref, width] = useElementWidth<HTMLDivElement>();
+  const maxWidth = Math.max(288, Math.min(780, Math.floor(width) || 320));
+
+  return (
+    <div ref={ref} className="overflow-hidden rounded-xl">
+      <blockquote
+        className="tiktok-embed"
+        cite={`https://www.tiktok.com/@${user}`}
+        data-unique-id={user}
+        data-embed-type="creator"
+        style={{ maxWidth, minWidth: 288, margin: 0 }}
+      >
+        <section>
+          <a href={`https://www.tiktok.com/@${user}`} target="_blank" rel="noopener noreferrer">
+            @{user}
+          </a>
+        </section>
+      </blockquote>
+    </div>
   );
 }
 
@@ -75,7 +154,7 @@ function FollowTile({
  *  a YouTube player. Each renders only when configured in admin. */
 export function SocialFeeds({ feeds }: { feeds: Feeds }) {
   const tk = tiktokUser(feeds.tiktok);
-  const fb = fbPlugin(feeds.facebook);
+  const fb = feeds.facebook?.trim() ?? '';
   const yt = ytEmbed(feeds.youtube);
   const hostRef = useRef<HTMLDivElement>(null);
   const [near, setNear] = useState(false);
@@ -115,94 +194,43 @@ export function SocialFeeds({ feeds }: { feeds: Feeds }) {
 
   if (!tk && !fb && !yt) return null;
 
+  // Reserve roughly the height the embeds will occupy so nothing below jumps.
+  if (!near) {
+    return <div ref={hostRef} aria-hidden className="min-h-[480px] rounded-2xl border border-line bg-paper-dark/40" />;
+  }
+
   return (
-    <>
-      {/*
-        Phones get link tiles, not platform widgets.
-        The TikTok creator embed renders a tall, often-blank box and the Facebook
-        page plugin overflows its card below ~400px — between them they were the
-        heaviest and least reliable part of the page on exactly the devices most
-        visitors use. Tiles are instant, on-brand, and load no third-party code:
-        the embeds live in a `hidden sm:block` wrapper, so the observer below
-        never fires on a phone and the scripts are never requested.
-      */}
-      <div className="grid gap-3 sm:hidden">
-        {tk ? (
-          <FollowTile
-            href={`https://www.tiktok.com/@${tk}`}
-            network="tiktok"
-            label="Follow us on TikTok"
-            handle={`@${tk}`}
-          />
-        ) : null}
-        {feeds.facebook ? (
-          <FollowTile
-            href={feeds.facebook}
-            network="facebook"
-            label="Follow us on Facebook"
-            handle="Daily updates from campus"
-          />
-        ) : null}
-        {yt ? (
-          <div className="relative aspect-video overflow-hidden rounded-2xl border border-line">
-            <iframe
-              title="YouTube"
-              src={yt}
-              className="absolute inset-0 h-full w-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-              loading="lazy"
-            />
-          </div>
-        ) : null}
-      </div>
-
-      <div className="hidden sm:block">{renderEmbeds()}</div>
-    </>
-  );
-
-  function renderEmbeds() {
-    // Reserve the height the embeds will occupy so nothing below them jumps.
-    if (!near) {
-      return <div ref={hostRef} aria-hidden className="min-h-[420px] rounded-2xl border border-line bg-paper-dark/40" />;
-    }
-    return (
-    <div ref={hostRef} className="grid gap-6 md:grid-cols-2">
+    <div ref={hostRef} className="grid gap-4 sm:gap-6 md:grid-cols-2">
       {tk ? (
-        <Card title="Our TikTok Feed">
-          <div className="overflow-x-auto">
-            <blockquote
-              className="tiktok-embed"
-              cite={`https://www.tiktok.com/@${tk}`}
-              data-unique-id={tk}
-              data-embed-type="creator"
-              style={{ maxWidth: 780, minWidth: 288 }}
-            >
-              <section>
-                <a href={`https://www.tiktok.com/@${tk}`} target="_blank" rel="noopener noreferrer">@{tk}</a>
-              </section>
-            </blockquote>
-          </div>
+        <Card
+          title="Our TikTok Feed"
+          network="tiktok"
+          href={`https://www.tiktok.com/@${tk}`}
+          linkLabel="Open TikTok"
+        >
+          <TikTokFeed user={tk} />
         </Card>
       ) : null}
 
       {fb ? (
-        <Card title="Our Facebook Page">
-          <iframe
-            title="Facebook page"
-            src={fb}
-            className="w-full rounded-xl"
-            height={520}
-            style={{ border: 'none', overflow: 'hidden' }}
-            allow="encrypted-media; clipboard-write; web-share"
-            loading="lazy"
-          />
+        <Card
+          title="Our Facebook Page"
+          network="facebook"
+          href={fb}
+          linkLabel="Open Facebook"
+        >
+          <FacebookFeed pageUrl={fb} />
         </Card>
       ) : null}
 
       {yt ? (
         <div className="md:col-span-2">
-          <Card title="Our YouTube Videos">
+          <Card
+            title="Our YouTube Videos"
+            network="youtube"
+            href={feeds.youtube}
+            linkLabel="Open YouTube"
+          >
             <div className="relative aspect-video overflow-hidden rounded-xl">
               <iframe
                 title="YouTube"
@@ -217,6 +245,5 @@ export function SocialFeeds({ feeds }: { feeds: Feeds }) {
         </div>
       ) : null}
     </div>
-    );
-  }
+  );
 }

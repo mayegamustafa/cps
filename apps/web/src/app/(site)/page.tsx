@@ -169,73 +169,6 @@ export default async function HomePage() {
         </section>
       ) : null}
 
-      {/* Why choose us — a two-column scan on mobile rather than six stacked
-          blocks; value propositions must all stay visible, never hidden in a
-          carousel. */}
-      {s.why !== false && why.items.length ? (
-        <section className="section">
-          <div className="container-page">
-            <SectionHeading align="center" eyebrow={why.eyebrow} title={why.title} />
-            <div className="mt-10 grid grid-cols-2 gap-x-5 gap-y-8 sm:gap-x-10 sm:gap-y-12 lg:mt-14 lg:grid-cols-3">
-              {why.items.map((v) => (
-                <div key={v.title} className="flex flex-col gap-3 sm:flex-row sm:gap-4">
-                  <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gold-100 text-maroon-700 sm:mt-0.5">
-                    <Icon name={v.icon} size={22} />
-                  </span>
-                  <div>
-                    <h3 className="text-base sm:text-lg">{v.title}</h3>
-                    <p className="clamp-mobile mt-1.5 text-sm leading-relaxed text-ink-soft" style={{ WebkitLineClamp: 3 }}>
-                      {v.body}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      {/* Admissions CTA */}
-      {s.admissionsCta !== false ? (
-      <section className="pb-4 pt-10 sm:py-12">
-        <div className="container-page">
-          <div className="relative isolate overflow-hidden rounded-3xl bg-maroon-900 px-6 py-12 text-white sm:px-16 sm:py-16">
-            <CoverImage
-              src={admissionsCta.image}
-              sizes="100vw"
-              className="-z-10 opacity-20"
-            />
-            <div className="grid items-center gap-7 lg:grid-cols-[1.6fr_1fr] lg:gap-8">
-              <div>
-                <span className="eyebrow !text-gold-300">{admissionsCta.eyebrow}</span>
-                <h2 className="mt-4 max-w-2xl text-3xl !text-white sm:text-4xl">{admissionsCta.title}</h2>
-                <p className="clamp-mobile mt-4 max-w-xl text-paper/80" style={{ WebkitLineClamp: 3 }}>
-                  {admissionsCta.intro}
-                </p>
-              </div>
-              <div data-apply-anchor className="flex flex-col gap-3 lg:items-end">
-                {admissionsCta.primaryCta.label ? (
-                  <Button href={admissionsCta.primaryCta.href} variant="gold" size="lg" icon="arrow-right" className="w-full lg:w-auto">
-                    {admissionsCta.primaryCta.label}
-                  </Button>
-                ) : null}
-                {admissionsCta.secondaryCta.label ? (
-                  <Button
-                    href={admissionsCta.secondaryCta.href}
-                    size="lg"
-                    className="w-full border border-white/25 bg-transparent text-white hover:bg-white/10 lg:w-auto"
-                  >
-                    {admissionsCta.secondaryCta.label}
-                  </Button>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      ) : null}
-
       {/* Latest news — a swipe rail on mobile. News cards are homogeneous and
           browsable, which is the only kind of content a rail suits. */}
       {s.news !== false && news.length ? (
@@ -326,6 +259,72 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
+      ) : null}
+
+      {/* Why choose us — a two-column scan on mobile rather than six stacked
+          blocks; value propositions must all stay visible, never hidden in a
+          carousel. */}
+      {s.why !== false && why.items.length ? (
+        <section className="section">
+          <div className="container-page">
+            <SectionHeading align="center" eyebrow={why.eyebrow} title={why.title} />
+            <div className="mt-10 grid grid-cols-2 gap-x-5 gap-y-8 sm:gap-x-10 sm:gap-y-12 lg:mt-14 lg:grid-cols-3">
+              {why.items.map((v) => (
+                <div key={v.title} className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+                  <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gold-100 text-maroon-700 sm:mt-0.5">
+                    <Icon name={v.icon} size={22} />
+                  </span>
+                  <div>
+                    <h3 className="text-base sm:text-lg">{v.title}</h3>
+                    <p className="clamp-mobile mt-1.5 text-sm leading-relaxed text-ink-soft" style={{ WebkitLineClamp: 3 }}>
+                      {v.body}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {/* Admissions CTA */}
+      {s.admissionsCta !== false ? (
+      <section className="pb-4 pt-10 sm:py-12">
+        <div className="container-page">
+          <div className="relative isolate overflow-hidden rounded-3xl bg-maroon-900 px-6 py-12 text-white sm:px-16 sm:py-16">
+            <CoverImage
+              src={admissionsCta.image}
+              sizes="100vw"
+              className="-z-10 opacity-20"
+            />
+            <div className="grid items-center gap-7 lg:grid-cols-[1.6fr_1fr] lg:gap-8">
+              <div>
+                <span className="eyebrow !text-gold-300">{admissionsCta.eyebrow}</span>
+                <h2 className="mt-4 max-w-2xl text-3xl !text-white sm:text-4xl">{admissionsCta.title}</h2>
+                <p className="clamp-mobile mt-4 max-w-xl text-paper/80" style={{ WebkitLineClamp: 3 }}>
+                  {admissionsCta.intro}
+                </p>
+              </div>
+              <div data-apply-anchor className="flex flex-col gap-3 lg:items-end">
+                {admissionsCta.primaryCta.label ? (
+                  <Button href={admissionsCta.primaryCta.href} variant="gold" size="lg" icon="arrow-right" className="w-full lg:w-auto">
+                    {admissionsCta.primaryCta.label}
+                  </Button>
+                ) : null}
+                {admissionsCta.secondaryCta.label ? (
+                  <Button
+                    href={admissionsCta.secondaryCta.href}
+                    size="lg"
+                    className="w-full border border-white/25 bg-transparent text-white hover:bg-white/10 lg:w-auto"
+                  >
+                    {admissionsCta.secondaryCta.label}
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
       ) : null}
 
       {/* Testimonials */}
