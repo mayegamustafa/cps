@@ -20,7 +20,7 @@ export default async function HomePage() {
   const news = (await getNews()).slice(0, 3);
   const albums = (await getAlbums()).slice(0, 6);
   const { welcome, pathways, why, admissionsCta, news: newsHeading, gallery: galleryHeading, testimonials, visit, headTeacher: ht, feeds } = config.home;
-  const { address, contact } = config;
+  const { contact } = config;
   const s = config.sections;
   const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${config.coords.lat},${config.coords.lng}`;
   return (
@@ -378,16 +378,12 @@ export default async function HomePage() {
         <div className="container-page grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
           <div>
             <SectionHeading eyebrow={visit.eyebrow} title={visit.title} intro={visit.intro} />
-            <dl className="mt-7 space-y-4 lg:mt-8">
-              <div className="flex items-start gap-3">
-                <span className="text-maroon-700"><Icon name="map-pin" size={22} /></span>
-                <div>
-                  <dt className="font-semibold text-ink">Campus</dt>
-                  <dd className="text-sm text-ink-soft sm:text-base">
-                    {address.line1}, {address.poBox}, {address.city}, {address.country}
-                  </dd>
-                </div>
-              </div>
+            {/* The postal address is deliberately not repeated here: the footer
+                renders the same four config.address fields a few hundred pixels
+                below, and "Contact" is already in the footer's own navigation.
+                Office hours are the one detail that helps someone plan a visit
+                and appear nowhere else, so they are all that remains. */}
+            <dl className="mt-7 lg:mt-8">
               <div className="flex items-start gap-3">
                 <span className="text-maroon-700"><Icon name="clock" size={22} /></span>
                 <div>
@@ -414,7 +410,6 @@ export default async function HomePage() {
               >
                 <Icon name="whatsapp" size={18} /> WhatsApp
               </a>
-              <Button href="/contact" variant="ghost" icon="arrow-right">Contact Us</Button>
             </div>
           </div>
           <div className="overflow-hidden rounded-2xl border border-line shadow-soft">
