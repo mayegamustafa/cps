@@ -38,6 +38,8 @@ export type Field = {
   table?: boolean;
   /** Display-only: shown in the table but not editable in the form. */
   readonly?: boolean;
+  /** Heading this field sits under in the detail panel and printed record. */
+  group?: string;
 };
 
 export type ResourceConfig = {
@@ -54,6 +56,28 @@ export type ResourceConfig = {
   updateMethod?: 'PUT' | 'PATCH';
   /** Hide the Add button (e.g. review-only resources). */
   readOnlyCreate?: boolean;
+  /**
+   * Adds a per-row "View" action opening a read-only panel with EVERY field —
+   * including the ones hidden from the table and the edit form — plus a
+   * printable one-page record sheet.
+   */
+  detail?: {
+    /** Title of the printed document, e.g. "Admission Application". */
+    documentTitle: string;
+    /** Heading for the record, e.g. the pupil's name. */
+    heading: (row: Record<string, unknown>) => string;
+    /** Optional supporting line, e.g. the tracking reference. */
+    subheading?: (row: Record<string, unknown>) => string;
+    /** Row key holding the creation timestamp, shown as "Submitted". */
+    createdKey?: string;
+    /**
+     * Keys already shown in the header block. They are skipped in the grouped
+     * body so the reference and submission date are not printed twice.
+     */
+    metaKeys?: string[];
+    /** Ruled lines printed at the foot of the sheet for a wet signature. */
+    signatureLines?: string[];
+  };
 };
 
 function authHeaders(): Record<string, string> {
@@ -154,6 +178,138 @@ function printRows(title: string, fields: Field[], rows: Record<string, unknown>
   if (w) { w.document.write(html); w.document.close(); }
 }
 
+/**
+ * A field's value in full — no truncation, dates spelled out, JSON answers
+ * broken onto their own lines. `displayCell` below is the abridged variant used
+ * in the list table, where column width matters.
+ */
+function displayFull(field: Field, value: unknown): string {
+  if (value == null || value === '') return '—';
+  if (field.type === 'boolean') return value ? 'Yes' : 'No';
+  // Prefer the human label over the stored enum: a printed file should read
+  // "Under review", not "UNDER_REVIEW".
+  const option = field.options?.find((o) => o.value === value);
+  if (option) return option.label;
+  if (Array.isArray(value)) return value.length ? value.join(', ') : '—';
+  if (field.type === 'date') {
+    return new Date(String(value)).toLocaleDateString(undefined, {
+      day: 'numeric', month: 'long', year: 'numeric',
+    });
+  }
+  if (field.type === 'datetime') {
+    return new Date(String(value)).toLocaleString(undefined, {
+      day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    });
+  }
+  if (typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>);
+    if (!entries.length) return '—';
+    return entries.map(([k, v]) => `${k}: ${v == null || v === '' ? '—' : v}`).join('\n');
+  }
+  return String(value);
+}
+
+/**
+ * Print a single record as a one-page sheet: school letterhead, the reference
+ * and status, when it was submitted, every field under its heading, and ruled
+ * signature lines. This is the document that goes in a physical file, so it is
+ * deliberately not the generic list table.
+ */
+export function buildRecordHtml(config: ResourceConfig, row: Record<string, unknown>): string {
+  const detail = config.detail;
+  if (!detail) return '';
+  const esc = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+
+  const skip = new Set(detail.metaKeys ?? []);
+  const groups = new Map<string, Field[]>();
+  for (const field of config.fields) {
+    if (skip.has(field.key)) continue;
+    const key = field.group ?? 'Details';
+    if (!groups.has(key)) groups.set(key, []);
+    (groups.get(key) as Field[]).push(field);
+  }
+
+  const sections = [...groups.entries()]
+    .filter(([, fields]) => fields.length > 0)
+    .map(([heading, fields]) => {
+      const rowsHtml = fields
+        .map(
+          (f) =>
+            `<tr><th>${esc(f.label)}</th><td>${esc(displayFull(f, row[f.key]))}</td></tr>`,
+        )
+        .join('');
+      return `<h2>${esc(heading)}</h2><table class="kv">${rowsHtml}</table>`;
+    })
+    .join('');
+
+  const created = detail.createdKey ? row[detail.createdKey] : null;
+  const submitted = created
+    ? new Date(String(created)).toLocaleString(undefined, {
+        day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
+      })
+    : '—';
+
+  const signatures = (detail.signatureLines ?? [])
+    .map((label) => `<div class="sig"><span></span><p>${esc(label)}</p></div>`)
+    .join('');
+
+  const { brand, address } = siteDefaults;
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(
+    detail.documentTitle,
+  )} — ${esc(detail.heading(row))}</title>
+    <style>
+      @page{size:A4;margin:16mm;}
+      *{box-sizing:border-box;}
+      body{font-family:Arial,Helvetica,sans-serif;color:#222;font-size:12px;margin:0;}
+      header{border-bottom:2px solid #6e1f23;padding-bottom:10px;margin-bottom:14px;}
+      .school{color:#6e1f23;font-size:17px;font-weight:bold;letter-spacing:.02em;}
+      .addr{color:#666;font-size:11px;margin-top:2px;}
+      .doc{margin-top:10px;font-size:14px;font-weight:bold;text-transform:uppercase;letter-spacing:.08em;}
+      .meta{width:100%;border-collapse:collapse;margin:12px 0 6px;font-size:11.5px;}
+      .meta td{padding:5px 8px;border:1px solid #ddd;background:#faf7f7;}
+      .meta td.k{color:#6e1f23;font-weight:bold;width:26%;}
+      h2{color:#6e1f23;font-size:12px;text-transform:uppercase;letter-spacing:.08em;
+         margin:16px 0 6px;padding-bottom:3px;border-bottom:1px solid #e6dcdc;}
+      table.kv{width:100%;border-collapse:collapse;}
+      table.kv th{width:34%;text-align:left;font-weight:normal;color:#666;
+         padding:5px 8px 5px 0;vertical-align:top;border-bottom:1px solid #f0eaea;}
+      table.kv td{padding:5px 0;vertical-align:top;border-bottom:1px solid #f0eaea;}
+      .sigs{display:flex;gap:28px;margin-top:34px;}
+      .sig{flex:1;}
+      .sig span{display:block;border-bottom:1px solid #999;height:26px;}
+      .sig p{margin:5px 0 0;color:#666;font-size:11px;}
+      footer{margin-top:26px;border-top:1px solid #e6dcdc;padding-top:8px;
+         color:#888;font-size:10px;}
+      @media print{ body{-webkit-print-color-adjust:exact;print-color-adjust:exact;} }
+    </style></head><body>
+    <header>
+      <div class="school">${esc(brand.name)}</div>
+      <div class="addr">${esc(address.line1)}, ${esc(address.poBox)}, ${esc(address.city)}, ${esc(address.country)}</div>
+      <div class="doc">${esc(detail.documentTitle)}</div>
+    </header>
+    <table class="meta">
+      <tr><td class="k">Applicant</td><td>${esc(detail.heading(row))}</td></tr>
+      ${detail.subheading ? `<tr><td class="k">Reference</td><td>${esc(detail.subheading(row))}</td></tr>` : ''}
+      <tr><td class="k">Date submitted</td><td>${esc(submitted)}</td></tr>
+    </table>
+    ${sections}
+    ${signatures ? `<div class="sigs">${signatures}</div>` : ''}
+    <footer>Printed ${esc(new Date().toLocaleString())} · ${esc(brand.name)}</footer>
+    </body></html>`;
+
+  return html;
+}
+
+function printRecord(config: ResourceConfig, row: Record<string, unknown>) {
+  const html = buildRecordHtml(config, row);
+  if (!html) return;
+  const w = window.open('', '_blank');
+  if (!w) return;
+  w.document.write(html.replace('</body>', '<script>window.onload=function(){window.print();}<\/script></body>'));
+  w.document.close();
+}
+
 function displayCell(field: Field, value: unknown): string {
   if (value == null || value === '') return '—';
   if (field.type === 'boolean') return value ? 'Yes' : 'No';
@@ -175,6 +331,7 @@ export function ResourceManager({ config }: { config: ResourceConfig }) {
   const [rows, setRows] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
+  const [viewing, setViewing] = useState<Record<string, unknown> | null>(null);
   const [form, setForm] = useState<Record<string, string | boolean>>(emptyForm(config.fields));
   const [open, setOpen] = useState(false);
   const [msg, setMsg] = useState('');
@@ -206,6 +363,7 @@ export function ResourceManager({ config }: { config: ResourceConfig }) {
   }
 
   function startEdit(row: Record<string, unknown>) {
+    setViewing(null);
     setEditing(row);
     const f: Record<string, string | boolean> = {};
     for (const field of config.fields) f[field.key] = toInput(field, row[field.key]);
@@ -279,6 +437,15 @@ export function ResourceManager({ config }: { config: ResourceConfig }) {
         </div>
       </div>
 
+      {viewing && config.detail ? (
+        <DetailPanel
+          config={config}
+          row={viewing}
+          onClose={() => setViewing(null)}
+          onEdit={() => startEdit(viewing)}
+        />
+      ) : null}
+
       {open ? (
         <form onSubmit={save} className="mb-8 rounded-2xl border border-line bg-white p-6">
           <h2 className="mb-4 font-display text-lg text-maroon-900">
@@ -322,6 +489,15 @@ export function ResourceManager({ config }: { config: ResourceConfig }) {
                     ))}
                     <td className="px-5 py-3.5">
                       <div className="flex items-center justify-end gap-1 text-ink-muted">
+                        {config.detail ? (
+                          <button
+                            onClick={() => { setOpen(false); setViewing(row); }}
+                            aria-label="View full details"
+                            className="rounded-lg p-1.5 hover:bg-maroon-50 hover:text-maroon-700"
+                          >
+                            <Icon name="eye" size={17} />
+                          </button>
+                        ) : null}
                         <button onClick={() => startEdit(row)} aria-label="Edit" className="rounded-lg p-1.5 hover:bg-maroon-50 hover:text-maroon-700"><Icon name="edit" size={17} /></button>
                         <button onClick={() => remove(row)} aria-label="Delete" className="rounded-lg p-1.5 hover:bg-rose-50 hover:text-rose-600"><Icon name="trash" size={17} /></button>
                       </div>
@@ -334,6 +510,104 @@ export function ResourceManager({ config }: { config: ResourceConfig }) {
         </div>
       </div>
     </>
+  );
+}
+
+/**
+ * Read-only view of a single record.
+ *
+ * The edit form deliberately shows only the writable fields, which left the
+ * reviewer unable to see the pupil's date of birth, the class applied for, the
+ * guardian's phone number or when the application actually arrived. This panel
+ * shows everything the API returns, grouped, and hands off to the printer.
+ */
+function DetailPanel({
+  config,
+  row,
+  onClose,
+  onEdit,
+}: {
+  config: ResourceConfig;
+  row: Record<string, unknown>;
+  onClose: () => void;
+  onEdit: () => void;
+}) {
+  const detail = config.detail as NonNullable<ResourceConfig['detail']>;
+
+  // Same rule as the printed sheet: anything already in the header strip is not
+  // repeated in the body.
+  const skip = new Set(detail.metaKeys ?? []);
+  const groups = new Map<string, Field[]>();
+  for (const field of config.fields) {
+    if (skip.has(field.key)) continue;
+    const key = field.group ?? 'Details';
+    if (!groups.has(key)) groups.set(key, []);
+    (groups.get(key) as Field[]).push(field);
+  }
+
+  const created = detail.createdKey ? row[detail.createdKey] : null;
+
+  return (
+    <section className="mb-8 overflow-hidden rounded-2xl border border-line bg-white">
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-line bg-paper-dark/40 px-6 py-5">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gold-600">
+            {detail.documentTitle}
+          </p>
+          <h2 className="mt-1 font-display text-xl text-maroon-900">{detail.heading(row)}</h2>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink-muted">
+            {detail.subheading ? <span className="font-mono">{detail.subheading(row)}</span> : null}
+            {created ? (
+              <span className="flex items-center gap-1.5">
+                <Icon name="calendar" size={14} />
+                Submitted{' '}
+                {new Date(String(created)).toLocaleString(undefined, {
+                  day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
+                })}
+              </span>
+            ) : null}
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => printRecord(config, row)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-2 text-sm font-medium text-ink-soft hover:bg-maroon-50 hover:text-maroon-700"
+          >
+            <Icon name="download" size={16} /> Print / PDF
+          </button>
+          <Button onClick={onEdit} icon="edit" size="md">Update status</Button>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="rounded-full p-2 text-ink-muted hover:bg-maroon-50 hover:text-maroon-700"
+          >
+            <Icon name="close" size={20} />
+          </button>
+        </div>
+      </div>
+
+      <div className="grid gap-x-10 gap-y-7 px-6 py-6 lg:grid-cols-2">
+        {[...groups.entries()].map(([heading, fields]) => (
+          <div key={heading}>
+            <h3 className="border-b border-line pb-2 text-xs font-semibold uppercase tracking-[0.16em] text-maroon-700">
+              {heading}
+            </h3>
+            <dl className="mt-3 space-y-2.5">
+              {fields.map((f) => (
+                <div key={f.key} className="grid grid-cols-[minmax(0,10rem)_1fr] gap-3 text-sm">
+                  <dt className="text-ink-muted">{f.label}</dt>
+                  <dd className="whitespace-pre-line break-words text-ink">
+                    {displayFull(f, row[f.key])}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
