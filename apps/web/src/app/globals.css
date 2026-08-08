@@ -265,6 +265,80 @@ html[data-theme='noir'] {
     height: 1px;
     background: var(--color-gold-400);
   }
+
+  /* ── Section rhythm ──
+     A flat 6rem of padding on every section costs ~1,900px of empty scroll on a
+     phone. Scale it with the viewport instead: tight on mobile, generous on
+     desktop where the horizontal space earns it. */
+  .section {
+    padding-block: 3.5rem;
+  }
+  @media (min-width: 640px) {
+    .section { padding-block: 5rem; }
+  }
+  @media (min-width: 1024px) {
+    .section { padding-block: 6rem; }
+  }
+  .section-tight {
+    padding-block: 2.5rem;
+  }
+  @media (min-width: 640px) {
+    .section-tight { padding-block: 3.5rem; }
+  }
+
+  /* ── Horizontal snap rail ──
+     For homogeneous, browsable content only (photos, news, quotes) — never for
+     value propositions, which must all stay visible at a glance. Bleeds to the
+     screen edges so cards look like they continue off-screen, which is what
+     tells a thumb there is more to swipe. */
+  .rail {
+    display: flex;
+    gap: 0.875rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 1.25rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin-inline: -1.25rem;
+    padding-inline: 1.25rem;
+    padding-block-end: 0.25rem;
+  }
+  .rail::-webkit-scrollbar { display: none; }
+  .rail > * {
+    scroll-snap-align: start;
+    flex: 0 0 auto;
+  }
+  @media (min-width: 768px) {
+    .rail {
+      display: grid;
+      gap: 1.5rem;
+      overflow: visible;
+      margin-inline: 0;
+      padding-inline: 0;
+    }
+  }
+
+  /* Safe-area aware floating UI (iPhone home indicator / Android gesture bar). */
+  .safe-bottom {
+    bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* ── Mobile-only line clamp ──
+     Long paragraphs are trimmed on a phone and shown in full from `sm` up. The
+     text stays in the DOM either way, so search engines and screen readers get
+     the whole message — unlike hiding it behind a modal. */
+  .clamp-mobile {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  @media (min-width: 640px) {
+    .clamp-mobile {
+      display: block;
+      overflow: visible;
+      -webkit-line-clamp: unset;
+    }
+  }
 }
 
 /* Subtle entrance animation utility */

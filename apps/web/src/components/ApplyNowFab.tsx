@@ -21,6 +21,7 @@ const ACTIONS: Action[] = [
 export function ApplyNowFab() {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [obstructed, setObstructed] = useState(true);
   const panelRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
@@ -39,8 +40,41 @@ export function ApplyNowFab() {
     return () => document.removeEventListener('keydown', onKey);
   }, [open]);
 
+  /**
+   * Step aside for the real calls to action.
+   *
+   * The capsule used to sit at a fixed bottom-right corner for the entire page,
+   * which meant it covered the hero's "Begin Admission" button, part of the map
+   * and a footer link — a floating Apply button hiding the Apply button. Any
+   * element marked `data-apply-anchor` (the hero CTAs, the admissions band, the
+   * footer) now pushes it out of the way while it is on screen.
+   */
+  useEffect(() => {
+    const anchors = document.querySelectorAll('[data-apply-anchor], footer');
+    if (!anchors.length) {
+      setObstructed(false);
+      return;
+    }
+    const visible = new Set<Element>();
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) visible.add(entry.target);
+          else visible.delete(entry.target);
+        }
+        setObstructed(visible.size > 0);
+      },
+      // Generous bottom margin: react before the CTA reaches the capsule, not after.
+      { rootMargin: '0px 0px -12% 0px' },
+    );
+    anchors.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [pathname]);
+
   // Hide on the admissions page itself (the form is already there).
   if (pathname?.startsWith('/admissions')) return null;
+
+  const hidden = !mounted || (obstructed && !open);
 
   return (
     <div className="lg:hidden">
@@ -57,7 +91,8 @@ export function ApplyNowFab() {
         role="dialog"
         aria-label="Admissions"
         aria-hidden={!open}
-        className={`fixed inset-x-4 bottom-24 z-50 origin-bottom rounded-2xl border border-line bg-paper shadow-2xl transition-all duration-300 ${open ? 'pointer-events-auto translate-y-0 scale-100 opacity-100' : 'pointer-events-none translate-y-3 scale-95 opacity-0'}`}
+        style={{ bottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
+        className={`fixed inset-x-4 z-50 origin-bottom rounded-2xl border border-line bg-paper shadow-2xl transition-all duration-300 ${open ? 'pointer-events-auto translate-y-0 scale-100 opacity-100' : 'pointer-events-none translate-y-3 scale-95 opacity-0'}`}
       >
         <div className="flex items-center justify-between border-b border-line px-5 py-4">
           <div>
@@ -96,7 +131,8 @@ export function ApplyNowFab() {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-label={open ? 'Close admissions menu' : 'Open admissions menu'}
-        className={`fixed bottom-5 right-4 z-50 inline-flex items-center gap-2.5 rounded-full bg-maroon-700 py-3.5 pl-5 pr-5 text-white shadow-lift ring-1 ring-white/10 transition-all duration-300 hover:bg-maroon-800 active:scale-95 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'}`}
+        tabIndex={hidden ? -1 : undefined}
+        className={`safe-bottom fixed right-4 z-50 inline-flex items-center gap-2.5 rounded-full bg-maroon-700 py-3.5 pl-5 pr-5 text-white shadow-lift ring-1 ring-white/10 transition-all duration-300 hover:bg-maroon-800 active:scale-95 ${hidden ? 'pointer-events-none translate-y-8 scale-90 opacity-0' : 'translate-y-0 scale-100 opacity-100'}`}
       >
         <span className="relative flex h-5 w-5 items-center justify-center">
           <span className={`absolute inline-flex h-full w-full rounded-full bg-gold-400/50 transition-opacity ${open ? 'opacity-0' : 'animate-ping'}`} />

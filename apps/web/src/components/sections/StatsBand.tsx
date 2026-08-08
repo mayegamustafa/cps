@@ -16,21 +16,24 @@ function parseValue(value: string) {
 
 function Counter({ value }: { value: string }) {
   const { prefix, num, suffix } = parseValue(value);
-  const [display, setDisplay] = useState(num === null ? value : '0');
+  // Start at the REAL number, not "0". The server has no idea where the band
+  // will land in the viewport, so seeding the animation start meant the HTML
+  // shipped "0 Modern classrooms" and anyone landing without JS — or mid-scroll
+  // on a slow phone — read a school with zero of everything.
+  const [display, setDisplay] = useState(num === null ? value : num.toLocaleString());
   const ref = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
-    if (num === null) {
-      setDisplay(value);
-      return;
-    }
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduce) {
-      setDisplay(num.toLocaleString());
-      return;
-    }
+    if (num === null) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const el = ref.current;
     if (!el) return;
+
+    // Only rewind to zero when the number is still below the fold; otherwise the
+    // correct value is already on screen and must not flicker back down.
+    if (el.getBoundingClientRect().top < window.innerHeight * 0.9) return;
+    setDisplay('0');
+
     let raf = 0;
     const io = new IntersectionObserver(
       (entries) => {
@@ -64,17 +67,23 @@ function Counter({ value }: { value: string }) {
   );
 }
 
+/**
+ * A slim ribbon of school numbers directly beneath the hero. It stays dark so it
+ * reads as the foot of the hero rather than a second, competing stats section,
+ * and it centres itself for any count from one stat to six.
+ */
 export function StatsBand({ stats }: { stats: SchoolStat[] }) {
+  if (!stats.length) return null;
   return (
-    <section className="border-y border-line bg-paper-dark/40 py-14">
+    <section className="section-tight bg-maroon-900 text-white">
       <div className="container-page">
-        <dl className="grid grid-cols-2 gap-8 md:grid-cols-4 lg:grid-cols-6">
+        <dl className="mx-auto flex max-w-5xl flex-wrap justify-center gap-x-8 gap-y-6 sm:gap-x-14">
           {stats.map((s) => (
-            <div key={s.id} className="text-center">
-              <dt className="font-display text-3xl text-maroon-700 sm:text-4xl">
+            <div key={s.id} className="min-w-[6.5rem] flex-1 basis-[6.5rem] text-center">
+              <dt className="font-display text-3xl text-gold-300 sm:text-4xl">
                 <Counter value={s.value} />
               </dt>
-              <dd className="mt-1.5 text-sm text-ink-soft">{s.label}</dd>
+              <dd className="mt-1 text-xs leading-tight text-paper/75 sm:text-sm">{s.label}</dd>
             </div>
           ))}
         </dl>

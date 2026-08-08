@@ -1,78 +1,82 @@
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
+import { HeroMedia } from '@/components/sections/HeroMedia';
+import { videoPoster } from '@/lib/media';
 import { siteDefaults, waLink, type SiteConfig } from '@/lib/site';
 
 export function Hero({ config = siteDefaults }: { config?: SiteConfig }) {
-  const { hero, contact } = config;
-  // Image layer falls back to the default only when nothing is configured.
-  const heroImage = hero.backgroundImage || siteDefaults.hero.backgroundImage;
+  const { hero, contact, brand } = config;
+  // Still frame priority: the configured image, else a frame lifted from the
+  // video, else the packaged default. Never leave the hero without a first paint.
+  const poster =
+    hero.backgroundImage ||
+    videoPoster(hero.backgroundVideo) ||
+    siteDefaults.hero.backgroundImage;
 
   return (
     <section className="relative isolate overflow-hidden bg-maroon-950 text-white">
-      {/* Background: autoplaying muted video when configured, else image */}
-      {hero.backgroundVideo ? (
-        <video
-          aria-hidden
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          poster={hero.backgroundImage || undefined}
-          className="absolute inset-0 -z-10 h-full w-full bg-maroon-950 object-cover"
-        >
-          <source src={hero.backgroundVideo} />
-        </video>
-      ) : (
-        <div
-          aria-hidden
-          className="absolute inset-0 -z-10 bg-cover bg-center"
-          style={{ backgroundImage: `url('${heroImage}')` }}
-        />
-      )}
-      {/* Lighter scrim: darker on the left for text legibility, fading right so
-          the background image/video stays clearly visible. */}
+      <HeroMedia src={hero.backgroundVideo} poster={poster} alt={`${brand.name} campus life`} />
+
+      {/* Scrim. On mobile the copy spans the full width, so it needs a bottom-up
+          gradient; the left-to-right one only works for the desktop two-column
+          layout, where it keeps the photograph visible on the right. */}
       <div
         aria-hidden
-        className="absolute inset-0 -z-10 bg-gradient-to-r from-maroon-950/75 via-maroon-950/40 to-maroon-900/15"
-      />
-      <div
-        aria-hidden
-        className="absolute inset-0 -z-10 bg-gradient-to-t from-maroon-950/50 via-transparent to-transparent"
+        className="absolute inset-0 -z-10 bg-gradient-to-t from-maroon-950 via-maroon-950/75 to-maroon-950/20 lg:bg-gradient-to-r lg:from-maroon-950/80 lg:via-maroon-950/45 lg:to-maroon-900/10"
       />
 
-      <div className="container-page grid min-h-[88vh] items-center gap-12 py-20 lg:grid-cols-[1.15fr_0.85fr]">
+      <div className="container-page flex min-h-[86svh] flex-col justify-end gap-10 pb-14 pt-28 lg:grid lg:min-h-[88vh] lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:py-20">
         <div className="max-w-2xl animate-rise">
           <span className="eyebrow !text-gold-300">{hero.eyebrow}</span>
-          <h1 className="mt-6 text-balance text-4xl font-medium leading-[1.05] text-white sm:text-5xl lg:text-6xl">
+
+          {/* Fluid so a long word like "character." never runs off a 360px screen. */}
+          <h1 className="mt-4 text-balance text-[clamp(2rem,9vw,2.75rem)] font-medium leading-[1.03] text-white sm:text-5xl lg:mt-6 lg:text-6xl">
             {hero.titleLead}
             <span className="block text-gold-300">{hero.titleAccent}</span>
           </h1>
-          <p className="mt-6 max-w-xl text-lg leading-relaxed text-paper/80">
+
+          {/* Clamped to two lines on a phone: a parent decides in seconds, and the
+              full paragraph lives on the About page. Uncapped from `sm` up. */}
+          <p className="mt-4 line-clamp-2 max-w-xl text-base leading-relaxed text-paper/85 sm:line-clamp-none sm:text-lg lg:mt-6">
             {hero.intro}
           </p>
 
-          <div className="mt-9 flex flex-wrap gap-3">
-            <Button href={hero.primaryCta.href} variant="gold" size="lg" icon="arrow-right">
+          <div
+            data-apply-anchor
+            className="mt-7 grid gap-2.5 sm:flex sm:flex-wrap sm:gap-3 lg:mt-9"
+          >
+            <Button
+              href={hero.primaryCta.href}
+              variant="gold"
+              size="lg"
+              icon="arrow-right"
+              className="w-full sm:w-auto"
+            >
               {hero.primaryCta.label}
             </Button>
             <Button
               href={hero.secondaryCta.href}
               size="lg"
-              className="border border-white/25 bg-white/5 text-white backdrop-blur hover:bg-white/10"
+              className="w-full border border-white/25 bg-white/10 text-white backdrop-blur hover:bg-white/20 sm:w-auto"
             >
               <Icon name="play" size={18} /> {hero.secondaryCta.label}
             </Button>
           </div>
 
-          <dl className="mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-white/15 pt-8">
-            {hero.stats.map((s) => (
-              <div key={s.label}>
-                <dt className="font-display text-3xl text-gold-300">{s.value}</dt>
-                <dd className="mt-1 text-sm text-paper/70">{s.label}</dd>
-              </div>
-            ))}
-          </dl>
+          {/* Proof strip. Tight enough on mobile to stay inside the first screen —
+              this is the fastest reassurance a prospective parent gets. */}
+          {hero.stats.length ? (
+            <dl className="mt-8 grid grid-cols-3 gap-3 border-t border-white/20 pt-6 sm:gap-6 lg:mt-12 lg:max-w-lg lg:pt-8">
+              {hero.stats.map((s) => (
+                <div key={s.label}>
+                  <dt className="font-display text-2xl text-gold-300 sm:text-3xl">{s.value}</dt>
+                  <dd className="mt-0.5 text-xs leading-tight text-paper/75 sm:mt-1 sm:text-sm">
+                    {s.label}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          ) : null}
         </div>
 
         {/* Live / quick-access card */}
