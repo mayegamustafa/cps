@@ -14,6 +14,29 @@ const SECTION_LABELS: Record<string, string> = {
   UPPER_PRIMARY: 'Upper Primary (P.4 to P.7)',
 };
 
+/** Answers to "How did you get to know about us?", ordered roughly by how often
+ *  a school actually hears them. "Other" opens a free-text box so switching this
+ *  field from open text to a list does not lose the answers it used to capture. */
+const HEARD_ABOUT_OPTIONS = [
+  'A friend or family member',
+  'A current or former parent',
+  'A pupil or alumnus of the school',
+  'Passing by the school',
+  'Facebook',
+  'TikTok',
+  'Instagram',
+  'YouTube',
+  'Google or a web search',
+  'The school website',
+  'Radio',
+  'Television',
+  'Newspaper or magazine',
+  'Billboard, poster or signpost',
+  'A school event or open day',
+  'A church or mosque',
+  'An employer or workplace',
+];
+
 /**
  * The contact/occupation/residence block the paper form repeats for the father,
  * the mother and the second contact person.
@@ -57,12 +80,20 @@ export function AdmissionForm({
   const [reference, setReference] = useState('');
   const [submitted, setSubmitted] = useState<{ at: Date; values: Record<string, string> } | null>(null);
   const [extra, setExtra] = useState<Record<string, unknown>>({});
+  const [heardAbout, setHeardAbout] = useState('');
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setStatus('sending');
     const form = new FormData(e.currentTarget);
     const payload = Object.fromEntries(form.entries()) as Record<string, string>;
+    // Fold the "Other" free text back into the single stored answer, so the
+    // column, the admin view and the printed form all stay unchanged.
+    const otherText = (payload.heardAboutUsOther ?? '').trim();
+    if (payload.heardAboutUs === 'Other') {
+      payload.heardAboutUs = otherText ? `Other — ${otherText}` : 'Other';
+    }
+    delete payload.heardAboutUsOther;
     const ref = `CPS-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
     try {
       const res = await fetch(`/api/admissions`, {
@@ -246,7 +277,28 @@ export function AdmissionForm({
           <Field label="Former school" id="formerSchool" name="formerSchool" placeholder="Leave blank if this is the first school" />
           <Field label="Former class attended" id="formerClass" name="formerClass" />
         </div>
-        <Field label="How did you get to know about us?" id="heardAboutUs" name="heardAboutUs" placeholder="A friend, social media, a school event…" />
+        <SelectField
+          label="How did you get to know about us?"
+          id="heardAboutUs"
+          name="heardAboutUs"
+          value={heardAbout}
+          onChange={(e) => setHeardAbout(e.target.value)}
+        >
+          <option value="">Select an answer</option>
+          {HEARD_ABOUT_OPTIONS.map((o) => (
+            <option key={o} value={o}>{o}</option>
+          ))}
+          <option value="Other">Other</option>
+        </SelectField>
+        {heardAbout === 'Other' ? (
+          <Field
+            label="Please tell us how"
+            id="heardAboutUsOther"
+            name="heardAboutUsOther"
+            required
+            placeholder="How did you hear about the school?"
+          />
+        ) : null}
       </fieldset>
 
       <fieldset className="space-y-5 border-t border-line pt-6">
