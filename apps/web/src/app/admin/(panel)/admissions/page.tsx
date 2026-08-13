@@ -69,6 +69,18 @@ const config: ResourceConfig = {
     { key: 'relationship', label: 'Relationship', readonly: true, group: 'Parent / guardian' },
     { key: 'guardianEmail', label: 'Email', readonly: true, group: 'Parent / guardian' },
     { key: 'guardianPhone', label: 'Phone', readonly: true, group: 'Parent / guardian' },
+    { key: 'guardianResidence', label: 'Residence', readonly: true, group: 'Parent / guardian' },
+    { key: 'guardianDistrict', label: 'District', readonly: true, group: 'Parent / guardian' },
+
+    // — Former school (section C of the paper form) —
+    { key: 'formerSchool', label: 'Former school', readonly: true, group: 'Former school' },
+    { key: 'formerClass', label: 'Former class attended', readonly: true, group: 'Former school' },
+    { key: 'heardAboutUs', label: 'How they heard about us', readonly: true, group: 'Former school' },
+
+    // — Health & family (section D) —
+    { key: 'specialIllness', label: 'Special illness', readonly: true, group: 'Health & family' },
+    { key: 'siblingName', label: 'Sibling already here', readonly: true, group: 'Health & family' },
+    { key: 'siblingClass', label: "Sibling's class", readonly: true, group: 'Health & family' },
 
     // — Review —
     { key: 'extraData', label: 'Additional answers', table: true, readonly: true, group: 'Review' },

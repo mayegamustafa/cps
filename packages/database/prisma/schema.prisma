@@ -558,11 +558,27 @@ model AdmissionApplication {
   section         SchoolSection
   gradeApplyingFor String
   residence       Residence         @default(DAY)
-  // Guardian
+  // Guardian (section B(i) of the paper form)
   guardianName    String
   guardianEmail   String
   guardianPhone   String
   relationship    String?
+  guardianResidence String?
+  guardianDistrict  String?
+  // Former school (section C)
+  formerSchool    String?
+  formerClass     String?
+  heardAboutUs    String?
+  // Health background (section D)
+  specialIllness  String?           @db.Text
+  siblingName     String?
+  siblingClass    String?
+  //
+  // The remaining lines of the paper form (mother's and second contact's
+  // details, occupations, nationality, religion) are deliberately NOT stored:
+  // the online form does not ask for them, and the printed copy leaves them as
+  // ruled lines to complete by hand at the interview. Columns that nothing ever
+  // writes are worse than blank lines on paper.
   // Workflow
   status          ApplicationStatus @default(SUBMITTED)
   decisionNote    String?           @db.Text

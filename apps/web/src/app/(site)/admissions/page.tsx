@@ -60,7 +60,18 @@ export default async function AdmissionsPage() {
               </Button>
             </div>
           </div>
-          <AdmissionForm extraFields={config.admissionsFields ?? []} />
+          <AdmissionForm
+            extraFields={config.admissionsFields ?? []}
+            school={{
+              name: config.brand.name,
+              poBox: config.address.poBox,
+              city: config.address.city,
+              phone: config.contact.phone,
+              email: config.contact.email,
+              motto: config.tagline,
+              logoUrl: config.brand.logoUrl,
+            }}
+          />
         </div>
       </section>
 

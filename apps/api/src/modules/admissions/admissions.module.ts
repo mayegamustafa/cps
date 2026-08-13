@@ -26,8 +26,16 @@ import { Roles } from '../../auth/roles.decorator';
 import { MailService } from '../mail/mail.module';
 import { admissionReceivedEmail, admissionDecisionEmail } from '../mail/templates';
 
+/**
+ * The subset of the school's paper "New Pupil's Application Form" that a parent
+ * fills in online. The rest of the paper form's lines are left blank on the
+ * printed copy for completion by hand at the interview, so everything here is
+ * either genuinely required to process the application or optional.
+ */
 class CreateAdmissionDto {
   @IsString() reference: string;
+
+  // A. Pupil's particulars
   @IsString() @MinLength(2) pupilFirstName: string;
   @IsString() @MinLength(2) pupilLastName: string;
   @IsDateString() pupilDob: string;
@@ -35,10 +43,25 @@ class CreateAdmissionDto {
   @IsEnum(SchoolSection) section: SchoolSection;
   @IsString() gradeApplyingFor: string;
   @IsOptional() @IsEnum(Residence) residence?: Residence;
+
+  // B. Parent / guardian
   @IsString() guardianName: string;
   @IsEmail() guardianEmail: string;
   @IsString() guardianPhone: string;
   @IsOptional() @IsString() relationship?: string;
+  @IsOptional() @IsString() guardianResidence?: string;
+  @IsOptional() @IsString() guardianDistrict?: string;
+
+  // C. Former school
+  @IsOptional() @IsString() formerSchool?: string;
+  @IsOptional() @IsString() formerClass?: string;
+  @IsOptional() @IsString() heardAboutUs?: string;
+
+  // D. Health background
+  @IsOptional() @IsString() specialIllness?: string;
+  @IsOptional() @IsString() siblingName?: string;
+  @IsOptional() @IsString() siblingClass?: string;
+
   @IsOptional() @IsObject() extraData?: Record<string, unknown>;
 }
 
