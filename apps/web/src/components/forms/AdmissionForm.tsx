@@ -14,6 +14,38 @@ const SECTION_LABELS: Record<string, string> = {
   UPPER_PRIMARY: 'Upper Primary (P.4 to P.7)',
 };
 
+/**
+ * The contact/occupation/residence block the paper form repeats for the father,
+ * the mother and the second contact person.
+ */
+function PersonFields({ prefix, required = false }: { prefix: string; required?: boolean }) {
+  return (
+    <>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Field label="Phone contact" id={`${prefix}Phone`} name={`${prefix}Phone`} required={required} placeholder="+256 …" />
+        <Field label="E-mail" id={`${prefix}Email`} name={`${prefix}Email`} type="email" required={required} />
+      </div>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Field label="Occupation" id={`${prefix}Occupation`} name={`${prefix}Occupation`} />
+        <Field label="Place of work" id={`${prefix}Workplace`} name={`${prefix}Workplace`} />
+      </div>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Field label="Residence" id={`${prefix}Residence`} name={`${prefix}Residence`} placeholder="e.g. Rubaga" />
+        <Field label="District" id={`${prefix}District`} name={`${prefix}District`} placeholder="e.g. Kampala" />
+      </div>
+    </>
+  );
+}
+
+function Legend({ children, hint }: { children: React.ReactNode; hint?: string }) {
+  return (
+    <legend className="mb-2">
+      <span className="eyebrow">{children}</span>
+      {hint ? <span className="mt-1 block text-xs font-normal text-ink-muted">{hint}</span> : null}
+    </legend>
+  );
+}
+
 export function AdmissionForm({
   extraFields = [],
   school,
@@ -43,8 +75,7 @@ export function AdmissionForm({
         return;
       }
       setReference(ref);
-      // Keep the answers in memory so the parent can print their copy without a
-      // second round trip — the submitted values never leave this page.
+      // Kept in memory so the parent can print without a second round trip.
       setSubmitted({
         at: new Date(),
         values: {
@@ -97,18 +128,19 @@ export function AdmissionForm({
 
         <div className="mt-7 rounded-xl border border-maroon-700/25 bg-maroon-50/50 p-5">
           <h4 className="flex items-center gap-2 font-semibold text-maroon-900">
-            <Icon name="download" size={18} /> Print your copy for the interview
+            <Icon name="download" size={18} /> Print this form and bring it to the school
           </h4>
           <p className="mt-1.5 text-sm text-ink-soft">
-            Print this application and bring it to the school with your child on the
-            interview day. Any line we didn&rsquo;t ask for online is left blank for you
-            to complete by hand.
+            Your application is not complete until you come to the school in person.
+            Print the form below and <strong className="text-maroon-800">come with your child</strong> and
+            the <strong className="text-maroon-800">interview fee</strong> on any interview day.
           </p>
           <ul className="mt-3 space-y-1.5 text-sm text-ink-soft">
+            <li className="flex gap-2"><Icon name="users" size={16} className="mt-0.5 shrink-0 text-maroon-700" /> Come together with the child being admitted — the interview is with them.</li>
             <li className="flex gap-2"><Icon name="clock" size={16} className="mt-0.5 shrink-0 text-maroon-700" /> Interviews run Monday to Friday, 9:00am to 12:00 noon.</li>
-            <li className="flex gap-2"><Icon name="shield-check" size={16} className="mt-0.5 shrink-0 text-maroon-700" /> Registration / interview fee: UGX 50,000 (non-refundable), paid in cash on the day.</li>
-            <li className="flex gap-2"><Icon name="image" size={16} className="mt-0.5 shrink-0 text-maroon-700" /> Bring 1 passport photo each for the child, mother and father.</li>
-            <li className="flex gap-2"><Icon name="book-open" size={16} className="mt-0.5 shrink-0 text-maroon-700" /> Bring photocopies of the recent report card and the immunization card or birth certificate.</li>
+            <li className="flex gap-2"><Icon name="shield-check" size={16} className="mt-0.5 shrink-0 text-maroon-700" /> Interview fee: UGX 50,000 (non-refundable), paid in cash on the day.</li>
+            <li className="flex gap-2"><Icon name="image" size={16} className="mt-0.5 shrink-0 text-maroon-700" /> 1 passport photo each for the child, the mother and the father.</li>
+            <li className="flex gap-2"><Icon name="book-open" size={16} className="mt-0.5 shrink-0 text-maroon-700" /> Photocopies of the recent report card and the immunization card or birth certificate.</li>
           </ul>
           <Button onClick={printCopy} size="lg" icon="arrow-right" className="mt-5 w-full sm:w-auto">
             Print / Save as PDF
@@ -138,8 +170,15 @@ export function AdmissionForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-6 rounded-2xl border border-line bg-paper p-6 sm:p-8">
+      <p className="rounded-xl bg-paper-dark/60 px-4 py-3 text-sm text-ink-soft">
+        This is the school&rsquo;s full application form. Only the fields marked
+        <span className="mx-1 font-semibold text-maroon-700">*</span> are required — fill in
+        what you can, print your copy at the end, and complete anything left blank by hand
+        at the interview.
+      </p>
+
       <fieldset className="space-y-5">
-        <legend className="eyebrow mb-2">A · Pupil&rsquo;s particulars</legend>
+        <Legend>A · Pupil&rsquo;s particulars</Legend>
         <div className="grid gap-5 sm:grid-cols-2">
           <Field label="Surname" id="pupilLastName" name="pupilLastName" required />
           <Field label="Other names" id="pupilFirstName" name="pupilFirstName" required />
@@ -151,6 +190,10 @@ export function AdmissionForm({
             <option value="Female">Female</option>
             <option value="Male">Male</option>
           </SelectField>
+        </div>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field label="Nationality" id="nationality" name="nationality" placeholder="e.g. Ugandan" />
+          <Field label="Religion" id="religion" name="religion" />
         </div>
         <div className="grid gap-5 sm:grid-cols-2">
           <Field label="Class applying for" id="gradeApplyingFor" name="gradeApplyingFor" required placeholder="e.g. KG2 or P.3" />
@@ -168,23 +211,37 @@ export function AdmissionForm({
       </fieldset>
 
       <fieldset className="space-y-5 border-t border-line pt-6">
-        <legend className="eyebrow mb-2">B · Parent / guardian</legend>
+        <Legend hint="This is the parent or guardian we will contact about the application.">
+          B (i) · Father / guardian
+        </Legend>
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Full name" id="guardianName" name="guardianName" required />
-          <Field label="Relationship to the child" id="relationship" name="relationship" placeholder="Mother / Father / Guardian" />
+          <Field label="Father / guardian's name" id="guardianName" name="guardianName" required />
+          <Field label="If guardian, relationship with the child" id="relationship" name="relationship" placeholder="Mother / Father / Guardian" />
         </div>
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Email" id="guardianEmail" name="guardianEmail" type="email" required />
-          <Field label="Phone" id="guardianPhone" name="guardianPhone" required placeholder="+256 …" />
-        </div>
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Residence" id="guardianResidence" name="guardianResidence" placeholder="e.g. Rubaga" />
-          <Field label="District" id="guardianDistrict" name="guardianDistrict" placeholder="e.g. Kampala" />
-        </div>
+        <PersonFields prefix="guardian" required />
       </fieldset>
 
       <fieldset className="space-y-5 border-t border-line pt-6">
-        <legend className="eyebrow mb-2">C · Former school</legend>
+        <Legend>B (ii) · Mother</Legend>
+        <Field label="Mother's names" id="motherName" name="motherName" />
+        <PersonFields prefix="mother" />
+      </fieldset>
+
+      <fieldset className="space-y-5 border-t border-line pt-6">
+        <Legend hint="Someone we can reach if you cannot be contacted.">
+          B (iii) · Other immediate contact person
+        </Legend>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field label="Name" id="contactName" name="contactName" />
+          <Field label="Relationship to the child" id="contactRelationship" name="contactRelationship" />
+        </div>
+        <PersonFields prefix="contact" />
+      </fieldset>
+
+      <fieldset className="space-y-5 border-t border-line pt-6">
+        <Legend hint="Please attach a copy of the report card when you come for the interview.">
+          C · Former school&rsquo;s details
+        </Legend>
         <div className="grid gap-5 sm:grid-cols-2">
           <Field label="Former school" id="formerSchool" name="formerSchool" placeholder="Leave blank if this is the first school" />
           <Field label="Former class attended" id="formerClass" name="formerClass" />
@@ -193,32 +250,42 @@ export function AdmissionForm({
       </fieldset>
 
       <fieldset className="space-y-5 border-t border-line pt-6">
-        <legend className="eyebrow mb-2">D · Health &amp; family</legend>
-        <Field label="Does the child have any special illness?" id="specialIllness" name="specialIllness" placeholder="None, or briefly describe" />
+        <Legend>D · Health background</Legend>
+        <Field label="State if the child has any special illness" id="specialIllness" name="specialIllness" placeholder="None, or briefly describe" />
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Name of any child already in our school" id="siblingName" name="siblingName" />
+          <Field label="Name of any child you already have in our school" id="siblingName" name="siblingName" />
           <Field label="Their class" id="siblingClass" name="siblingClass" />
         </div>
       </fieldset>
 
       {extraFields.length ? (
         <fieldset className="space-y-5 border-t border-line pt-6">
-          <legend className="eyebrow mb-2">Additional information</legend>
+          <Legend>Additional information</Legend>
           <PublicFieldInputs fields={extraFields} values={extra} onChange={(k, v) => setExtra((p) => ({ ...p, [k]: v }))} />
         </fieldset>
       ) : null}
 
-      <p className="text-xs text-ink-muted">
-        After submitting you can print a copy of this form to bring to the school on
-        the interview day, along with the passport photos, report card and birth
-        certificate or immunization card.
-      </p>
+      <fieldset className="space-y-5 border-t border-line pt-6">
+        <Legend hint="You will sign the printed copy by hand at the school.">Declaration</Legend>
+        <Field label="Parent / guardian's name" id="declarationName" name="declarationName" placeholder="Your full name, as it will be signed" />
+      </fieldset>
+
+      <div className="rounded-xl border border-maroon-700/25 bg-maroon-50/50 p-4 text-sm text-ink-soft">
+        <p className="font-semibold text-maroon-900">After you submit</p>
+        <p className="mt-1">
+          You will be able to print this form and must bring it to the school{' '}
+          <strong className="text-maroon-800">together with your child</strong> and the{' '}
+          <strong className="text-maroon-800">UGX 50,000 interview fee</strong>, plus the
+          passport photos, report card and birth certificate or immunization card.
+        </p>
+      </div>
+
       {status === 'error' ? (
         <p className="text-sm text-maroon-600">
           Could not submit your application. Please check your connection and try again.
         </p>
       ) : null}
-      <Button type="submit" size="lg" icon="arrow-right" disabled={status === 'sending'}>
+      <Button type="submit" size="lg" icon="arrow-right" disabled={status === 'sending'} className="w-full sm:w-auto">
         {status === 'sending' ? 'Submitting…' : 'Submit application'}
       </Button>
     </form>

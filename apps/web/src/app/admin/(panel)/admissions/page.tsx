@@ -59,18 +59,41 @@ const config: ResourceConfig = {
       { value: 'UPPER_PRIMARY', label: 'Upper Primary (P.4 to P.7)' },
     ] },
     { key: 'gradeApplyingFor', label: 'Class applying for', readonly: true, group: 'Pupil' },
-    { key: 'residence', label: 'Residence', readonly: true, group: 'Pupil', options: [
+    { key: 'residence', label: 'Day / Boarding', readonly: true, group: 'Pupil', options: [
       { value: 'DAY', label: 'Day' },
       { value: 'BOARDING', label: 'Boarding' },
     ] },
+    { key: 'nationality', label: 'Nationality', readonly: true, group: 'Pupil' },
+    { key: 'religion', label: 'Religion', readonly: true, group: 'Pupil' },
 
     // — Parent / guardian —
-    { key: 'guardianName', label: 'Full name', readonly: true, group: 'Parent / guardian' },
-    { key: 'relationship', label: 'Relationship', readonly: true, group: 'Parent / guardian' },
-    { key: 'guardianEmail', label: 'Email', readonly: true, group: 'Parent / guardian' },
-    { key: 'guardianPhone', label: 'Phone', readonly: true, group: 'Parent / guardian' },
-    { key: 'guardianResidence', label: 'Residence', readonly: true, group: 'Parent / guardian' },
-    { key: 'guardianDistrict', label: 'District', readonly: true, group: 'Parent / guardian' },
+    { key: 'guardianName', label: 'Full name', readonly: true, group: 'Father / guardian' },
+    { key: 'relationship', label: 'Relationship', readonly: true, group: 'Father / guardian' },
+    { key: 'guardianEmail', label: 'Email', readonly: true, group: 'Father / guardian' },
+    { key: 'guardianPhone', label: 'Phone', readonly: true, group: 'Father / guardian' },
+    { key: 'guardianOccupation', label: 'Occupation', readonly: true, group: 'Father / guardian' },
+    { key: 'guardianWorkplace', label: 'Place of work', readonly: true, group: 'Father / guardian' },
+    { key: 'guardianResidence', label: 'Residence', readonly: true, group: 'Father / guardian' },
+    { key: 'guardianDistrict', label: 'District', readonly: true, group: 'Father / guardian' },
+
+    // — Mother (section B(ii)) —
+    { key: 'motherName', label: 'Name', readonly: true, group: 'Mother' },
+    { key: 'motherPhone', label: 'Phone', readonly: true, group: 'Mother' },
+    { key: 'motherEmail', label: 'Email', readonly: true, group: 'Mother' },
+    { key: 'motherOccupation', label: 'Occupation', readonly: true, group: 'Mother' },
+    { key: 'motherWorkplace', label: 'Place of work', readonly: true, group: 'Mother' },
+    { key: 'motherResidence', label: 'Residence', readonly: true, group: 'Mother' },
+    { key: 'motherDistrict', label: 'District', readonly: true, group: 'Mother' },
+
+    // — Other immediate contact (section B(iii)) —
+    { key: 'contactName', label: 'Name', readonly: true, group: 'Other contact' },
+    { key: 'contactRelationship', label: 'Relationship', readonly: true, group: 'Other contact' },
+    { key: 'contactPhone', label: 'Phone', readonly: true, group: 'Other contact' },
+    { key: 'contactEmail', label: 'Email', readonly: true, group: 'Other contact' },
+    { key: 'contactOccupation', label: 'Occupation', readonly: true, group: 'Other contact' },
+    { key: 'contactWorkplace', label: 'Place of work', readonly: true, group: 'Other contact' },
+    { key: 'contactResidence', label: 'Residence', readonly: true, group: 'Other contact' },
+    { key: 'contactDistrict', label: 'District', readonly: true, group: 'Other contact' },
 
     // — Former school (section C of the paper form) —
     { key: 'formerSchool', label: 'Former school', readonly: true, group: 'Former school' },
@@ -83,6 +106,7 @@ const config: ResourceConfig = {
     { key: 'siblingClass', label: "Sibling's class", readonly: true, group: 'Health & family' },
 
     // — Review —
+    { key: 'declarationName', label: 'Declared by', readonly: true, group: 'Review' },
     { key: 'extraData', label: 'Additional answers', table: true, readonly: true, group: 'Review' },
     { key: 'decisionNote', label: 'Decision note', type: 'textarea', group: 'Review' },
   ],

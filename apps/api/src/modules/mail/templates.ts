@@ -27,6 +27,23 @@ export function admissionReceivedEmail(p: { guardian: string; pupil: string; ref
       <p>Your tracking reference is:</p>
       <p style="font-size:22px;font-weight:bold;color:#6e1f23;letter-spacing:.05em;">${escapeHtml(p.reference)}</p>
       <p>Keep this reference safe — you can use it to track your application status at any time.</p>
+      <div style="border:1px solid #6e1f23;background:#faf6f6;padding:14px 16px;margin:18px 0;">
+        <p style="margin:0 0 6px;color:#6e1f23;font-weight:bold;text-transform:uppercase;letter-spacing:.05em;font-size:13px;">
+          Next step: come to the school
+        </p>
+        <p style="margin:0;">Applying online does not complete the admission. Please
+          <strong>print your application form and bring it to the school together with your child</strong>
+          and the <strong>interview fee</strong> on any interview day.</p>
+        <p style="margin:8px 0 0;"><strong>Come with:</strong> the child being admitted, the printed form, and UGX 50,000 in cash.</p>
+        <p style="margin:4px 0 0;"><strong>Interviews:</strong> Monday to Friday, 9:00am to 12:00 noon.</p>
+        <p style="margin:4px 0 0;"><strong>Interview / registration fee:</strong> UGX 50,000 (non-refundable), payable in cash on the day.</p>
+        <p style="margin:8px 0 4px;"><strong>Also bring:</strong></p>
+        <ul style="margin:0;padding-left:18px;">
+          <li>1 passport photo each for the child, the mother and the father</li>
+          <li>Photocopy of the recent report card from the previous school</li>
+          <li>Photocopy of the immunization card or Birth Certificate</li>
+        </ul>
+      </div>
       <p>Warm regards,<br/>The Admissions Office</p>`,
   });
 }

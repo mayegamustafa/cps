@@ -125,7 +125,7 @@ export function buildAdmissionPrintout(data: AdmissionPrintData, school: SchoolI
 <div class="indent">
   <div class="row">(i) &nbsp;Surname: ${slot(v.pupilLastName)} &nbsp; Other names: ${slot(v.pupilFirstName)}</div>
   <div class="row">(ii) &nbsp;Date of birth ${slot(dobText)} &nbsp; Age: ${slot(age(dob))} &nbsp; Gender: ${slot(v.gender)}</div>
-  <div class="row">(iii) &nbsp;Nationality: ${slot('')} &nbsp; (iv) Religion: ${slot('')}</div>
+  <div class="row">(iii) &nbsp;Nationality: ${slot(v.nationality)} &nbsp; (iv) Religion: ${slot(v.religion)}</div>
   <div class="row">(v) &nbsp;Day or Boarding: ${slot(v.residenceLabel)} &nbsp; Section: ${slot(v.sectionLabel)}</div>
 </div>
 
@@ -133,20 +133,21 @@ export function buildAdmissionPrintout(data: AdmissionPrintData, school: SchoolI
 <div class="indent">
   <div class="row">(i) &nbsp;Father/Guardian's Name: ${slot(v.guardianName)}</div>
   <div class="row">Phone contact: ${slot(v.guardianPhone)} &nbsp; E-mail: ${slot(v.guardianEmail)}</div>
-  <div class="row">Occupation: ${slot('')} &nbsp; Place of work: ${slot('')}</div>
+  <div class="row">Occupation: ${slot(v.guardianOccupation)} &nbsp; Place of work: ${slot(v.guardianWorkplace)}</div>
   <div class="row">Residence: ${slot(v.guardianResidence)} &nbsp; District: ${slot(v.guardianDistrict)}</div>
   <div class="row">If Guardian, relationship with the child: ${slot(v.relationship)}</div>
 
-  <div class="row" style="margin-top:6px">(ii) &nbsp;Mother's Names: ${slot('')}</div>
-  <div class="row">Phone contact: ${slot('')} &nbsp; E-mail: ${slot('')}</div>
-  <div class="row">Occupation: ${slot('')} &nbsp; Place of work: ${slot('')}</div>
-  <div class="row">Residence: ${slot('')} &nbsp; District: ${slot('')}</div>
+  <div class="row" style="margin-top:5px">(ii) &nbsp;Mother's Names: ${slot(v.motherName)}</div>
+  <div class="row">Phone contact: ${slot(v.motherPhone)} &nbsp; E-mail: ${slot(v.motherEmail)}</div>
+  <div class="row">Occupation: ${slot(v.motherOccupation)} &nbsp; Place of work: ${slot(v.motherWorkplace)}</div>
+  <div class="row">Residence: ${slot(v.motherResidence)} &nbsp; District: ${slot(v.motherDistrict)}</div>
 
-  <div class="row" style="margin-top:6px">(iii) &nbsp;Other immediate contact person</div>
-  <div class="row">Name: ${slot('')}</div>
-  <div class="row">Phone contact: ${slot('')} &nbsp; E-mail: ${slot('')}</div>
-  <div class="row">Residence: ${slot('')} &nbsp; District: ${slot('')}</div>
-  <div class="row">Relationship to the child: ${slot('')}</div>
+  <div class="row" style="margin-top:5px">(iii) &nbsp;Other immediate contact person</div>
+  <div class="row">Name: ${slot(v.contactName)}</div>
+  <div class="row">Phone contact: ${slot(v.contactPhone)} &nbsp; E-mail: ${slot(v.contactEmail)}</div>
+  <div class="row">Occupation: ${slot(v.contactOccupation)} &nbsp; Place of work: ${slot(v.contactWorkplace)}</div>
+  <div class="row">Residence: ${slot(v.contactResidence)} &nbsp; District: ${slot(v.contactDistrict)}</div>
+  <div class="row">Relationship to the child: ${slot(v.contactRelationship)}</div>
 </div>
 
 <h2>C. &nbsp;Former School's details <span style="font-weight:normal">(Attach copy of Report Card)</span></h2>
@@ -164,19 +165,21 @@ export function buildAdmissionPrintout(data: AdmissionPrintData, school: SchoolI
 
 <div class="sign">
   <div class="row">Parent/ Guardian's Signature: ${slot('')}</div>
-  <div class="row">Name: ${slot(v.guardianName)}</div>
+  <div class="row">Name: ${slot(v.declarationName || v.guardianName)}</div>
   <div class="row">Date: ${slot('')}</div>
 </div>
 
 <div class="note">
-  <h3>Bring this form with you</h3>
+  <h3>Bring this form to the school</h3>
   <p style="margin:0">
-    Please print this form and bring it to the school with your child on the interview day,
-    together with the items below. Any line left blank above can be completed by hand.
+    Applying online does not complete the admission. Please <b>bring this printed form to
+    the school together with your child</b> and the <b>interview fee</b> on any interview
+    day. Sign above, and complete by hand any line left blank.
   </p>
-  <p style="margin:6px 0 0"><b>Interviews:</b> Monday to Friday, 9:00am to 12:00 noon.</p>
-  <p style="margin:3px 0 0"><b>Registration / interview fee:</b> UGX 50,000 (non-refundable), payable in cash on the interview day.</p>
-  <p style="margin:6px 0 3px"><b>Requirements for registration:</b></p>
+  <p style="margin:5px 0 0"><b>Come with:</b> the child being admitted, this form, and UGX 50,000 in cash.</p>
+  <p style="margin:3px 0 0"><b>Interviews:</b> Monday to Friday, 9:00am to 12:00 noon.</p>
+  <p style="margin:3px 0 0"><b>Interview / registration fee:</b> UGX 50,000 (non-refundable), payable in cash on the day.</p>
+  <p style="margin:5px 0 3px"><b>Also bring:</b></p>
   <ul>
     <li>1 passport photo for the child</li>
     <li>1 passport photo for the mother</li>

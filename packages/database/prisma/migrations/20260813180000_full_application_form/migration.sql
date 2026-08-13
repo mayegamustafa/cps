@@ -1,0 +1,22 @@
+-- AlterTable
+ALTER TABLE "admission_applications" ADD COLUMN     "contactDistrict" TEXT,
+ADD COLUMN     "contactEmail" TEXT,
+ADD COLUMN     "contactName" TEXT,
+ADD COLUMN     "contactOccupation" TEXT,
+ADD COLUMN     "contactPhone" TEXT,
+ADD COLUMN     "contactRelationship" TEXT,
+ADD COLUMN     "contactResidence" TEXT,
+ADD COLUMN     "contactWorkplace" TEXT,
+ADD COLUMN     "declarationName" TEXT,
+ADD COLUMN     "guardianOccupation" TEXT,
+ADD COLUMN     "guardianWorkplace" TEXT,
+ADD COLUMN     "motherDistrict" TEXT,
+ADD COLUMN     "motherEmail" TEXT,
+ADD COLUMN     "motherName" TEXT,
+ADD COLUMN     "motherOccupation" TEXT,
+ADD COLUMN     "motherPhone" TEXT,
+ADD COLUMN     "motherResidence" TEXT,
+ADD COLUMN     "motherWorkplace" TEXT,
+ADD COLUMN     "nationality" TEXT,
+ADD COLUMN     "religion" TEXT;
+

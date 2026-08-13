@@ -555,30 +555,47 @@ model AdmissionApplication {
   pupilLastName   String
   pupilDob        DateTime
   gender          String?
+  nationality     String?
+  religion        String?
   section         SchoolSection
   gradeApplyingFor String
   residence       Residence         @default(DAY)
-  // Guardian (section B(i) of the paper form)
+  // Father / guardian — section B(i) of the paper form
   guardianName    String
   guardianEmail   String
   guardianPhone   String
   relationship    String?
-  guardianResidence String?
-  guardianDistrict  String?
-  // Former school (section C)
+  guardianOccupation String?
+  guardianWorkplace  String?
+  guardianResidence  String?
+  guardianDistrict   String?
+  // Mother — section B(ii)
+  motherName      String?
+  motherPhone     String?
+  motherEmail     String?
+  motherOccupation String?
+  motherWorkplace String?
+  motherResidence String?
+  motherDistrict  String?
+  // Other immediate contact person — section B(iii)
+  contactName     String?
+  contactPhone    String?
+  contactEmail    String?
+  contactOccupation String?
+  contactWorkplace String?
+  contactResidence String?
+  contactDistrict String?
+  contactRelationship String?
+  // Former school — section C
   formerSchool    String?
   formerClass     String?
   heardAboutUs    String?
-  // Health background (section D)
+  // Health background — section D
   specialIllness  String?           @db.Text
   siblingName     String?
   siblingClass    String?
-  //
-  // The remaining lines of the paper form (mother's and second contact's
-  // details, occupations, nationality, religion) are deliberately NOT stored:
-  // the online form does not ask for them, and the printed copy leaves them as
-  // ruled lines to complete by hand at the interview. Columns that nothing ever
-  // writes are worse than blank lines on paper.
+  // Declaration — the printed copy still carries the wet signature
+  declarationName String?
   // Workflow
   status          ApplicationStatus @default(SUBMITTED)
   decisionNote    String?           @db.Text

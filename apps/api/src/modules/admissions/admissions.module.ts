@@ -27,10 +27,12 @@ import { MailService } from '../mail/mail.module';
 import { admissionReceivedEmail, admissionDecisionEmail } from '../mail/templates';
 
 /**
- * The subset of the school's paper "New Pupil's Application Form" that a parent
- * fills in online. The rest of the paper form's lines are left blank on the
- * printed copy for completion by hand at the interview, so everything here is
- * either genuinely required to process the application or optional.
+ * The school's paper "New Pupil's Application Form", section for section.
+ *
+ * Only the fields the office genuinely cannot process an application without
+ * are required; every dotted line the paper form treats as fill-if-you-can is
+ * optional here too, so a parent is never blocked at 11pm because they cannot
+ * remember the mother's employer.
  */
 class CreateAdmissionDto {
   @IsString() reference: string;
@@ -40,17 +42,40 @@ class CreateAdmissionDto {
   @IsString() @MinLength(2) pupilLastName: string;
   @IsDateString() pupilDob: string;
   @IsOptional() @IsString() gender?: string;
+  @IsOptional() @IsString() nationality?: string;
+  @IsOptional() @IsString() religion?: string;
   @IsEnum(SchoolSection) section: SchoolSection;
   @IsString() gradeApplyingFor: string;
   @IsOptional() @IsEnum(Residence) residence?: Residence;
 
-  // B. Parent / guardian
+  // B(i). Father / guardian
   @IsString() guardianName: string;
   @IsEmail() guardianEmail: string;
   @IsString() guardianPhone: string;
   @IsOptional() @IsString() relationship?: string;
+  @IsOptional() @IsString() guardianOccupation?: string;
+  @IsOptional() @IsString() guardianWorkplace?: string;
   @IsOptional() @IsString() guardianResidence?: string;
   @IsOptional() @IsString() guardianDistrict?: string;
+
+  // B(ii). Mother
+  @IsOptional() @IsString() motherName?: string;
+  @IsOptional() @IsString() motherPhone?: string;
+  @IsOptional() @IsString() motherEmail?: string;
+  @IsOptional() @IsString() motherOccupation?: string;
+  @IsOptional() @IsString() motherWorkplace?: string;
+  @IsOptional() @IsString() motherResidence?: string;
+  @IsOptional() @IsString() motherDistrict?: string;
+
+  // B(iii). Other immediate contact person
+  @IsOptional() @IsString() contactName?: string;
+  @IsOptional() @IsString() contactPhone?: string;
+  @IsOptional() @IsString() contactEmail?: string;
+  @IsOptional() @IsString() contactOccupation?: string;
+  @IsOptional() @IsString() contactWorkplace?: string;
+  @IsOptional() @IsString() contactResidence?: string;
+  @IsOptional() @IsString() contactDistrict?: string;
+  @IsOptional() @IsString() contactRelationship?: string;
 
   // C. Former school
   @IsOptional() @IsString() formerSchool?: string;
@@ -61,6 +86,9 @@ class CreateAdmissionDto {
   @IsOptional() @IsString() specialIllness?: string;
   @IsOptional() @IsString() siblingName?: string;
   @IsOptional() @IsString() siblingClass?: string;
+
+  // Declaration
+  @IsOptional() @IsString() declarationName?: string;
 
   @IsOptional() @IsObject() extraData?: Record<string, unknown>;
 }
