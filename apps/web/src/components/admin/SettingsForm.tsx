@@ -305,7 +305,15 @@ export function SettingsForm() {
             </div>
             <TextAreaField label="Intro" id="hintro" value={cfg.hero.intro} onChange={(e) => patch((d) => { d.hero.intro = e.target.value; })} />
             <ImageInput label="Hero background image (shown when no video is set)" value={cfg.hero.backgroundImage} onChange={(url) => patch((d) => { d.hero.backgroundImage = url; })} />
-            <FileUpload label="Hero background video (optional — autoplays muted & looped; overrides the image when set)" accept="video/*" value={cfg.hero.backgroundVideo} onChange={(url) => patch((d) => { d.hero.backgroundVideo = url; })} />
+            {/* `video/*` alone hides files whose container the browser has no MIME
+                type for (.mkv and .avi on many systems), so the extensions are
+                listed too. Cloudinary transcodes all of them. */}
+            <FileUpload
+              label="Hero background video (optional — autoplays muted & looped; overrides the image when set)"
+              accept="video/*,.mp4,.mov,.m4v,.webm,.mkv,.avi,.wmv,.flv,.3gp,.mpeg,.mpg,.ogv,.ts"
+              value={cfg.hero.backgroundVideo}
+              onChange={(url) => patch((d) => { d.hero.backgroundVideo = url; })}
+            />
             <div className="grid grid-cols-2 gap-4">
               <Field label="Primary button" id="hpc" value={cfg.hero.primaryCta.label} onChange={(e) => patch((d) => { d.hero.primaryCta.label = e.target.value; })} />
               <Field label="Primary link" id="hpl" value={cfg.hero.primaryCta.href} onChange={(e) => patch((d) => { d.hero.primaryCta.href = e.target.value; })} />

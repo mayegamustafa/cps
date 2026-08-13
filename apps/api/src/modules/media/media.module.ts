@@ -126,11 +126,47 @@ export class MediaController {
     return { uploadsEnabled: false, provider: null };
   }
 
+  /**
+   * A short-lived signed permit letting the browser POST straight to Cloudinary.
+   *
+   * Routing an upload through this API meant a video was buffered in memory by
+   * the Next proxy, buffered again by multer, and then re-sent in a single
+   * request that Cloudinary's nginx rejects with 413 once it is large enough.
+   * Uploading direct removes both hops and allows chunked transfer, so the only
+   * ceiling left is the Cloudinary plan's own per-file limit.
+   *
+   * The api_secret never leaves the server, and this stays behind the same auth
+   * and roles as the upload route — an unguarded signature would let anyone
+   * write into the school's Cloudinary account.
+   */
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.MARKETING_ADMIN, Role.CONTENT_EDITOR, Role.HR_ADMIN, Role.ADMISSIONS_ADMIN)
+  @Post('signature')
+  async signature() {
+    const creds = await resolveCloudinary(this.integrations);
+    if (!creds) return { enabled: false };
+    const timestamp = Math.floor(Date.now() / 1000);
+    const folder = 'city-parents';
+    const toSign = `folder=${folder}&timestamp=${timestamp}`;
+    const signature = createHash('sha1').update(toSign + creds.apiSecret).digest('hex');
+    return {
+      enabled: true,
+      cloudName: creds.cloudName,
+      apiKey: creds.apiKey,
+      timestamp,
+      folder,
+      signature,
+    };
+  }
+
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SUPER_ADMIN, Role.MARKETING_ADMIN, Role.CONTENT_EDITOR, Role.HR_ADMIN, Role.ADMISSIONS_ADMIN)
   @Post('upload')
-  @UseInterceptors(FileInterceptor('file'))
+  // Cap the fallback path: multer buffers the whole file in memory, so an
+  // unbounded upload takes the API container down rather than failing cleanly.
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 100 * 1024 * 1024 } }))
   async upload(@UploadedFile() file: MulterFile) {
     if (!file) throw new ServiceUnavailableException('No file received.');
 
