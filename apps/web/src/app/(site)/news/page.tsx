@@ -87,7 +87,7 @@ export default async function NewsPage() {
       {social.length ? (
         <section className="py-24">
           <div className="container-page">
-            <SectionHeading align="center" eyebrow="Social wall" title="Follow our journey" intro="The latest from our social channels — updated as we post." />
+            <SectionHeading align="center" eyebrow="Social wall" title="Follow our journey" intro="The latest from our social channels, updated as we post." />
           </div>
           <div className="mt-12">
             <SocialWall posts={social} />

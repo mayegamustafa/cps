@@ -27,7 +27,7 @@ function authHeaders(): Record<string, string> {
 }
 
 function blankForm(): FormItem {
-  return { id: '', title: '', description: '', status: 'DRAFT', fields: [], submitLabel: 'Submit', successMessage: 'Thank you — your response has been received.' };
+  return { id: '', title: '', description: '', status: 'DRAFT', fields: [], submitLabel: 'Submit', successMessage: 'Thank you, your response has been received.' };
 }
 
 export function FormsManager() {
@@ -126,7 +126,7 @@ export function FormsManager() {
                   <td className="px-5 py-3.5">
                     {f.status === 'PUBLISHED' && f.slug ? (
                       <a href={`/forms/${f.slug}`} target="_blank" rel="noreferrer" className="text-maroon-700 hover:underline">/forms/{f.slug}</a>
-                    ) : <span className="text-ink-muted">—</span>}
+                    ) : <span className="text-ink-muted">-</span>}
                   </td>
                   <td className="px-5 py-3.5">
                     <button onClick={() => openSubmissions(f)} className="font-medium text-maroon-700 hover:underline">{f.submissions ?? 0}</button>
@@ -162,7 +162,7 @@ export function FormsManager() {
       const e = (s: unknown) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
       const head = [...cols.map((c) => `<th>${e(c.label)}</th>`), '<th>Submitted</th>'].join('');
       const body = subs.map((s) => `<tr>${[...cols.map((c) => `<td>${e(s.data[c.key])}</td>`), `<td>${e(new Date(s.createdAt).toLocaleString())}</td>`].join('')}</tr>`).join('');
-      const html = `<!doctype html><html><head><title>${e(subForm!.title)}</title><style>body{font-family:Arial;padding:24px;}h1{color:#6e1f23;font-size:20px;}table{width:100%;border-collapse:collapse;font-size:12px;}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left;}th{background:#f5eceb;color:#6e1f23;}</style></head><body><h1>${e(subForm!.title)} — responses</h1><p>${subs.length} response(s)</p><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table><script>window.onload=function(){window.print();}</script></body></html>`;
+      const html = `<!doctype html><html><head><title>${e(subForm!.title)}</title><style>body{font-family:Arial;padding:24px;}h1{color:#6e1f23;font-size:20px;}table{width:100%;border-collapse:collapse;font-size:12px;}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left;}th{background:#f5eceb;color:#6e1f23;}</style></head><body><h1>${e(subForm!.title)}: responses</h1><p>${subs.length} response(s)</p><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table><script>window.onload=function(){window.print();}</script></body></html>`;
       const w = window.open('', '_blank'); if (w) { w.document.write(html); w.document.close(); }
     }
     return (
@@ -170,7 +170,7 @@ export function FormsManager() {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
             <button onClick={() => setView('list')} className="mb-2 inline-flex items-center gap-1 text-sm text-maroon-700 hover:underline"><Icon name="arrow-right" size={15} className="rotate-180" /> All forms</button>
-            <h1 className="font-display text-2xl text-maroon-900">{subForm.title} — responses</h1>
+            <h1 className="font-display text-2xl text-maroon-900">{subForm.title}: responses</h1>
             <p className="mt-1 text-sm text-ink-soft">{subs.length} response(s).</p>
           </div>
           <div className="flex gap-2">
@@ -191,7 +191,7 @@ export function FormsManager() {
                 <tr><td colSpan={cols.length + 1} className="px-5 py-8 text-center text-ink-muted">No responses yet.</td></tr>
               ) : subs.map((s) => (
                 <tr key={s.id} className="hover:bg-paper-dark/30">
-                  {cols.map((c) => <td key={c.key} className="px-5 py-3.5 text-ink">{String(s.data[c.key] ?? '—')}</td>)}
+                  {cols.map((c) => <td key={c.key} className="px-5 py-3.5 text-ink">{String(s.data[c.key] ?? '-')}</td>)}
                   <td className="px-5 py-3.5 text-ink-muted">{new Date(s.createdAt).toLocaleString()}</td>
                 </tr>
               ))}

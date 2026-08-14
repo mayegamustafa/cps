@@ -58,7 +58,7 @@ export function AlbumGallery({ images, title }: { images: string[]; title: strin
           onClick={close}
           role="dialog"
           aria-modal="true"
-          aria-label={`${title} — photo viewer`}
+          aria-label={`${title} photo viewer`}
         >
           <button
             onClick={close}
@@ -90,7 +90,7 @@ export function AlbumGallery({ images, title }: { images: string[]; title: strin
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={images[open]}
-            alt={`${title} — photo ${open + 1}`}
+            alt={`${title} photo ${open + 1}`}
             className="max-h-[85vh] max-w-[90vw] rounded-lg object-contain"
             onClick={(e) => e.stopPropagation()}
           />

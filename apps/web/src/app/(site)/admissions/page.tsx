@@ -29,32 +29,44 @@ export default async function AdmissionsPage() {
         image="https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=2000&q=70"
       />
 
-      {/* Process */}
-      <section className="py-24">
+      {/* Process. On a phone these four cards used to fill more than a screen
+          before the form came into view, so they are compact rows there and
+          full cards from `md` up. */}
+      <section className="section">
         <div className="container-page">
           <SectionHeading align="center" eyebrow="How to apply" title="Four simple steps to enrolment" />
-          <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <ol className="mt-8 grid gap-3 md:mt-14 md:gap-6 md:grid-cols-2 lg:grid-cols-4">
             {admissionSteps.map((s) => (
-              <div key={s.step} className="relative rounded-2xl border border-line bg-paper p-7">
-                <span className="font-display text-5xl text-gold-200">{s.step}</span>
-                <h3 className="mt-3 text-xl">{s.title}</h3>
-                <p className="mt-2 text-sm text-ink-soft">{s.body}</p>
-              </div>
+              <li
+                key={s.step}
+                className="flex items-start gap-4 rounded-2xl border border-line bg-paper p-4 md:block md:p-7"
+              >
+                <span className="font-display text-3xl leading-none text-gold-300 md:text-5xl md:text-gold-200">
+                  {s.step}
+                </span>
+                <div className="md:mt-3">
+                  <h3 className="text-base md:text-xl">{s.title}</h3>
+                  <p className="mt-1 text-sm text-ink-soft md:mt-2">{s.body}</p>
+                </div>
+              </li>
             ))}
+          </ol>
+          <div className="mt-7 sm:hidden">
+            <Button href="#apply" size="lg" icon="arrow-right" className="w-full">Start your application</Button>
           </div>
         </div>
       </section>
 
       {/* Application form */}
-      <section id="apply" className="bg-paper-dark py-24">
-        <div className="container-page grid gap-12 lg:grid-cols-[0.9fr_1.1fr]">
+      <section id="apply" className="section bg-paper-dark scroll-mt-20">
+        <div className="container-page grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:gap-12">
           <div>
             <SectionHeading
               eyebrow="Online application"
               title="Start your application"
               intro="Complete the form and we will create a secure tracking reference for your child’s application."
             />
-            <div className="mt-8">
+            <div className="mt-6 hidden lg:mt-8 lg:block">
               <Button href="/downloads" variant="outline" icon="arrow-right">
                 Download prospectus & forms
               </Button>
@@ -76,7 +88,7 @@ export default async function AdmissionsPage() {
       </section>
 
       {/* Fees — request via WhatsApp / admissions office */}
-      <section className="py-24">
+      <section className="section">
         <div className="container-page">
           <div className="mx-auto max-w-3xl rounded-3xl border border-line bg-paper-dark/40 p-8 text-center sm:p-12">
             <span className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-maroon-700 text-gold-300">
@@ -103,7 +115,7 @@ export default async function AdmissionsPage() {
       </section>
 
       {/* FAQ */}
-      <section className="bg-paper-dark py-24">
+      <section className="section bg-paper-dark">
         <div className="container-page max-w-3xl">
           <SectionHeading align="center" eyebrow="Questions" title="Frequently asked questions" />
           <div className="mt-10">

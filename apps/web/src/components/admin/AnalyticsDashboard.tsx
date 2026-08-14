@@ -48,7 +48,7 @@ function BarList({ title, data }: { title: string; data: Slice[] }) {
           {data.slice(0, 8).map((d) => (
             <li key={d.label}>
               <div className="flex items-center justify-between text-sm">
-                <span className="truncate pr-3 text-ink">{d.label || '—'}</span>
+                <span className="truncate pr-3 text-ink">{d.label || '-'}</span>
                 <span className="shrink-0 font-medium text-ink-soft">{d.count}</span>
               </div>
               <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-paper-dark">
@@ -110,7 +110,7 @@ export function AnalyticsDashboard() {
       rows.forEach((r) => lines.push(`"${r.label.replace(/"/g, '""')}",${r.count}`));
       lines.push('');
     };
-    lines.push(`City Parents School — Analytics (last ${data.range.days} days)`, '');
+    lines.push(`City Parents School: Analytics (last ${data.range.days} days)`, '');
     lines.push('Metric,Value');
     Object.entries(data.totals).forEach(([k, v]) => lines.push(`${k},${v}`));
     lines.push('');

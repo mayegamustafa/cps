@@ -36,10 +36,16 @@ export function AnalyticsBeacon() {
         ? document.referrer
         : undefined;
 
+    // The visitor's time zone is how the dashboard works out their country: the
+    // site sits behind no CDN, so no cf-ipcountry style header ever reaches the
+    // API. It costs nothing, needs no GeoIP service, and never involves an IP.
+    let tz: string | undefined;
+    try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { /* unsupported */ }
+
     fetch('/api/analytics/track', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: pathname, referrer: ref, visitorId: vid, sessionId: sid, isNew }),
+      body: JSON.stringify({ path: pathname, referrer: ref, visitorId: vid, sessionId: sid, isNew, tz }),
       keepalive: true,
     }).catch(() => {});
   }, [pathname]);

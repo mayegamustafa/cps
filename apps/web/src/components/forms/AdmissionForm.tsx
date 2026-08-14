@@ -85,11 +85,21 @@ export function AdmissionForm({
     setStatus('sending');
     const form = new FormData(e.currentTarget);
     const payload = Object.fromEntries(form.entries()) as Record<string, string>;
+
+    // One "full name" box on screen, two columns in the database. Splitting at
+    // the LAST space keeps the parent's own word order intact, because every
+    // display joins the two back as "first last" - so whatever they typed,
+    // in whichever order Ugandan families use, reads back exactly the same.
+    const fullName = (payload.pupilName ?? '').trim().replace(/\s+/g, ' ');
+    const cut = fullName.lastIndexOf(' ');
+    payload.pupilFirstName = cut === -1 ? fullName : fullName.slice(0, cut);
+    payload.pupilLastName = cut === -1 ? '' : fullName.slice(cut + 1);
+    delete payload.pupilName;
     // Fold the "Other" free text back into the single stored answer, so the
     // column, the admin view and the printed form all stay unchanged.
     const otherText = (payload.heardAboutUsOther ?? '').trim();
     if (payload.heardAboutUs === 'Other') {
-      payload.heardAboutUs = otherText ? `Other — ${otherText}` : 'Other';
+      payload.heardAboutUs = otherText ? `Other: ${otherText}` : 'Other';
     }
     delete payload.heardAboutUsOther;
     const ref = `CPS-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -147,7 +157,7 @@ export function AdmissionForm({
           </span>
           <h3 className="mt-4 text-xl">Application submitted</h3>
           <p className="mt-2 text-ink-soft">
-            Keep your tracking reference safe — you can use it to follow your
+            Keep your tracking reference safe. You can use it to follow your
             child&rsquo;s application status.
           </p>
           <p className="mt-4 inline-block rounded-xl bg-maroon-50 px-5 py-3 font-mono text-lg font-semibold text-maroon-800">
@@ -165,7 +175,7 @@ export function AdmissionForm({
             the <strong className="text-maroon-800">interview fee</strong> on any interview day.
           </p>
           <ul className="mt-3 space-y-1.5 text-sm text-ink-soft">
-            <li className="flex gap-2"><Icon name="users" size={16} className="mt-0.5 shrink-0 text-maroon-700" /> Come together with the child being admitted — the interview is with them.</li>
+            <li className="flex gap-2"><Icon name="users" size={16} className="mt-0.5 shrink-0 text-maroon-700" /> Come together with the child being admitted. The interview is with them.</li>
             <li className="flex gap-2"><Icon name="clock" size={16} className="mt-0.5 shrink-0 text-maroon-700" /> Interviews run Monday to Friday, 9:00am to 12:00 noon.</li>
             <li className="flex gap-2"><Icon name="shield-check" size={16} className="mt-0.5 shrink-0 text-maroon-700" /> Interview fee: UGX 50,000 (non-refundable), paid in cash on the day.</li>
             <li className="flex gap-2"><Icon name="image" size={16} className="mt-0.5 shrink-0 text-maroon-700" /> 1 passport photo each for the child, the mother and the father.</li>
@@ -200,17 +210,21 @@ export function AdmissionForm({
   return (
     <form onSubmit={onSubmit} className="space-y-6 rounded-2xl border border-line bg-paper p-6 sm:p-8">
       <p className="rounded-xl bg-paper-dark/60 px-4 py-3 text-sm text-ink-soft">
-        Just the essentials — this takes about a minute. You will print a copy at the end
+        Just the essentials. This takes about a minute. You will print a copy at the end
         and complete the rest of the school&rsquo;s form by hand at the interview.
         Fields marked <span className="font-semibold text-maroon-700">*</span> are required.
       </p>
 
       <fieldset className="space-y-5">
         <Legend>Pupil</Legend>
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Surname" id="pupilLastName" name="pupilLastName" required />
-          <Field label="Other names" id="pupilFirstName" name="pupilFirstName" required />
-        </div>
+        <Field
+          label="Pupil's full name"
+          id="pupilName"
+          name="pupilName"
+          required
+          autoComplete="name"
+          placeholder="As written on the birth certificate"
+        />
         <div className="grid gap-5 sm:grid-cols-2">
           <Field label="Date of birth" id="pupilDob" name="pupilDob" type="date" required />
           <SelectField label="Gender" id="gender" name="gender" defaultValue="">

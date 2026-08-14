@@ -9,7 +9,7 @@ import { getSiteConfig } from '@/lib/site-config';
 export const metadata: Metadata = {
   title: 'Talent Development Program',
   description:
-    'The City Parents School Talent Development Program — nurturing pupils’ gifts in music, sport, the arts, debate, science and more, with photos and videos.',
+    'The City Parents School Talent Development Program, nurturing pupils’ gifts in music, sport, the arts, debate, science and more, with photos and videos.',
 };
 
 function youtubeEmbed(url: string): string | null {
@@ -29,7 +29,7 @@ export default async function TalentPage() {
       <ConfigurablePageHero page="talent"
         eyebrow="Talent Development Program"
         title="Where every talent finds its stage."
-        intro="Discover how we nurture each child’s gifts — in music, sport, the arts, debate, science and more."
+        intro="Discover how we nurture each child’s gifts in music, sport, the arts, debate, science and more."
         crumbs={[{ label: 'Talent' }]}
         image="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=2000&q=70"
       />
@@ -69,7 +69,7 @@ export default async function TalentPage() {
           <SectionHeading eyebrow="In action" title="Talent in pictures & film" intro="Moments from rehearsals, matches, performances and showcases across the programme." />
           {media.length === 0 ? (
             <p className="mt-10 rounded-2xl border border-line bg-paper-dark/40 p-10 text-center text-ink-muted">
-              Media is being added — check back soon for photos and videos from the programme.
+              Media is being added. Check back soon for photos and videos from the programme.
             </p>
           ) : (
             <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">

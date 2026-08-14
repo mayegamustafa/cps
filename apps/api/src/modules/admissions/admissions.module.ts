@@ -39,7 +39,9 @@ class CreateAdmissionDto {
 
   // A. Pupil's particulars
   @IsString() @MinLength(2) pupilFirstName: string;
-  @IsString() @MinLength(2) pupilLastName: string;
+  // The form asks for one full name and splits it, so a single-word name leaves
+  // this empty. Displays join the two back together, so nothing is lost.
+  @IsOptional() @IsString() pupilLastName?: string;
   @IsDateString() pupilDob: string;
   @IsOptional() @IsString() gender?: string;
   @IsOptional() @IsString() nationality?: string;
@@ -113,6 +115,9 @@ export class AdmissionsController {
     const application = await this.prisma.admissionApplication.create({
       data: {
         ...rest,
+        // The column is NOT NULL; a single-word pupil name legitimately has no
+        // second part, so store an empty string rather than rejecting it.
+        pupilLastName: dto.pupilLastName ?? '',
         pupilDob: new Date(pupilDob),
         ...(extraData ? { extraData: extraData as object } : {}),
       },
@@ -120,10 +125,10 @@ export class AdmissionsController {
     // Confirmation email (best-effort; no-op when SMTP is not configured).
     void this.mail.send({
       to: application.guardianEmail,
-      subject: `Application received — ${application.reference}`,
+      subject: `Application received: ${application.reference}`,
       html: admissionReceivedEmail({
         guardian: application.guardianName,
-        pupil: `${application.pupilFirstName} ${application.pupilLastName}`,
+        pupil: `${application.pupilFirstName} ${application.pupilLastName}`.trim(),
         reference: application.reference,
       }),
     });

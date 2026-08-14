@@ -104,7 +104,7 @@ export function IntegrationsForm() {
     setNote('Sending test email…');
     const res = await fetch('/api/mail/test', { method: 'POST', headers: authHeaders(), body: '{}' }).catch(() => null);
     const data = res && res.ok ? await res.json() : null;
-    setNote(data?.sent ? 'Test email sent — check your inbox.' : `Test failed: ${data?.error ?? 'unable to send'}`);
+    setNote(data?.sent ? 'Test email sent, check your inbox.' : `Test failed: ${data?.error ?? 'unable to send'}`);
   }
 
   async function syncNow() {
@@ -174,7 +174,7 @@ export function IntegrationsForm() {
           <p className="text-xs text-ink-muted">Posts pulled in are published to the wall automatically. You can still hide or delete any post under Social Wall.</p>
         </Card>
 
-        <Card title="Media storage (Cloudinary — free)" desc="Free image/video/document hosting for uploads (photos, cover images, CVs). Create a free account at cloudinary.com and paste the credentials from your dashboard.">
+        <Card title="Media storage (Cloudinary, free)" desc="Free image/video/document hosting for uploads (photos, cover images, CVs). Create a free account at cloudinary.com and paste the credentials from your dashboard.">
           <Field label="Cloud name" id="cl-name" value={cfg.media?.cloudinary?.cloudName ?? ''} placeholder="your-cloud-name" onChange={(e) => patch((d) => { d.media!.cloudinary = { ...d.media!.cloudinary, cloudName: e.target.value }; })} />
           <Field label="API key" id="cl-key" value={cfg.media?.cloudinary?.apiKey ?? ''} placeholder="123456789012345" onChange={(e) => patch((d) => { d.media!.cloudinary = { ...d.media!.cloudinary, apiKey: e.target.value }; })} />
           <Field label="API secret" id="cl-secret" type="password" value={cfg.media?.cloudinary?.apiSecret ?? ''} placeholder="leave blank to keep current" onChange={(e) => patch((d) => { d.media!.cloudinary = { ...d.media!.cloudinary, apiSecret: e.target.value }; })} />

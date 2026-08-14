@@ -90,7 +90,7 @@ function Card({ title, desc, onSave, children }: { title: string; desc?: string;
             }}
             className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium text-white disabled:opacity-50 ${result === 'fail' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-maroon-700 hover:bg-maroon-800'}`}
           >
-            {saving ? 'Saving…' : result === 'ok' ? 'Saved ✓' : result === 'fail' ? 'Failed — sign in again' : 'Save'}
+            {saving ? 'Saving…' : result === 'ok' ? 'Saved ✓' : result === 'fail' ? 'Failed, sign in again' : 'Save'}
           </button>
         ) : null}
       </div>
@@ -235,7 +235,7 @@ export function SettingsForm() {
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl text-maroon-900">Content & Settings</h1>
-          <p className="mt-1 text-sm text-ink-soft">Everything shown on the public website — text, images and links — edited in one place.</p>
+          <p className="mt-1 text-sm text-ink-soft">Everything shown on the public website: text, images and links, edited in one place.</p>
         </div>
         <div className="flex items-center gap-3">
           {status === 'saved' ? <span className="text-sm font-medium text-emerald-600">Saved</span> : null}
@@ -309,7 +309,7 @@ export function SettingsForm() {
                 type for (.mkv and .avi on many systems), so the extensions are
                 listed too. Cloudinary transcodes all of them. */}
             <FileUpload
-              label="Hero background video (optional — autoplays muted & looped; overrides the image when set)"
+              label="Hero background video (optional: autoplays muted and looped, and overrides the image when set)"
               accept="video/*,.mp4,.mov,.m4v,.webm,.mkv,.avi,.wmv,.flv,.3gp,.mpeg,.mpg,.ogv,.ts"
               value={cfg.hero.backgroundVideo}
               onChange={(url) => patch((d) => { d.hero.backgroundVideo = url; })}
@@ -369,7 +369,7 @@ export function SettingsForm() {
                       <Field label="Name" id={`pn-${item.name}`} value={item.name} onChange={(e) => update({ name: e.target.value })} />
                       <IconSelect value={item.icon} onChange={(v) => update({ icon: v as IconName })} />
                     </div>
-                    <ImageInput label="Image (optional — replaces the icon when set)" value={item.image ?? ''} onChange={(v) => update({ image: v })} />
+                    <ImageInput label="Image (optional: replaces the icon when set)" value={item.image ?? ''} onChange={(v) => update({ image: v })} />
                     <Field label="Age range / subtitle" id={`pa-${item.name}`} value={item.age} onChange={(e) => update({ age: e.target.value })} />
                     <TextAreaField label="Blurb" id={`pb-${item.name}`} value={item.blurb} onChange={(e) => update({ blurb: e.target.value })} />
                     <Field label="Link" id={`ph-${item.name}`} value={item.href} onChange={(e) => update({ href: e.target.value })} />
@@ -525,7 +525,7 @@ export function SettingsForm() {
                       <Field label="Title / role" id={`ld-t-${item.name}`} value={item.title} onChange={(e) => update({ title: e.target.value })} />
                     </div>
                     <TextAreaField label="Bio" id={`ld-b-${item.name}`} value={item.bio} onChange={(e) => update({ bio: e.target.value })} />
-                    <ImageInput label="Photo (optional — initials shown if empty)" value={item.image} onChange={(v) => update({ image: v })} />
+                    <ImageInput label="Photo (optional: initials shown if empty)" value={item.image} onChange={(v) => update({ image: v })} />
                   </>
                 )}
               </Repeater>
@@ -548,7 +548,7 @@ export function SettingsForm() {
                       <Field label="Name" id={`ac-n-${item.name}`} value={item.name} onChange={(e) => update({ name: e.target.value })} />
                       <IconSelect value={item.icon} onChange={(v) => update({ icon: v as IconName })} />
                     </div>
-                    <ImageInput label="Image (optional — replaces the icon when set)" value={item.image ?? ''} onChange={(v) => update({ image: v })} />
+                    <ImageInput label="Image (optional: replaces the icon when set)" value={item.image ?? ''} onChange={(v) => update({ image: v })} />
                     <Field label="Age range / subtitle" id={`ac-a-${item.name}`} value={item.age} onChange={(e) => update({ age: e.target.value })} />
                     <TextAreaField label="Summary" id={`ac-s-${item.name}`} value={item.summary} onChange={(e) => update({ summary: e.target.value })} />
                     <StringList label="Subjects" items={item.subjects} placeholder="e.g. Mathematics" onChange={(v) => update({ subjects: v })} />
@@ -574,7 +574,7 @@ export function SettingsForm() {
                       <Field label="Name" id={`ac-db-n-${item.name}`} value={item.name} onChange={(e) => update({ name: e.target.value })} />
                       <IconSelect value={item.icon} onChange={(v) => update({ icon: v as IconName })} />
                     </div>
-                    <ImageInput label="Image (optional — replaces the icon when set)" value={item.image ?? ''} onChange={(v) => update({ image: v })} />
+                    <ImageInput label="Image (optional: replaces the icon when set)" value={item.image ?? ''} onChange={(v) => update({ image: v })} />
                     <TextAreaField label="Summary" id={`ac-db-s-${item.name}`} value={item.summary} onChange={(e) => update({ summary: e.target.value })} />
                     <StringList label="Features" items={item.features} placeholder="e.g. GPS-tracked bus routes" onChange={(v) => update({ features: v })} />
                   </>
@@ -597,7 +597,7 @@ export function SettingsForm() {
                       <Field label="Title" id={`ac-r-n-${item.title}`} value={item.title} onChange={(e) => update({ title: e.target.value })} />
                       <IconSelect value={item.icon} onChange={(v) => update({ icon: v as IconName })} />
                     </div>
-                    <ImageInput label="Image (optional — replaces the icon when set)" value={item.image ?? ''} onChange={(v) => update({ image: v })} />
+                    <ImageInput label="Image (optional: replaces the icon when set)" value={item.image ?? ''} onChange={(v) => update({ image: v })} />
                     <TextAreaField label="Description" id={`ac-r-b-${item.title}`} value={item.body} onChange={(e) => update({ body: e.target.value })} />
                   </>
                 )}
@@ -608,7 +608,7 @@ export function SettingsForm() {
 
         {tab === 'Talent (TDP)' ? (
           <>
-            <Card onSave={save} title="Talent Development Program — intro">
+            <Card onSave={save} title="Talent Development Program intro">
               <Field label="Eyebrow" id="tp-eb" value={cfg.talent.intro.eyebrow} onChange={(e) => patch((d) => { d.talent.intro.eyebrow = e.target.value; })} />
               <Field label="Title" id="tp-t" value={cfg.talent.intro.title} onChange={(e) => patch((d) => { d.talent.intro.title = e.target.value; })} />
               <TextAreaField label="Intro paragraph" id="tp-b" value={cfg.talent.intro.body} onChange={(e) => patch((d) => { d.talent.intro.body = e.target.value; })} />
@@ -708,7 +708,7 @@ export function SettingsForm() {
         ) : null}
 
         {tab === 'Live TV' ? (
-          <Card onSave={save} title="Live TV — idle message" desc="Shown when nothing is streaming. When you start a stream in Admin → Live (or a recording exists), it automatically takes over the page. The page banner is edited under 'Page heads'.">
+          <Card onSave={save} title="Live TV idle message" desc="Shown when nothing is streaming. When you start a stream in Admin → Live (or a recording exists), it automatically takes over the page. The page banner is edited under 'Page heads'.">
             <Field label="Badge" id="lv-b" value={cfg.live.badge} onChange={(e) => patch((d) => { d.live.badge = e.target.value; })} />
             <Field label="Title" id="lv-t" value={cfg.live.title} onChange={(e) => patch((d) => { d.live.title = e.target.value; })} />
             <TextAreaField label="Message" id="lv-m" value={cfg.live.message} onChange={(e) => patch((d) => { d.live.message = e.target.value; })} />
@@ -753,10 +753,10 @@ export function SettingsForm() {
             <Card onSave={save} title="Maintenance mode" desc="When ON, public visitors see a branded maintenance screen. The admin dashboard stays accessible.">
               <label className="flex items-center gap-2 rounded-xl border border-line p-3 text-sm font-medium text-ink">
                 <input type="checkbox" checked={cfg.maintenance.enabled} onChange={(e) => patch((d) => { d.maintenance.enabled = e.target.checked; })} />
-                Enable maintenance mode {cfg.maintenance.enabled ? <span className="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">LIVE — site is down for visitors</span> : null}
+                Enable maintenance mode {cfg.maintenance.enabled ? <span className="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">LIVE: site is down for visitors</span> : null}
               </label>
               <TextAreaField label="Message" id="mt-msg" value={cfg.maintenance.message} onChange={(e) => patch((d) => { d.maintenance.message = e.target.value; })} />
-              <Field label="Estimated return (optional — shows a countdown)" id="mt-ret" type="datetime-local" value={cfg.maintenance.returnAt ? cfg.maintenance.returnAt.slice(0, 16) : ''} onChange={(e) => patch((d) => { d.maintenance.returnAt = e.target.value ? new Date(e.target.value).toISOString() : undefined; })} />
+              <Field label="Estimated return (optional: shows a countdown)" id="mt-ret" type="datetime-local" value={cfg.maintenance.returnAt ? cfg.maintenance.returnAt.slice(0, 16) : ''} onChange={(e) => patch((d) => { d.maintenance.returnAt = e.target.value ? new Date(e.target.value).toISOString() : undefined; })} />
             </Card>
 
             <Card onSave={save} title="Homepage sections" desc="Show or hide individual blocks on the homepage.">
@@ -822,7 +822,7 @@ export function SettingsForm() {
         ) : null}
 
         {tab === 'Admissions form' ? (
-          <Card onSave={save} title="Admissions application — extra questions" desc="These questions are added to the public admissions form, after the standard pupil and guardian details. Answers appear in the Admissions list and exports.">
+          <Card onSave={save} title="Admissions application: extra questions" desc="These questions are added to the public admissions form, after the standard pupil and guardian details. Answers appear in the Admissions list and exports.">
             <FieldDesigner fields={(cfg.admissionsFields ?? []) as FormField[]} onChange={(fields) => patch((d) => { d.admissionsFields = fields; })} addLabel="+ Add question" />
           </Card>
         ) : null}

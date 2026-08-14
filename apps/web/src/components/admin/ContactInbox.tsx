@@ -67,7 +67,7 @@ export function ContactInbox() {
       setReplyText('');
     } else {
       setReplyNote(data?.error === 'SMTP not configured'
-        ? 'Email is not configured yet — set up SMTP under Integrations, or use the mail icon to reply from your own client.'
+        ? 'Email is not configured yet. Set up SMTP under Integrations, or use the mail icon to reply from your own client.'
         : `Could not send: ${data?.error ?? 'try again'}.`);
     }
   }

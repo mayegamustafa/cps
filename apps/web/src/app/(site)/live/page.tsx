@@ -9,7 +9,7 @@ import { serverApi } from '@/lib/api-base';
 export const metadata: Metadata = {
   title: 'Live TV',
   description:
-    'City Parents School Live TV — assemblies, sports, graduations and special events, streamed to families wherever they are.',
+    'City Parents School Live TV: assemblies, sports, graduations and special events, streamed to families wherever they are.',
 };
 
 type ActiveStream = { title: string; description?: string | null; embedUrl?: string | null } | null;
@@ -37,7 +37,7 @@ export default async function LivePage() {
       <ConfigurablePageHero page="live"
         eyebrow="City Parents Live"
         title="Be there, wherever you are."
-        intro="Our school streaming platform brings assemblies, sports days, graduations and special events directly to your screen — live and on demand."
+        intro="Our school streaming platform brings assemblies, sports days, graduations and special events directly to your screen, live and on demand."
         crumbs={[{ label: 'Live TV' }]}
       />
 

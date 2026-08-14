@@ -26,7 +26,7 @@ export function admissionReceivedEmail(p: { guardian: string; pupil: string; ref
       Your application has been received and is now under review.</p>
       <p>Your tracking reference is:</p>
       <p style="font-size:22px;font-weight:bold;color:#6e1f23;letter-spacing:.05em;">${escapeHtml(p.reference)}</p>
-      <p>Keep this reference safe — you can use it to track your application status at any time.</p>
+      <p>Keep this reference safe. You can use it to track your application status at any time.</p>
       <div style="border:1px solid #6e1f23;background:#faf6f6;padding:14px 16px;margin:18px 0;">
         <p style="margin:0 0 6px;color:#6e1f23;font-weight:bold;text-transform:uppercase;letter-spacing:.05em;font-size:13px;">
           Next step: come to the school

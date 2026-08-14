@@ -47,7 +47,7 @@ export function PublicForm({ form }: { form: PublicFormData }) {
     return (
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-8 text-center">
         <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-emerald-600 text-white"><Icon name="shield-check" size={26} /></span>
-        <p className="mt-4 text-lg font-medium text-emerald-900">{form.successMessage || 'Thank you — your response has been received.'}</p>
+        <p className="mt-4 text-lg font-medium text-emerald-900">{form.successMessage || 'Thank you, your response has been received.'}</p>
       </div>
     );
   }

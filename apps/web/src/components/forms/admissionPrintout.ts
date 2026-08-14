@@ -57,10 +57,10 @@ export function buildAdmissionPrintout(data: AdmissionPrintData, school: SchoolI
   const dob = v.pupilDob ?? '';
   const dobText = dob ? longDate(new Date(dob)) : '';
 
-  const sibling = [v.siblingName, v.siblingClass].filter(Boolean).join(' — ');
+  const sibling = [v.siblingName, v.siblingClass].filter(Boolean).join(', ');
 
   return `<!doctype html><html><head><meta charset="utf-8">
-<title>Application Form — ${esc(v.pupilFirstName ?? '')} ${esc(v.pupilLastName ?? '')}</title>
+<title>Application Form: ${esc(v.pupilFirstName ?? '')} ${esc(v.pupilLastName ?? '')}</title>
 <style>
   /* Tuned to land the whole form — including the interview note — on ONE A4
      sheet, so a parent is not asked to print two pages. */
@@ -80,7 +80,7 @@ export function buildAdmissionPrintout(data: AdmissionPrintData, school: SchoolI
      margin:9px 0 7px;letter-spacing:.03em;}
   .row{margin:1px 0;}
   .v{font-weight:bold;border-bottom:1px dotted #444;padding:0 4px;}
-  .blank{display:inline-block;min-width:110px;border-bottom:1px dotted #777;height:11px;}
+  .blank{display:inline-block;min-width:110px;width:60%;max-width:420px;border-bottom:1px dotted #777;height:11px;}
   .grow{min-width:220px;}
   h2{font-size:11px;margin:7px 0 2px;font-weight:bold;}
   .indent{padding-left:15px;}
@@ -123,7 +123,7 @@ export function buildAdmissionPrintout(data: AdmissionPrintData, school: SchoolI
 
 <h2>A. &nbsp;Pupil's Particulars</h2>
 <div class="indent">
-  <div class="row">(i) &nbsp;Surname: ${slot(v.pupilLastName)} &nbsp; Other names: ${slot(v.pupilFirstName)}</div>
+  <div class="row">(i) &nbsp;Name: ${slot(`${v.pupilFirstName ?? ''} ${v.pupilLastName ?? ''}`.trim())}</div>
   <div class="row">(ii) &nbsp;Date of birth ${slot(dobText)} &nbsp; Age: ${slot(age(dob))} &nbsp; Gender: ${slot(v.gender)}</div>
   <div class="row">(iii) &nbsp;Nationality: ${slot(v.nationality)} &nbsp; (iv) Religion: ${slot(v.religion)}</div>
   <div class="row">(v) &nbsp;Day or Boarding: ${slot(v.residenceLabel)} &nbsp; Section: ${slot(v.sectionLabel)}</div>

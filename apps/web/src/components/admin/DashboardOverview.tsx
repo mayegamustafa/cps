@@ -70,8 +70,8 @@ export function DashboardOverview() {
           <DataTable
             columns={['Reference', 'Pupil', 'Status']}
             rows={admissions.slice(0, 5).map((a) => [
-              <span key="r" className="font-mono text-xs">{String(a.reference ?? '—')}</span>,
-              `${a.pupilFirstName ?? ''} ${a.pupilLastName ?? ''}`.trim() || '—',
+              <span key="r" className="font-mono text-xs">{String(a.reference ?? '-')}</span>,
+              `${a.pupilFirstName ?? ''} ${a.pupilLastName ?? ''}`.trim() || '-',
               <StatusBadge key="s" status={String(a.status ?? 'submitted')} />,
             ])}
           />
@@ -85,7 +85,7 @@ export function DashboardOverview() {
           <DataTable
             columns={['Title', 'Status']}
             rows={news.slice(0, 5).map((n) => [
-              <span key="t" className="line-clamp-1">{String(n.title ?? '—')}</span>,
+              <span key="t" className="line-clamp-1">{String(n.title ?? '-')}</span>,
               <StatusBadge key="s" status={String(n.status ?? 'draft')} />,
             ])}
           />

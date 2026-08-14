@@ -169,7 +169,7 @@ function printRows(title: string, fields: Field[], rows: Record<string, unknown>
       th,td{border:1px solid #ddd;padding:6px 8px;text-align:left;vertical-align:top;}
       th{background:#f5eceb;color:#6e1f23;}
     </style></head><body>
-    <h1>City Parents School — ${esc(title)}</h1>
+    <h1>City Parents School: ${esc(title)}</h1>
     <p>${rows.length} record(s) · Generated ${new Date().toLocaleString()}</p>
     <table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
     <script>window.onload=function(){window.print();}</script>
@@ -184,13 +184,13 @@ function printRows(title: string, fields: Field[], rows: Record<string, unknown>
  * in the list table, where column width matters.
  */
 function displayFull(field: Field, value: unknown): string {
-  if (value == null || value === '') return '—';
+  if (value == null || value === '') return '-';
   if (field.type === 'boolean') return value ? 'Yes' : 'No';
   // Prefer the human label over the stored enum: a printed file should read
   // "Under review", not "UNDER_REVIEW".
   const option = field.options?.find((o) => o.value === value);
   if (option) return option.label;
-  if (Array.isArray(value)) return value.length ? value.join(', ') : '—';
+  if (Array.isArray(value)) return value.length ? value.join(', ') : '-';
   if (field.type === 'date') {
     return new Date(String(value)).toLocaleDateString(undefined, {
       day: 'numeric', month: 'long', year: 'numeric',
@@ -203,8 +203,8 @@ function displayFull(field: Field, value: unknown): string {
   }
   if (typeof value === 'object') {
     const entries = Object.entries(value as Record<string, unknown>);
-    if (!entries.length) return '—';
-    return entries.map(([k, v]) => `${k}: ${v == null || v === '' ? '—' : v}`).join('\n');
+    if (!entries.length) return '-';
+    return entries.map(([k, v]) => `${k}: ${v == null || v === '' ? '-' : v}`).join('\n');
   }
   return String(value);
 }
@@ -248,7 +248,7 @@ export function buildRecordHtml(config: ResourceConfig, row: Record<string, unkn
     ? new Date(String(created)).toLocaleString(undefined, {
         day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
       })
-    : '—';
+    : '-';
 
   const signatures = (detail.signatureLines ?? [])
     .map((label) => `<div class="sig"><span></span><p>${esc(label)}</p></div>`)
@@ -257,7 +257,7 @@ export function buildRecordHtml(config: ResourceConfig, row: Record<string, unkn
   const { brand, address } = siteDefaults;
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(
     detail.documentTitle,
-  )} — ${esc(detail.heading(row))}</title>
+  )}: ${esc(detail.heading(row))}</title>
     <style>
       @page{size:A4;margin:16mm;}
       *{box-sizing:border-box;}
@@ -311,7 +311,7 @@ function printRecord(config: ResourceConfig, row: Record<string, unknown>) {
 }
 
 function displayCell(field: Field, value: unknown): string {
-  if (value == null || value === '') return '—';
+  if (value == null || value === '') return '-';
   if (field.type === 'boolean') return value ? 'Yes' : 'No';
   if (field.type === 'tags') return Array.isArray(value) ? value.join(', ') : String(value);
   if (field.type === 'date' || field.type === 'datetime')
@@ -321,7 +321,7 @@ function displayCell(field: Field, value: unknown): string {
     const s = Object.entries(value as Record<string, unknown>)
       .map(([k, v]) => `${k}: ${v}`)
       .join(' · ');
-    return s.length > 80 ? s.slice(0, 77) + '…' : s || '—';
+    return s.length > 80 ? s.slice(0, 77) + '…' : s || '-';
   }
   const s = String(value);
   return s.length > 60 ? s.slice(0, 57) + '…' : s;

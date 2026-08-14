@@ -17,6 +17,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { JwtAuthGuard, RolesGuard } from '../../auth/guards';
 import { Roles } from '../../auth/roles.decorator';
 import { parseDevice, parseBrowser, parseOs, classifySource } from '../../common/ua';
+import { countryFromTimezone } from '../../common/geo';
 
 class TrackDto {
   @IsString() @MaxLength(512) path: string;
@@ -24,6 +25,8 @@ class TrackDto {
   @IsString() @MaxLength(64) visitorId: string;
   @IsString() @MaxLength(64) sessionId: string;
   @IsOptional() @IsBoolean() isNew?: boolean;
+  /** IANA time zone, used to derive the country. See common/geo.ts. */
+  @IsOptional() @IsString() @MaxLength(64) tz?: string;
 }
 
 type Row = {
@@ -133,7 +136,13 @@ export class AnalyticsController {
   @HttpCode(204)
   async track(@Body() dto: TrackDto, @Req() req: { headers: Record<string, string | string[] | undefined> }) {
     const ua = (req.headers['user-agent'] as string) ?? '';
+    // A CDN header if one is ever put in front of us, otherwise the browser's
+    // own time zone. Without this the country panel was permanently empty:
+    // Railway sets none of these headers. See common/geo.ts.
     const countryHeader = (req.headers['cf-ipcountry'] || req.headers['x-vercel-ip-country'] || req.headers['x-country']) as string | undefined;
+    const country =
+      (countryHeader && countryHeader !== 'XX' ? countryHeader : null) ??
+      countryFromTimezone(dto.tz);
     let selfHost: string | undefined;
     try { selfHost = dto.referrer ? new URL(dto.referrer).hostname : undefined; } catch { /* ignore */ }
     void selfHost;
@@ -145,7 +154,7 @@ export class AnalyticsController {
         device: parseDevice(ua),
         browser: parseBrowser(ua),
         os: parseOs(ua),
-        country: countryHeader && countryHeader !== 'XX' ? countryHeader : null,
+        country,
         visitorId: dto.visitorId.slice(0, 64),
         sessionId: dto.sessionId.slice(0, 64),
         isNewVisitor: dto.isNew ?? true,

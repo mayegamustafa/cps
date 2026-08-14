@@ -89,12 +89,12 @@ export function AuditLogViewer() {
               ) : items.map((e) => (
                 <tr key={e.id} className="hover:bg-paper-dark/30">
                   <td className="whitespace-nowrap px-5 py-3 text-ink-muted">{new Date(e.createdAt).toLocaleString()}</td>
-                  <td className="px-5 py-3 text-ink">{e.actorEmail || '—'}</td>
+                  <td className="px-5 py-3 text-ink">{e.actorEmail || '-'}</td>
                   <td className="px-5 py-3 font-mono text-xs text-ink-soft">{e.action}</td>
                   <td className="px-5 py-3">
                     <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${e.status === 'error' ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}>{e.status}</span>
                   </td>
-                  <td className="px-5 py-3 text-ink-muted">{e.ip || '—'}</td>
+                  <td className="px-5 py-3 text-ink-muted">{e.ip || '-'}</td>
                 </tr>
               ))}
             </tbody>

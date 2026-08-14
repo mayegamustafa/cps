@@ -423,7 +423,7 @@ export const siteDefaults: SiteConfig = {
     intro: {
       eyebrow: 'Talent Development Program',
       title: 'Where every talent finds its stage.',
-      body: 'Our Talent Development Program nurtures each child’s gifts — in music, sport, the arts, debate, technology and more — through dedicated coaching, performances and competitions.',
+      body: 'Our Talent Development Program nurtures each child’s gifts in music, sport, the arts, debate, technology and more, through dedicated coaching, performances and competitions.',
     },
     areas: [
       { title: 'Music & Performing Arts', icon: 'music', body: 'Choir, instruments, drama and dance, with regular showcases.' },
@@ -522,7 +522,7 @@ export const siteDefaults: SiteConfig = {
     badge: 'Coming soon',
     title: 'Live TV is on its way',
     message:
-      'We’re building a premium live-streaming experience so parents, alumni and friends of City Parents can watch our biggest moments in real time — and catch every recording afterwards.',
+      'We’re building a premium live-streaming experience so parents, alumni and friends of City Parents can watch our biggest moments in real time, and catch every recording afterwards.',
     primary: { label: 'See what’s happening', href: '/news' },
     secondary: { label: 'Contact us', href: '/contact' },
   },
@@ -533,7 +533,7 @@ export const siteDefaults: SiteConfig = {
       intro:
         'What began as a handful of pupils and a bold vision has become a thriving community of over 2,400 learners. Through every chapter, our commitment has remained unchanged: to know, challenge and champion every child.',
       body:
-        'Today, our graduates lead in medicine, law, technology, business and public service across Uganda and the world — a living testament to the foundation laid on Kabaka Njagala Road.',
+        'Today, our graduates lead in medicine, law, technology, business and public service across Uganda and the world, a living testament to the foundation laid on Kabaka Njagala Road.',
       image: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1000&q=70',
     },
     vision: {
@@ -599,11 +599,11 @@ export const siteDefaults: SiteConfig = {
     gallery: { show: true, eyebrow: 'Media Center', title: 'Life at City Parents, in pictures and film.', intro: 'Browse moments from across our school year, sports, academics, the arts, trips and our biggest celebrations.' },
     alumni: { show: true, eyebrow: 'Alumni', title: 'Once a City Parent, always a City Parent.', intro: 'Celebrating the achievements of our graduates around the world.' },
     careers: { show: true, eyebrow: 'Careers', title: 'Join our team.', intro: 'Build your career with a school that invests in its people.' },
-    contact: { show: true, eyebrow: 'Contact', title: 'We would love to hear from you.', intro: 'Reach the right office quickly — admissions, general enquiries or a campus visit.' },
+    contact: { show: true, eyebrow: 'Contact', title: 'We would love to hear from you.', intro: 'Reach the right office quickly: admissions, general enquiries or a campus visit.' },
     'virtual-tour': { show: true, eyebrow: 'Virtual Tour', title: 'Explore our campus from anywhere.', intro: 'Take a guided look around our classrooms, laboratories and grounds.' },
     live: { show: true, eyebrow: 'Live TV', title: 'Watch City Parents live.', intro: 'Assemblies, events and ceremonies streamed to families wherever they are.' },
     downloads: { show: true, eyebrow: 'Downloads', title: 'Forms, prospectus and resources.', intro: 'Everything you need to download in one place.' },
-    talent: { show: true, eyebrow: 'Talent Development Program', title: 'Where every talent finds its stage.', intro: 'Discover how we nurture each child’s gifts — in music, sport, the arts, debate, science and more.' },
+    talent: { show: true, eyebrow: 'Talent Development Program', title: 'Where every talent finds its stage.', intro: 'Discover how we nurture each child’s gifts in music, sport, the arts, debate, science and more.' },
   },
   taxonomies: {
     galleryCategories: ['Sports', 'Graduation', 'Trips', 'Academics', 'Arts', 'Events', 'Campus'],
