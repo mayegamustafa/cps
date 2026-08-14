@@ -9,10 +9,29 @@ import { buildAdmissionPrintout, type SchoolInfo } from '@/components/forms/admi
 import type { FormField } from '@/components/admin/FieldDesigner';
 
 const SECTION_LABELS: Record<string, string> = {
-  PRE_PRIMARY: 'Pre-Primary (KG1 to KG3)',
-  LOWER_PRIMARY: 'Lower Primary (P.1 to P.3)',
-  UPPER_PRIMARY: 'Upper Primary (P.4 to P.7)',
+  PRE_PRIMARY: 'Pre-Primary',
+  LOWER_PRIMARY: 'Lower Primary',
+  UPPER_PRIMARY: 'Upper Primary',
 };
+
+/**
+ * Classes open to new applicants.
+ *
+ * P.7 is deliberately absent: it is the PLE candidate year, and the school does
+ * not take new pupils into it. A list also spares a parent typing "kg 2", "KG2"
+ * and "Kindergarten 2" into what used to be a free-text box.
+ */
+const CLASS_OPTIONS: { value: string; label: string; section: string }[] = [
+  { value: 'KG1', label: 'KG1 (Baby)', section: 'PRE_PRIMARY' },
+  { value: 'KG2', label: 'KG2 (Middle)', section: 'PRE_PRIMARY' },
+  { value: 'KG3', label: 'KG3 (Top / Pre)', section: 'PRE_PRIMARY' },
+  { value: 'P.1', label: 'P.1', section: 'LOWER_PRIMARY' },
+  { value: 'P.2', label: 'P.2', section: 'LOWER_PRIMARY' },
+  { value: 'P.3', label: 'P.3', section: 'LOWER_PRIMARY' },
+  { value: 'P.4', label: 'P.4', section: 'UPPER_PRIMARY' },
+  { value: 'P.5', label: 'P.5', section: 'UPPER_PRIMARY' },
+  { value: 'P.6', label: 'P.6', section: 'UPPER_PRIMARY' },
+];
 
 /** Answers to "How did you get to know about us?", ordered roughly by how often
  *  a school actually hears them. "Other" opens a free-text box so switching this
@@ -37,29 +56,6 @@ const HEARD_ABOUT_OPTIONS = [
   'An employer or workplace',
 ];
 
-/**
- * The contact/occupation/residence block the paper form repeats for the father,
- * the mother and the second contact person.
- */
-function PersonFields({ prefix, required = false }: { prefix: string; required?: boolean }) {
-  return (
-    <>
-      <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="Phone contact" id={`${prefix}Phone`} name={`${prefix}Phone`} required={required} placeholder="+256 …" />
-        <Field label="E-mail" id={`${prefix}Email`} name={`${prefix}Email`} type="email" required={required} />
-      </div>
-      <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="Occupation" id={`${prefix}Occupation`} name={`${prefix}Occupation`} />
-        <Field label="Place of work" id={`${prefix}Workplace`} name={`${prefix}Workplace`} />
-      </div>
-      <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="Residence" id={`${prefix}Residence`} name={`${prefix}Residence`} placeholder="e.g. Rubaga" />
-        <Field label="District" id={`${prefix}District`} name={`${prefix}District`} placeholder="e.g. Kampala" />
-      </div>
-    </>
-  );
-}
-
 function Legend({ children, hint }: { children: React.ReactNode; hint?: string }) {
   return (
     <legend className="mb-2">
@@ -81,6 +77,8 @@ export function AdmissionForm({
   const [submitted, setSubmitted] = useState<{ at: Date; values: Record<string, string> } | null>(null);
   const [extra, setExtra] = useState<Record<string, unknown>>({});
   const [heardAbout, setHeardAbout] = useState('');
+  const [grade, setGrade] = useState('');
+  const section = CLASS_OPTIONS.find((c) => c.value === grade)?.section ?? '';
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -202,14 +200,13 @@ export function AdmissionForm({
   return (
     <form onSubmit={onSubmit} className="space-y-6 rounded-2xl border border-line bg-paper p-6 sm:p-8">
       <p className="rounded-xl bg-paper-dark/60 px-4 py-3 text-sm text-ink-soft">
-        This is the school&rsquo;s full application form. Only the fields marked
-        <span className="mx-1 font-semibold text-maroon-700">*</span> are required — fill in
-        what you can, print your copy at the end, and complete anything left blank by hand
-        at the interview.
+        Just the essentials — this takes about a minute. You will print a copy at the end
+        and complete the rest of the school&rsquo;s form by hand at the interview.
+        Fields marked <span className="font-semibold text-maroon-700">*</span> are required.
       </p>
 
       <fieldset className="space-y-5">
-        <Legend>A · Pupil&rsquo;s particulars</Legend>
+        <Legend>Pupil</Legend>
         <div className="grid gap-5 sm:grid-cols-2">
           <Field label="Surname" id="pupilLastName" name="pupilLastName" required />
           <Field label="Other names" id="pupilFirstName" name="pupilFirstName" required />
@@ -223,60 +220,50 @@ export function AdmissionForm({
           </SelectField>
         </div>
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Nationality" id="nationality" name="nationality" placeholder="e.g. Ugandan" />
-          <Field label="Religion" id="religion" name="religion" />
-        </div>
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Class applying for" id="gradeApplyingFor" name="gradeApplyingFor" required placeholder="e.g. KG2 or P.3" />
-          <SelectField label="Section applying for" id="section" name="section" required defaultValue="">
-            <option value="" disabled>Select section</option>
-            <option value="PRE_PRIMARY">Pre-Primary (KG1 to KG3)</option>
-            <option value="LOWER_PRIMARY">Lower Primary (P.1 to P.3)</option>
-            <option value="UPPER_PRIMARY">Upper Primary (P.4 to P.7)</option>
+          <SelectField
+            label="Class applying for"
+            id="gradeApplyingFor"
+            name="gradeApplyingFor"
+            required
+            value={grade}
+            onChange={(e) => setGrade(e.target.value)}
+          >
+            <option value="" disabled>Select a class</option>
+            {CLASS_OPTIONS.map((c) => (
+              <option key={c.value} value={c.value}>{c.label}</option>
+            ))}
+          </SelectField>
+          <SelectField label="Day or Boarding" id="residence" name="residence" required defaultValue="DAY">
+            <option value="DAY">Day</option>
+            <option value="BOARDING">Boarding</option>
           </SelectField>
         </div>
-        <SelectField label="Day or Boarding" id="residence" name="residence" required defaultValue="DAY">
-          <option value="DAY">Day</option>
-          <option value="BOARDING">Boarding</option>
-        </SelectField>
+        {/* Derived, not asked: the class already determines the section, and a
+            separate dropdown only creates the chance of picking "KG2" with
+            "Upper Primary". */}
+        <input type="hidden" name="section" value={section} />
+        {section ? (
+          <p className="text-sm text-ink-muted">
+            Section: <span className="font-medium text-ink">{SECTION_LABELS[section]}</span>
+          </p>
+        ) : null}
       </fieldset>
 
       <fieldset className="space-y-5 border-t border-line pt-6">
-        <Legend hint="This is the parent or guardian we will contact about the application.">
-          B (i) · Father / guardian
-        </Legend>
+        <Legend hint="This is who we will contact about the application.">Parent / guardian</Legend>
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Father / guardian's name" id="guardianName" name="guardianName" required />
-          <Field label="If guardian, relationship with the child" id="relationship" name="relationship" placeholder="Mother / Father / Guardian" />
+          <Field label="Full name" id="guardianName" name="guardianName" required />
+          <Field label="Relationship to the child" id="relationship" name="relationship" placeholder="Mother / Father / Guardian" />
         </div>
-        <PersonFields prefix="guardian" required />
-      </fieldset>
-
-      <fieldset className="space-y-5 border-t border-line pt-6">
-        <Legend>B (ii) · Mother</Legend>
-        <Field label="Mother's names" id="motherName" name="motherName" />
-        <PersonFields prefix="mother" />
-      </fieldset>
-
-      <fieldset className="space-y-5 border-t border-line pt-6">
-        <Legend hint="Someone we can reach if you cannot be contacted.">
-          B (iii) · Other immediate contact person
-        </Legend>
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Name" id="contactName" name="contactName" />
-          <Field label="Relationship to the child" id="contactRelationship" name="contactRelationship" />
+          <Field label="Phone contact" id="guardianPhone" name="guardianPhone" required placeholder="+256 …" />
+          <Field label="E-mail" id="guardianEmail" name="guardianEmail" type="email" required />
         </div>
-        <PersonFields prefix="contact" />
       </fieldset>
 
       <fieldset className="space-y-5 border-t border-line pt-6">
-        <Legend hint="Please attach a copy of the report card when you come for the interview.">
-          C · Former school&rsquo;s details
-        </Legend>
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Former school" id="formerSchool" name="formerSchool" placeholder="Leave blank if this is the first school" />
-          <Field label="Former class attended" id="formerClass" name="formerClass" />
-        </div>
+        <Legend>A little more</Legend>
+        <Field label="Former school" id="formerSchool" name="formerSchool" placeholder="Leave blank if this is the first school" />
         <SelectField
           label="How did you get to know about us?"
           id="heardAboutUs"
@@ -301,26 +288,12 @@ export function AdmissionForm({
         ) : null}
       </fieldset>
 
-      <fieldset className="space-y-5 border-t border-line pt-6">
-        <Legend>D · Health background</Legend>
-        <Field label="State if the child has any special illness" id="specialIllness" name="specialIllness" placeholder="None, or briefly describe" />
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Name of any child you already have in our school" id="siblingName" name="siblingName" />
-          <Field label="Their class" id="siblingClass" name="siblingClass" />
-        </div>
-      </fieldset>
-
       {extraFields.length ? (
         <fieldset className="space-y-5 border-t border-line pt-6">
           <Legend>Additional information</Legend>
           <PublicFieldInputs fields={extraFields} values={extra} onChange={(k, v) => setExtra((p) => ({ ...p, [k]: v }))} />
         </fieldset>
       ) : null}
-
-      <fieldset className="space-y-5 border-t border-line pt-6">
-        <Legend hint="You will sign the printed copy by hand at the school.">Declaration</Legend>
-        <Field label="Parent / guardian's name" id="declarationName" name="declarationName" placeholder="Your full name, as it will be signed" />
-      </fieldset>
 
       <div className="rounded-xl border border-maroon-700/25 bg-maroon-50/50 p-4 text-sm text-ink-soft">
         <p className="font-semibold text-maroon-900">After you submit</p>
