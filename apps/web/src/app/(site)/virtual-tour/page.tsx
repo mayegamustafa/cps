@@ -7,9 +7,9 @@ import { getSiteConfig } from '@/lib/site-config';
 import { img, video, videoPoster, mediaPoster } from '@/lib/media';
 
 export const metadata: Metadata = {
-  title: 'Virtual Tour',
+  title: 'Campus Tour',
   description:
-    'Watch a guided video tour of the City Parents School campus: classrooms, laboratories, library and sports facilities.',
+    'A short film through the City Parents School campus: classrooms, laboratories, library and grounds.',
 };
 
 export default async function VirtualTourPage() {
@@ -18,34 +18,29 @@ export default async function VirtualTourPage() {
   return (
     <>
       <ConfigurablePageHero page="virtual-tour"
-        eyebrow="Virtual Tour"
-        title="Walk our campus from anywhere."
-        intro="Watch a guided tour of City Parents School: our classrooms, laboratories, library, sports facilities and more, from your device."
-        crumbs={[{ label: 'Virtual Tour' }]}
+        eyebrow="Campus Tour"
+        title="See the school for yourself."
+        intro="A short film through our classrooms, laboratories, library and grounds, so you know the place before you visit."
+        crumbs={[{ label: 'Campus Tour' }]}
       />
 
-      {/* Viewer. An uploaded video comes first, an embed second, and the poster
-          placeholder only when neither is set. */}
+      {/* Viewer: the uploaded tour video, or a poster placeholder until one is set. */}
       <section className="section-tight">
         <div className="container-page">
           <div className="relative overflow-hidden rounded-2xl border border-line bg-maroon-950">
             {vt.videoUrl ? (
+              /* Starts on its own but muted, because every browser blocks
+                 autoplay with sound. The native controls let a visitor unmute,
+                 pause, scrub or go full screen. */
               <video
                 src={video(vt.videoUrl, 1280)}
                 poster={vt.viewerImage ? img(vt.viewerImage, 1600) : videoPoster(vt.videoUrl) || undefined}
+                autoPlay
+                muted
                 controls
                 playsInline
-                preload="none"
+                preload="metadata"
                 className="aspect-video w-full bg-black object-contain"
-              />
-            ) : vt.embedUrl ? (
-              <iframe
-                src={vt.embedUrl}
-                title="Virtual campus tour"
-                className="aspect-video w-full"
-                allow="accelerometer; autoplay; gyroscope; xr-spatial-tracking; fullscreen"
-                allowFullScreen
-                loading="lazy"
               />
             ) : (
               <div
@@ -61,9 +56,6 @@ export default async function VirtualTourPage() {
               </div>
             )}
           </div>
-          {vt.caption ? (
-            <p className="mt-4 text-center text-sm text-ink-muted">{vt.caption}</p>
-          ) : null}
         </div>
       </section>
 

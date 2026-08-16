@@ -13,6 +13,7 @@ type Summary = {
   };
   series: { date: string; views: number; visitors: number }[];
   topPages: Slice[]; devices: Slice[]; browsers: Slice[]; os: Slice[]; sources: Slice[]; countries: Slice[];
+  socials: Slice[];
 };
 
 const RANGES = [
@@ -116,6 +117,7 @@ export function AnalyticsDashboard() {
     lines.push('');
     section('Top pages', data.topPages);
     section('Traffic sources', data.sources);
+    section('Social networks', data.socials);
     section('Devices', data.devices);
     section('Browsers', data.browsers);
     section('Operating systems', data.os);
@@ -160,6 +162,19 @@ export function AnalyticsDashboard() {
           <div className="grid gap-6 lg:grid-cols-2">
             <BarList title="Top pages" data={data.topPages} />
             <BarList title="Traffic sources" data={data.sources} />
+            <div>
+              <BarList title="Social networks" data={data.socials ?? []} />
+              {/* Attribution is only as honest as the links. TikTok, Instagram
+                  and Facebook open links in an in-app browser that sends no
+                  referrer, so an untagged link is indistinguishable from someone
+                  typing the address in. */}
+              <p className="mt-2 text-xs leading-relaxed text-ink-muted">
+                Social apps hide where a visitor came from unless the link says so. Add
+                <code className="mx-1 rounded bg-paper-dark px-1">?utm_source=tiktok</code>
+                (or instagram, facebook, whatsapp) to the links you post, and those visits
+                move out of &ldquo;Direct or untagged&rdquo; into the right row here.
+              </p>
+            </div>
             <BarList title="Devices" data={data.devices} />
             <BarList title="Browsers" data={data.browsers} />
             <BarList title="Operating systems" data={data.os} />

@@ -16,7 +16,7 @@ import { Role } from '@cps/database';
 import { PrismaService } from '../../prisma/prisma.service';
 import { JwtAuthGuard, RolesGuard } from '../../auth/guards';
 import { Roles } from '../../auth/roles.decorator';
-import { parseDevice, parseBrowser, parseOs, classifySource, sourceLabel } from '../../common/ua';
+import { parseDevice, parseBrowser, parseOs, classifySource, sourceLabel, SOCIAL_SOURCES } from '../../common/ua';
 import { countryFromTimezone, normalizeCountry } from '../../common/geo';
 
 class TrackDto {
@@ -133,6 +133,12 @@ export class AnalyticsService {
       // "direct" for the second and later pages of the same visit.
       sources: tally(firstOfEachSession, (r) => r.source).map((s) => ({ ...s, label: sourceLabel(s.label) })),
       countries: tally(rows, (r) => normalizeCountry(r.country)).slice(0, 12),
+      // Every network, every time, including the ones nobody used: a missing row
+      // reads as "no data", a zero reads as "no one came from there".
+      socials: SOCIAL_SOURCES.map((key) => ({
+        label: sourceLabel(key),
+        count: firstOfEachSession.filter((r) => r.source === key).length,
+      })).sort((a, b) => b.count - a.count),
     };
   }
 }

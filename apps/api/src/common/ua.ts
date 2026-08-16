@@ -75,6 +75,15 @@ export function classifySource(
   return knownNetwork(host) ?? 'referral';
 }
 
+/**
+ * The social networks the dashboard always lists, in a fixed order, so a zero
+ * reads as "nobody arrived from here" rather than the row simply being absent.
+ */
+export const SOCIAL_SOURCES = [
+  'facebook', 'tiktok', 'instagram', 'whatsapp', 'youtube',
+  'x', 'linkedin', 'telegram', 'snapchat', 'pinterest', 'reddit',
+] as const;
+
 /** Display name for a stored source key. */
 export function sourceLabel(source: string): string {
   const map: Record<string, string> = {

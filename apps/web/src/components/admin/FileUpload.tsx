@@ -14,6 +14,17 @@ const inputCls =
  */
 const CHUNK_SIZE = 20 * 1024 * 1024;
 
+/**
+ * Largest single asset Cloudinary will accept on this account.
+ *
+ * Chunked upload removes the limit on one *request*, not the limit on a *file*:
+ * the plan caps the finished asset, and the server replies "File size too large.
+ * Got 178448147. Maximum is 104857600" only after the whole thing has been sent.
+ * Checking first means a parent-sized video fails in a second with advice
+ * instead of after a long upload with a number.
+ */
+const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
+
 type Signature = {
   enabled: boolean;
   cloudName: string;
@@ -201,6 +212,14 @@ export function FileUpload({
   const [error, setError] = useState('');
 
   async function upload(file: File) {
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setError(
+        `This file is ${formatBytes(file.size)}. The largest we can upload is ` +
+          `${formatBytes(MAX_UPLOAD_BYTES)}, so please compress the video and try again ` +
+          `(exporting at 1080p usually does it), or host it elsewhere and paste the link below.`,
+      );
+      return;
+    }
     setBusy(true);
     setError('');
     setPct(0);
@@ -263,7 +282,7 @@ export function FileUpload({
         onChange={(e) => onChange(e.target.value)}
         className={`${inputCls} mt-2`}
       />
-      {error ? <p className="mt-1 text-xs text-maroon-600">{error} You can also paste a URL instead.</p> : null}
+      {error ? <p className="mt-1.5 text-xs leading-relaxed text-maroon-600">{error}</p> : null}
 
       {/* Show the actual file, not just its address. A URL alone gives no way to
           tell whether an upload replaced what was there before. */}

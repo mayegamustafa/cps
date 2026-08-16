@@ -175,11 +175,8 @@ export type SiteConfig = {
   virtualTour: {
     /** An uploaded tour video. Takes priority over `embedUrl` when set. */
     videoUrl: string;
-    /** 360°/Matterport/Google/YouTube embed URL. Used when there is no video. */
-    embedUrl: string;
     /** Poster image shown in the viewer when there is no embed (or before launch). */
     viewerImage: string;
-    caption: string;
     stopsHeading: { eyebrow: string; title: string };
     stops: { title: string; image: string }[];
     cta: { eyebrow: string; title: string; primary: CtaLink; secondary: CtaLink };
@@ -508,9 +505,7 @@ export const siteDefaults: SiteConfig = {
   },
   virtualTour: {
     videoUrl: '',
-    embedUrl: '',
     viewerImage: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=2000&q=70',
-    caption: 'A guided walk through our classrooms, laboratories and grounds.',
     stopsHeading: { eyebrow: 'Explore', title: 'Tour highlights' },
     stops: [
       { title: 'Main Entrance & Reception', image: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=900&q=70' },
