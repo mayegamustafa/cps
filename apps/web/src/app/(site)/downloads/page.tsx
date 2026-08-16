@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { assertPageEnabled } from '@/lib/page-guard';
 import { ConfigurablePageHero } from '@/components/ui/ConfigurablePageHero';
-import { Icon } from '@/components/Icon';
+import { DownloadsList, type DownloadItem } from '@/components/DownloadsList';
+import { getSiteConfig } from '@/lib/site-config';
 import { downloads as fallbackDownloads } from '@/lib/content';
 import { serverApi } from '@/lib/api-base';
 
@@ -9,13 +10,6 @@ export const metadata: Metadata = {
   title: 'Downloads Center',
   description:
     'Download the prospectus, application forms, fee structure, policies and the term calendar for City Parents School.',
-};
-
-type DownloadItem = {
-  title: string;
-  category: string;
-  size: string;
-  fileUrl?: string;
 };
 
 function formatSize(bytes?: number | null) {
@@ -55,7 +49,7 @@ async function getDownloads(): Promise<DownloadItem[]> {
 export default async function DownloadsPage() {
   await assertPageEnabled('downloads');
   const items = await getDownloads();
-  const categories = Array.from(new Set(items.map((d) => d.category)));
+  const config = await getSiteConfig();
 
   return (
     <>
@@ -66,36 +60,13 @@ export default async function DownloadsPage() {
         crumbs={[{ label: 'Downloads' }]}
       />
 
-      <section className="py-24">
-        <div className="container-page space-y-14">
-          {categories.map((cat) => (
-            <div key={cat}>
-              <h2 className="flex items-center gap-3 text-2xl">
-                <span className="h-px w-8 bg-gold-400" /> {cat}
-              </h2>
-              <ul className="mt-6 grid gap-4 sm:grid-cols-2">
-                {items
-                  .filter((d) => d.category === cat)
-                  .map((d) => (
-                    <li key={d.title}>
-                      <a
-                        href={d.fileUrl ?? '#'}
-                        className="group flex items-center gap-4 rounded-2xl border border-line bg-paper p-5 transition-all hover:border-maroon-700/30 hover:shadow-soft"
-                      >
-                        <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gold-100 text-maroon-700">
-                          <Icon name="book-open" size={22} />
-                        </span>
-                        <div className="flex-1">
-                          <h3 className="text-base font-medium text-ink group-hover:text-maroon-700">{d.title}</h3>
-                          <p className="text-sm text-ink-muted">PDF · {d.size}</p>
-                        </div>
-                        <span className="text-maroon-600"><Icon name="arrow-up-right" size={20} /></span>
-                      </a>
-                    </li>
-                  ))}
-              </ul>
-            </div>
-          ))}
+      <section className="section">
+        <div className="container-page">
+          <DownloadsList
+            items={items}
+            phone={config.contact.phone}
+            whatsapp={config.contact.whatsapp}
+          />
         </div>
       </section>
     </>

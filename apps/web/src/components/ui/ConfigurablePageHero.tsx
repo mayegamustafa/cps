@@ -17,6 +17,7 @@ export async function ConfigurablePageHero({
   intro,
   image,
   crumbs = [],
+  hideIntro = false,
 }: {
   page: PageHeadKey;
   eyebrow?: string;
@@ -24,6 +25,15 @@ export async function ConfigurablePageHero({
   intro?: string;
   image?: string;
   crumbs?: Crumb[];
+  /**
+   * Drop the banner's paragraph even when one is saved in admin.
+   *
+   * The saved value normally wins over the prop, so a page that wants a
+   * headline on its own cannot get there by editing code alone. Setting this
+   * does mean an intro typed in Admin → Settings → Page heads will not appear
+   * on that page until the flag is removed.
+   */
+  hideIntro?: boolean;
 }) {
   const config = await getSiteConfig();
   const cfg = config.pageHeads?.[page];
@@ -32,7 +42,7 @@ export async function ConfigurablePageHero({
     <PageHero
       eyebrow={cfg?.eyebrow ?? eyebrow}
       title={cfg?.title || title}
-      intro={cfg?.intro ?? intro}
+      intro={hideIntro ? undefined : cfg?.intro ?? intro}
       image={cfg?.image || image}
       crumbs={crumbs}
     />

@@ -31,10 +31,16 @@ export type SchoolInfo = {
 const esc = (s: string) =>
   String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-/** A filled value, or a ruled line to write on. */
-function slot(value: string | undefined): string {
+/**
+ * A filled value, or a ruled line to write on.
+ *
+ * `wide` is for rows that hold a single answer; the default width has to stay
+ * modest so a row carrying three of them (date of birth, age, gender) still
+ * fits across the sheet instead of wrapping.
+ */
+function slot(value: string | undefined, wide = false): string {
   const v = (value ?? '').trim();
-  return v ? `<span class="v">${esc(v)}</span>` : '<span class="blank"></span>';
+  return v ? `<span class="v">${esc(v)}</span>` : `<span class="blank${wide ? ' wide' : ''}"></span>`;
 }
 
 function age(dob: string): string {
@@ -52,7 +58,24 @@ function longDate(d: Date): string {
   return d.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-export function buildAdmissionPrintout(data: AdmissionPrintData, school: SchoolInfo): string {
+export type PrintoutOptions = {
+  /**
+   * Print the fee amounts in the closing note. The copy a parent gets after
+   * applying online says what to bring and what it costs; the blank form
+   * offered on the Downloads page deliberately carries no figures, so nothing
+   * on paper can go out of date or contradict the admissions office.
+   */
+  includeFees?: boolean;
+};
+
+export function buildAdmissionPrintout(
+  data: AdmissionPrintData,
+  school: SchoolInfo,
+  options: PrintoutOptions = {},
+): string {
+  const { includeFees = true } = options;
+  // No reference means this is a blank form, not a record of a submission.
+  const isBlank = !data.reference;
   const v = data.values;
   const dob = v.pupilDob ?? '';
   const dobText = dob ? longDate(new Date(dob)) : '';
@@ -80,7 +103,8 @@ export function buildAdmissionPrintout(data: AdmissionPrintData, school: SchoolI
      margin:9px 0 7px;letter-spacing:.03em;}
   .row{margin:1px 0;}
   .v{font-weight:bold;border-bottom:1px dotted #444;padding:0 4px;}
-  .blank{display:inline-block;min-width:110px;width:60%;max-width:420px;border-bottom:1px dotted #777;height:11px;}
+  .blank{display:inline-block;min-width:130px;border-bottom:1px dotted #777;height:11px;}
+  .blank.wide{min-width:330px;}
   .grow{min-width:220px;}
   h2{font-size:11px;margin:7px 0 2px;font-weight:bold;}
   .indent{padding-left:15px;}
@@ -114,16 +138,20 @@ export function buildAdmissionPrintout(data: AdmissionPrintData, school: SchoolI
 
 <h1>New Pupil's Application Form</h1>
 
-<div class="ref">
+${
+  isBlank
+    ? ''
+    : `<div class="ref">
   <span>Reference: <b>${esc(data.reference)}</b></span>
   <span>Applied online: <b>${esc(longDate(data.submittedAt))}</b></span>
-</div>
+</div>`
+}
 
-<div class="row">Date: ${slot(longDate(data.submittedAt))} &nbsp; Class applied for: ${slot(v.gradeApplyingFor)}</div>
+<div class="row">Date: ${slot(isBlank ? '' : longDate(data.submittedAt))} &nbsp; Class applied for: ${slot(v.gradeApplyingFor, true)}</div>
 
 <h2>A. &nbsp;Pupil's Particulars</h2>
 <div class="indent">
-  <div class="row">(i) &nbsp;Name: ${slot(`${v.pupilFirstName ?? ''} ${v.pupilLastName ?? ''}`.trim())}</div>
+  <div class="row">(i) &nbsp;Name: ${slot(`${v.pupilFirstName ?? ''} ${v.pupilLastName ?? ''}`.trim(), true)}</div>
   <div class="row">(ii) &nbsp;Date of birth ${slot(dobText)} &nbsp; Age: ${slot(age(dob))} &nbsp; Gender: ${slot(v.gender)}</div>
   <div class="row">(iii) &nbsp;Nationality: ${slot(v.nationality)} &nbsp; (iv) Religion: ${slot(v.religion)}</div>
   <div class="row">(v) &nbsp;Day or Boarding: ${slot(v.residenceLabel)} &nbsp; Section: ${slot(v.sectionLabel)}</div>
@@ -131,54 +159,60 @@ export function buildAdmissionPrintout(data: AdmissionPrintData, school: SchoolI
 
 <h2>B. &nbsp;Parent's / Guardian's details</h2>
 <div class="indent">
-  <div class="row">(i) &nbsp;Father/Guardian's Name: ${slot(v.guardianName)}</div>
+  <div class="row">(i) &nbsp;Father/Guardian's Name: ${slot(v.guardianName, true)}</div>
   <div class="row">Phone contact: ${slot(v.guardianPhone)} &nbsp; E-mail: ${slot(v.guardianEmail)}</div>
   <div class="row">Occupation: ${slot(v.guardianOccupation)} &nbsp; Place of work: ${slot(v.guardianWorkplace)}</div>
   <div class="row">Residence: ${slot(v.guardianResidence)} &nbsp; District: ${slot(v.guardianDistrict)}</div>
-  <div class="row">If Guardian, relationship with the child: ${slot(v.relationship)}</div>
+  <div class="row">If Guardian, relationship with the child: ${slot(v.relationship, true)}</div>
 
-  <div class="row" style="margin-top:5px">(ii) &nbsp;Mother's Names: ${slot(v.motherName)}</div>
+  <div class="row" style="margin-top:5px">(ii) &nbsp;Mother's Names: ${slot(v.motherName, true)}</div>
   <div class="row">Phone contact: ${slot(v.motherPhone)} &nbsp; E-mail: ${slot(v.motherEmail)}</div>
   <div class="row">Occupation: ${slot(v.motherOccupation)} &nbsp; Place of work: ${slot(v.motherWorkplace)}</div>
   <div class="row">Residence: ${slot(v.motherResidence)} &nbsp; District: ${slot(v.motherDistrict)}</div>
 
   <div class="row" style="margin-top:5px">(iii) &nbsp;Other immediate contact person</div>
-  <div class="row">Name: ${slot(v.contactName)}</div>
+  <div class="row">Name: ${slot(v.contactName, true)}</div>
   <div class="row">Phone contact: ${slot(v.contactPhone)} &nbsp; E-mail: ${slot(v.contactEmail)}</div>
   <div class="row">Occupation: ${slot(v.contactOccupation)} &nbsp; Place of work: ${slot(v.contactWorkplace)}</div>
   <div class="row">Residence: ${slot(v.contactResidence)} &nbsp; District: ${slot(v.contactDistrict)}</div>
-  <div class="row">Relationship to the child: ${slot(v.contactRelationship)}</div>
+  <div class="row">Relationship to the child: ${slot(v.contactRelationship, true)}</div>
 </div>
 
 <h2>C. &nbsp;Former School's details <span style="font-weight:normal">(Attach copy of Report Card)</span></h2>
 <div class="indent">
   <div class="row">(i) &nbsp;Former school: ${slot(v.formerSchool)} &nbsp; Former Class attended: ${slot(v.formerClass)}</div>
-  <div class="row">(ii) &nbsp;How did you get to know about us? ${slot(v.heardAboutUs)}</div>
+  <div class="row">(ii) &nbsp;How did you get to know about us? ${slot(v.heardAboutUs, true)}</div>
 </div>
 
 <h2>D. &nbsp;Health background</h2>
 <div class="indent">
-  <div class="row">(i) &nbsp;State if the child has any special illness: <span class="grow">${slot(v.specialIllness)}</span></div>
+  <div class="row">(i) &nbsp;State if the child has any special illness: ${slot(v.specialIllness, true)}</div>
   <div class="row">(ii) &nbsp;Do you have children in our school? ${slot(sibling ? 'Yes' : '')}</div>
   <div class="row">Name: ${slot(v.siblingName)} &nbsp; Class: ${slot(v.siblingClass)}</div>
 </div>
 
 <div class="sign">
-  <div class="row">Parent/ Guardian's Signature: ${slot('')}</div>
-  <div class="row">Name: ${slot(v.declarationName || v.guardianName)}</div>
+  <div class="row">Parent/ Guardian's Signature: ${slot('', true)}</div>
+  <div class="row">Name: ${slot(v.declarationName || v.guardianName, true)}</div>
   <div class="row">Date: ${slot('')}</div>
 </div>
 
 <div class="note">
   <h3>Bring this form to the school</h3>
   <p style="margin:0">
-    Applying online does not complete the admission. Please <b>bring this printed form to
-    the school together with your child</b> and the <b>interview fee</b> on any interview
-    day. Sign above, and complete by hand any line left blank.
+    ${
+      isBlank
+        ? 'Complete this form by hand and <b>bring it to the school together with your child</b> on any interview day.'
+        : 'Applying online does not complete the admission. Please <b>bring this printed form to the school together with your child</b> on any interview day. Sign above, and complete by hand any line left blank.'
+    }
   </p>
-  <p style="margin:5px 0 0"><b>Come with:</b> the child being admitted, this form, and UGX 50,000 in cash.</p>
+  <p style="margin:5px 0 0"><b>Come with:</b> the child being admitted and this completed form.</p>
   <p style="margin:3px 0 0"><b>Interviews:</b> Monday to Friday, 9:00am to 12:00 noon.</p>
-  <p style="margin:3px 0 0"><b>Interview / registration fee:</b> UGX 50,000 (non-refundable), payable in cash on the day.</p>
+  ${
+    includeFees
+      ? `<p style="margin:3px 0 0"><b>Interview / registration fee:</b> UGX 50,000 (non-refundable), payable in cash on the day.</p>`
+      : `<p style="margin:3px 0 0"><b>Fees:</b> for the registration and school fee structure, call or WhatsApp ${esc(school.phone)}.</p>`
+  }
   <p style="margin:5px 0 3px"><b>Also bring:</b></p>
   <ul>
     <li>1 passport photo for the child</li>

@@ -21,17 +21,21 @@ export default async function AdmissionsPage() {
   const config = await getSiteConfig();
   return (
     <>
+      {/* hideIntro: the banner paragraph is also saved in Admin → Settings →
+          Page heads, and the saved value wins over the prop, so removing it
+          here alone would not have taken it off the live page. Clearing that
+          field in admin and dropping this flag has the same result. */}
       <ConfigurablePageHero page="admissions"
+        hideIntro
         eyebrow="Admissions 2026 / 2027"
         title="Begin your child’s journey with us."
-        intro="Our online admissions process makes it simple to apply, upload documents and track your application, from anywhere, at any time."
         crumbs={[{ label: 'Admissions' }]}
         image="https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=2000&q=70"
       />
 
-      {/* Process. On a phone these four cards used to fill more than a screen
-          before the form came into view, so they are compact rows there and
-          full cards from `md` up. */}
+      {/* HIDDEN, kept for easy restoring: the "Four simple steps to enrolment"
+          process section. Deleting this comment wrapper brings it back.
+
       <section className="section">
         <div className="container-page">
           <SectionHeading align="center" eyebrow="How to apply" title="Four simple steps to enrolment" />
@@ -57,9 +61,16 @@ export default async function AdmissionsPage() {
         </div>
       </section>
 
-      {/* Application form */}
+      */}
+
+      {/* Application form. With the intro column hidden the form is no longer
+          one half of a two-column grid, so it is centred at a readable width
+          instead of stretching the full page. */}
       <section id="apply" className="section bg-paper-dark scroll-mt-20">
-        <div className="container-page grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:gap-12">
+        <div className="container-page">
+          {/* HIDDEN, kept for easy restoring: the "Start your application"
+              heading and the prospectus link that sat beside the form.
+
           <div>
             <SectionHeading
               eyebrow="Online application"
@@ -68,22 +79,26 @@ export default async function AdmissionsPage() {
             />
             <div className="mt-6 hidden lg:mt-8 lg:block">
               <Button href="/downloads" variant="outline" icon="arrow-right">
-                Download prospectus & forms
+                Download prospectus and forms
               </Button>
             </div>
           </div>
-          <AdmissionForm
-            extraFields={config.admissionsFields ?? []}
-            school={{
-              name: config.brand.name,
-              poBox: config.address.poBox,
-              city: config.address.city,
-              phone: config.contact.phone,
-              email: config.contact.email,
-              motto: config.tagline,
-              logoUrl: config.brand.logoUrl,
-            }}
-          />
+
+          */}
+          <div className="mx-auto max-w-2xl">
+            <AdmissionForm
+              extraFields={config.admissionsFields ?? []}
+              school={{
+                name: config.brand.name,
+                poBox: config.address.poBox,
+                city: config.address.city,
+                phone: config.contact.phone,
+                email: config.contact.email,
+                motto: config.tagline,
+                logoUrl: config.brand.logoUrl,
+              }}
+            />
+          </div>
         </div>
       </section>
 
