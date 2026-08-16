@@ -36,6 +36,19 @@ export function AnalyticsBeacon() {
         ? document.referrer
         : undefined;
 
+    /**
+     * `utm_source` from the landing URL, remembered for the whole session.
+     *
+     * This is the only dependable way to tell TikTok from Instagram: both open
+     * links in an in-app browser that sends no referrer, so an untagged link
+     * records as "direct" whichever app it came from. Tagging the links the
+     * school posts is what makes the breakdown real.
+     */
+    const SRC = 'cps_src';
+    const tagged = new URLSearchParams(window.location.search).get('utm_source') ?? '';
+    if (tagged) sessionStorage.setItem(SRC, tagged.slice(0, 32));
+    const utmSource = sessionStorage.getItem(SRC) ?? undefined;
+
     // The visitor's time zone is how the dashboard works out their country: the
     // site sits behind no CDN, so no cf-ipcountry style header ever reaches the
     // API. It costs nothing, needs no GeoIP service, and never involves an IP.
@@ -45,7 +58,7 @@ export function AnalyticsBeacon() {
     fetch('/api/analytics/track', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: pathname, referrer: ref, visitorId: vid, sessionId: sid, isNew, tz }),
+      body: JSON.stringify({ path: pathname, referrer: ref, visitorId: vid, sessionId: sid, isNew, tz, utmSource }),
       keepalive: true,
     }).catch(() => {});
   }, [pathname]);

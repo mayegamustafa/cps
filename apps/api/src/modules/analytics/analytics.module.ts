@@ -16,8 +16,8 @@ import { Role } from '@cps/database';
 import { PrismaService } from '../../prisma/prisma.service';
 import { JwtAuthGuard, RolesGuard } from '../../auth/guards';
 import { Roles } from '../../auth/roles.decorator';
-import { parseDevice, parseBrowser, parseOs, classifySource } from '../../common/ua';
-import { countryFromTimezone } from '../../common/geo';
+import { parseDevice, parseBrowser, parseOs, classifySource, sourceLabel } from '../../common/ua';
+import { countryFromTimezone, normalizeCountry } from '../../common/geo';
 
 class TrackDto {
   @IsString() @MaxLength(512) path: string;
@@ -27,6 +27,8 @@ class TrackDto {
   @IsOptional() @IsBoolean() isNew?: boolean;
   /** IANA time zone, used to derive the country. See common/geo.ts. */
   @IsOptional() @IsString() @MaxLength(64) tz?: string;
+  /** `utm_source` from the landing URL; the only reliable social signal. */
+  @IsOptional() @IsString() @MaxLength(32) utmSource?: string;
 }
 
 type Row = {
@@ -79,6 +81,15 @@ export class AnalyticsService {
       if (s) { s.count++; s.first = Math.min(s.first, t); s.last = Math.max(s.last, t); }
       else sessions.set(r.sessionId, { count: 1, first: t, last: t });
     }
+    // First view of each session, in arrival order.
+    const seenSession = new Set<string>();
+    const firstOfEachSession: Row[] = [];
+    for (const r of rows) {
+      if (seenSession.has(r.sessionId)) continue;
+      seenSession.add(r.sessionId);
+      firstOfEachSession.push(r);
+    }
+
     const sessionList = [...sessions.values()];
     const bounced = sessionList.filter((s) => s.count === 1).length;
     const durations = sessionList.filter((s) => s.count > 1).map((s) => s.last - s.first);
@@ -117,8 +128,11 @@ export class AnalyticsService {
       devices: tally(rows, (r) => r.device),
       browsers: tally(rows, (r) => r.browser),
       os: tally(rows, (r) => r.os),
-      sources: tally(rows, (r) => r.source),
-      countries: tally(rows, (r) => r.country).slice(0, 12),
+      // One entry per session, not per page view: the referrer is only known on
+      // the first page, so counting every view buried real sources under
+      // "direct" for the second and later pages of the same visit.
+      sources: tally(firstOfEachSession, (r) => r.source).map((s) => ({ ...s, label: sourceLabel(s.label) })),
+      countries: tally(rows, (r) => normalizeCountry(r.country)).slice(0, 12),
     };
   }
 }
@@ -140,9 +154,10 @@ export class AnalyticsController {
     // own time zone. Without this the country panel was permanently empty:
     // Railway sets none of these headers. See common/geo.ts.
     const countryHeader = (req.headers['cf-ipcountry'] || req.headers['x-vercel-ip-country'] || req.headers['x-country']) as string | undefined;
-    const country =
+    const country = normalizeCountry(
       (countryHeader && countryHeader !== 'XX' ? countryHeader : null) ??
-      countryFromTimezone(dto.tz);
+        countryFromTimezone(dto.tz),
+    );
     let selfHost: string | undefined;
     try { selfHost = dto.referrer ? new URL(dto.referrer).hostname : undefined; } catch { /* ignore */ }
     void selfHost;
@@ -150,7 +165,7 @@ export class AnalyticsController {
       data: {
         path: dto.path.slice(0, 512),
         referrer: dto.referrer?.slice(0, 1024) || null,
-        source: classifySource(dto.referrer, process.env.PUBLIC_HOST),
+        source: classifySource(dto.referrer, process.env.PUBLIC_HOST, dto.utmSource),
         device: parseDevice(ua),
         browser: parseBrowser(ua),
         os: parseOs(ua),

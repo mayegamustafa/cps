@@ -25,8 +25,45 @@ export function parseOs(ua: string): string {
   return 'Other';
 }
 
-/** Maps a referrer URL to a coarse traffic source. */
-export function classifySource(referrer: string | undefined, selfHost?: string): string {
+/**
+ * Canonical name for a network, from either a `utm_source` value or a hostname.
+ * Returns null when nothing recognisable is present.
+ */
+function knownNetwork(text: string): string | null {
+  const t = text.toLowerCase();
+  if (/tiktok/.test(t)) return 'tiktok';
+  if (/instagram|^ig$/.test(t)) return 'instagram';
+  if (/facebook|(^|\.)fb\b|^fb$/.test(t)) return 'facebook';
+  if (/whatsapp|^wa$|wa\.me/.test(t)) return 'whatsapp';
+  if (/youtube|youtu\.be/.test(t)) return 'youtube';
+  if (/linkedin|lnkd\.in/.test(t)) return 'linkedin';
+  if (/telegram|t\.me/.test(t)) return 'telegram';
+  if (/twitter|(^|\.)x\.com|^x$|(^|\.)t\.co$/.test(t)) return 'x';
+  if (/snapchat/.test(t)) return 'snapchat';
+  if (/pinterest/.test(t)) return 'pinterest';
+  if (/reddit/.test(t)) return 'reddit';
+  if (/google|bing|duckduckgo|yahoo|ecosia|baidu/.test(t)) return 'search';
+  if (/newsletter|email|mailchimp|gmail|outlook/.test(t)) return 'email';
+  return null;
+}
+
+/**
+ * Where a visit came from.
+ *
+ * `utmSource` is checked first and is the only reliable signal for social:
+ * TikTok, Instagram and Facebook open links in an in-app browser that usually
+ * sends no referrer at all, so a link posted without a `?utm_source=` tag turns
+ * up here as "direct" no matter which app it came from. Referrer parsing is the
+ * fallback for everything else.
+ */
+export function classifySource(
+  referrer: string | undefined,
+  selfHost?: string,
+  utmSource?: string,
+): string {
+  const tagged = (utmSource ?? '').trim();
+  if (tagged) return knownNetwork(tagged) ?? tagged.toLowerCase().slice(0, 32);
+
   if (!referrer) return 'direct';
   let host = '';
   try {
@@ -35,10 +72,17 @@ export function classifySource(referrer: string | undefined, selfHost?: string):
     return 'direct';
   }
   if (!host || (selfHost && host === selfHost)) return 'direct';
-  if (/(^|\.)(google|bing|duckduckgo|yahoo|ecosia|baidu)\./.test(host)) return 'search';
-  if (/(^|\.)(facebook|fb)\./.test(host) || host === 'l.facebook.com') return 'facebook';
-  if (/(^|\.)instagram\./.test(host)) return 'instagram';
-  if (/(^|\.)tiktok\./.test(host)) return 'tiktok';
-  if (/(^|\.)(youtube\.|youtu\.be)/.test(host)) return 'youtube';
-  return 'referral';
+  return knownNetwork(host) ?? 'referral';
+}
+
+/** Display name for a stored source key. */
+export function sourceLabel(source: string): string {
+  const map: Record<string, string> = {
+    tiktok: 'TikTok', instagram: 'Instagram', facebook: 'Facebook',
+    whatsapp: 'WhatsApp', youtube: 'YouTube', linkedin: 'LinkedIn',
+    telegram: 'Telegram', x: 'X (Twitter)', snapchat: 'Snapchat',
+    pinterest: 'Pinterest', reddit: 'Reddit', search: 'Search engines',
+    email: 'Email', referral: 'Other websites', direct: 'Direct or untagged',
+  };
+  return map[source] ?? source.charAt(0).toUpperCase() + source.slice(1);
 }

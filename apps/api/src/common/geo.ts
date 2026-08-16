@@ -149,6 +149,51 @@ const ZONE_TO_COUNTRY: Record<string, string> = {
 };
 
 /**
+ * ISO 3166-1 alpha-2 codes to the same names used above.
+ *
+ * Railway's edge does supply a country header for some requests, so rows were
+ * being stored as both "UG" and "Uganda" and the dashboard listed Uganda twice.
+ * Everything is normalised to the long name on the way in AND on the way out,
+ * so rows saved before this fix are folded into the right bucket too.
+ */
+const CODE_TO_COUNTRY: Record<string, string> = {
+  UG: 'Uganda', KE: 'Kenya', TZ: 'Tanzania', RW: 'Rwanda', BI: 'Burundi',
+  SS: 'South Sudan', SD: 'Sudan', ET: 'Ethiopia', SO: 'Somalia', ER: 'Eritrea',
+  DJ: 'Djibouti', NG: 'Nigeria', GH: 'Ghana', CI: "Côte d'Ivoire", SN: 'Senegal',
+  ML: 'Mali', BF: 'Burkina Faso', GN: 'Guinea', SL: 'Sierra Leone', LR: 'Liberia',
+  TG: 'Togo', BJ: 'Benin', NE: 'Niger', TD: 'Chad', CF: 'Central African Republic',
+  CM: 'Cameroon', GA: 'Gabon', CG: 'Congo', CD: 'DR Congo', AO: 'Angola',
+  ZM: 'Zambia', ZW: 'Zimbabwe', BW: 'Botswana', NA: 'Namibia', MZ: 'Mozambique',
+  MW: 'Malawi', ZA: 'South Africa', LS: 'Lesotho', SZ: 'Eswatini', EG: 'Egypt',
+  LY: 'Libya', TN: 'Tunisia', DZ: 'Algeria', MA: 'Morocco', MG: 'Madagascar',
+  MU: 'Mauritius', GB: 'United Kingdom', IE: 'Ireland', FR: 'France', DE: 'Germany',
+  ES: 'Spain', IT: 'Italy', PT: 'Portugal', NL: 'Netherlands', BE: 'Belgium',
+  CH: 'Switzerland', AT: 'Austria', SE: 'Sweden', NO: 'Norway', DK: 'Denmark',
+  FI: 'Finland', PL: 'Poland', CZ: 'Czechia', HU: 'Hungary', RO: 'Romania',
+  GR: 'Greece', TR: 'Türkiye', RU: 'Russia', UA: 'Ukraine', US: 'United States',
+  CA: 'Canada', MX: 'Mexico', CO: 'Colombia', PE: 'Peru', CL: 'Chile',
+  AR: 'Argentina', BR: 'Brazil', JM: 'Jamaica', TT: 'Trinidad and Tobago',
+  AE: 'United Arab Emirates', QA: 'Qatar', SA: 'Saudi Arabia', KW: 'Kuwait',
+  BH: 'Bahrain', OM: 'Oman', JO: 'Jordan', LB: 'Lebanon', IL: 'Israel',
+  IQ: 'Iraq', IR: 'Iran', PK: 'Pakistan', IN: 'India', LK: 'Sri Lanka',
+  BD: 'Bangladesh', NP: 'Nepal', TH: 'Thailand', VN: 'Vietnam', ID: 'Indonesia',
+  MY: 'Malaysia', SG: 'Singapore', PH: 'Philippines', HK: 'Hong Kong',
+  CN: 'China', TW: 'Taiwan', KR: 'South Korea', JP: 'Japan', AU: 'Australia',
+  NZ: 'New Zealand', FJ: 'Fiji',
+};
+
+/**
+ * One canonical spelling for a stored country, whatever shape it arrived in.
+ * Two-letter codes become full names; anything else is passed through.
+ */
+export function normalizeCountry(value: string | null | undefined): string | null {
+  const v = (value ?? '').trim();
+  if (!v) return null;
+  if (/^[A-Za-z]{2}$/.test(v)) return CODE_TO_COUNTRY[v.toUpperCase()] ?? v.toUpperCase();
+  return v;
+}
+
+/**
  * Country name for an IANA time zone, or null when it is missing or unusable.
  *
  * Unknown zones fall back to the city segment ("Africa/Lusaka" that we have not
