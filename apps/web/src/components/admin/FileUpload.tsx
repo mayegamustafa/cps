@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { Icon } from '@/components/Icon';
 import { isVideoUrl } from '@/lib/media';
+import { VideoPrepare } from '@/components/admin/VideoPrepare';
 
 const inputCls =
   'w-full rounded-xl border border-line bg-white px-4 py-2.5 text-ink shadow-sm transition-colors placeholder:text-ink-muted focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20';
@@ -209,17 +210,26 @@ export function FileUpload({
   const [busy, setBusy] = useState(false);
   const [pct, setPct] = useState(0);
   const [pending, setPending] = useState<{ name: string; size: number } | null>(null);
+  const [oversize, setOversize] = useState<File | null>(null);
   const [error, setError] = useState('');
 
   async function upload(file: File) {
     if (file.size > MAX_UPLOAD_BYTES) {
+      // A video can be trimmed and re-encoded here rather than sent away to be
+      // compressed elsewhere; anything else can only be replaced by a smaller file.
+      if (file.type.startsWith('video/')) {
+        setError('');
+        setOversize(file);
+        return;
+      }
       setError(
         `This file is ${formatBytes(file.size)}. The largest we can upload is ` +
-          `${formatBytes(MAX_UPLOAD_BYTES)}, so please compress the video and try again ` +
-          `(exporting at 1080p usually does it), or host it elsewhere and paste the link below.`,
+          `${formatBytes(MAX_UPLOAD_BYTES)}, so please compress it and try again, or host it ` +
+          `elsewhere and paste the link below.`,
       );
       return;
     }
+    setOversize(null);
     setBusy(true);
     setError('');
     setPct(0);
@@ -283,6 +293,24 @@ export function FileUpload({
         className={`${inputCls} mt-2`}
       />
       {error ? <p className="mt-1.5 text-xs leading-relaxed text-maroon-600">{error}</p> : null}
+
+      {oversize ? (
+        <VideoPrepare
+          file={oversize}
+          maxBytes={MAX_UPLOAD_BYTES}
+          onCancel={() => setOversize(null)}
+          onReady={(prepared) => { setOversize(null); void upload(prepared); }}
+        />
+      ) : null}
+
+      {oversize ? (
+        <VideoPrepare
+          file={oversize}
+          maxBytes={MAX_UPLOAD_BYTES}
+          onCancel={() => setOversize(null)}
+          onReady={(prepared) => { setOversize(null); void upload(prepared); }}
+        />
+      ) : null}
 
       {/* Show the actual file, not just its address. A URL alone gives no way to
           tell whether an upload replaced what was there before. */}

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
 import { getSiteConfig } from '@/lib/site-config';
 import { img, video, videoPoster, mediaPoster } from '@/lib/media';
+import { resolveVideoSource } from '@/lib/video-embed';
 
 export const metadata: Metadata = {
   title: 'Campus Tour',
@@ -14,6 +15,8 @@ export const metadata: Metadata = {
 
 export default async function VirtualTourPage() {
   const { virtualTour: vt } = await getSiteConfig();
+  // An uploaded file, or any video link pasted into the same field.
+  const source = resolveVideoSource(vt.videoUrl);
 
   return (
     <>
@@ -28,19 +31,30 @@ export default async function VirtualTourPage() {
       <section className="section-tight">
         <div className="container-page">
           <div className="relative overflow-hidden rounded-2xl border border-line bg-maroon-950">
-            {vt.videoUrl ? (
+            {source.kind === 'file' ? (
               /* Starts on its own but muted, because every browser blocks
                  autoplay with sound. The native controls let a visitor unmute,
                  pause, scrub or go full screen. */
               <video
-                src={video(vt.videoUrl, 1280)}
-                poster={vt.viewerImage ? img(vt.viewerImage, 1600) : videoPoster(vt.videoUrl) || undefined}
+                src={video(source.src, 1280)}
+                poster={vt.viewerImage ? img(vt.viewerImage, 1600) : videoPoster(source.src) || undefined}
                 autoPlay
                 muted
                 controls
                 playsInline
                 preload="metadata"
                 className="aspect-video w-full bg-black object-contain"
+              />
+            ) : source.kind === 'embed' ? (
+              /* A link pasted from YouTube, Vimeo, TikTok and the like. Whether
+                 it starts on its own is the platform's rule, not ours. */
+              <iframe
+                src={source.src}
+                title={`Campus tour on ${source.provider}`}
+                className="aspect-video w-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                allowFullScreen
+                loading="lazy"
               />
             ) : (
               <div

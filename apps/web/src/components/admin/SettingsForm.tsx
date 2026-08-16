@@ -685,9 +685,9 @@ export function SettingsForm() {
 
         {tab === 'Virtual Tour' ? (
           <>
-            <Card onSave={save} title="Tour viewer" desc="Upload the tour video. It plays automatically, muted, and visitors can unmute, pause or go full screen. The poster image is the still shown before it starts. The page banner is edited under 'Page heads'.">
+            <Card onSave={save} title="Tour viewer" desc="Upload the tour video, or paste a link to one (YouTube, Vimeo, TikTok, Facebook, Instagram, or any .mp4). Uploaded files, YouTube and Vimeo start playing on their own, muted; TikTok, Facebook and Instagram players always open paused, which is their rule and not something we can change. The poster image is the still shown before an uploaded video starts. The page banner is edited under 'Page heads'.">
               <FileUpload
-                label="Tour video"
+                label="Tour video (upload, or paste a video link)"
                 accept="video/*,.mp4,.mov,.m4v,.webm,.mkv,.avi,.wmv,.flv,.3gp,.mpeg,.mpg,.ogv,.ts"
                 value={cfg.virtualTour.videoUrl}
                 onChange={(url) => patch((d) => { d.virtualTour.videoUrl = url; })}
