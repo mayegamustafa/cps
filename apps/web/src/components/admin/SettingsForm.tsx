@@ -668,13 +668,19 @@ export function SettingsForm() {
 
         {tab === 'Virtual Tour' ? (
           <>
-            <Card onSave={save} title="360° viewer" desc="Paste a tour embed link (Matterport, Google Street View, YouTube 360, etc.) to show the live tour. Leave it blank to show a poster image and a 'coming soon' badge. The page banner is edited under 'Page heads'.">
-              <Field label="Tour embed URL" id="vt-embed" value={cfg.virtualTour.embedUrl} placeholder="https://my.matterport.com/show/?m=…" onChange={(e) => patch((d) => { d.virtualTour.embedUrl = e.target.value; })} />
-              <ImageInput label="Poster image (shown when no embed URL is set)" value={cfg.virtualTour.viewerImage} onChange={(v) => patch((d) => { d.virtualTour.viewerImage = v; })} />
+            <Card onSave={save} title="Tour viewer" desc="Upload a tour video to play on the page. The embed link below is only used when there is no video, and the poster image only when there is neither. The page banner is edited under 'Page heads'.">
+              <FileUpload
+                label="Tour video"
+                accept="video/*,.mp4,.mov,.m4v,.webm,.mkv,.avi,.wmv,.flv,.3gp,.mpeg,.mpg,.ogv,.ts"
+                value={cfg.virtualTour.videoUrl}
+                onChange={(url) => patch((d) => { d.virtualTour.videoUrl = url; })}
+              />
+              <Field label="Tour embed URL (used only when there is no video)" id="vt-embed" value={cfg.virtualTour.embedUrl} placeholder="https://my.matterport.com/show/?m=…" onChange={(e) => patch((d) => { d.virtualTour.embedUrl = e.target.value; })} />
+              <ImageInput label="Poster image (the still shown before the video plays)" value={cfg.virtualTour.viewerImage} onChange={(v) => patch((d) => { d.virtualTour.viewerImage = v; })} />
               <Field label="Caption under the viewer" id="vt-cap" value={cfg.virtualTour.caption} onChange={(e) => patch((d) => { d.virtualTour.caption = e.target.value; })} />
             </Card>
 
-            <Card onSave={save} title="Tour highlights" desc="The photo tiles below the viewer. Leave the list empty to hide the section.">
+            <Card onSave={save} title="Tour highlights" desc="The tiles below the viewer. A video URL shows a frame from the start of the clip. Leave the list empty to hide the section.">
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Eyebrow" id="vt-se" value={cfg.virtualTour.stopsHeading.eyebrow} onChange={(e) => patch((d) => { d.virtualTour.stopsHeading.eyebrow = e.target.value; })} />
                 <Field label="Title" id="vt-st" value={cfg.virtualTour.stopsHeading.title} onChange={(e) => patch((d) => { d.virtualTour.stopsHeading.title = e.target.value; })} />
