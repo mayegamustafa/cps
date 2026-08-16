@@ -22,6 +22,10 @@ export type VideoSource =
   | { kind: 'embed'; src: string; provider: string; autoplays: boolean; watchUrl: string }
   /** TikTok refuses to be framed directly and needs its own script. */
   | { kind: 'tiktok'; videoId: string; watchUrl: string }
+  /** A vt./vm.tiktok.com share link; the id is behind a redirect. */
+  | { kind: 'tiktok-short'; shortUrl: string }
+  /** Known not to be embeddable: offer the link rather than an empty box. */
+  | { kind: 'link'; provider: string; watchUrl: string }
   | { kind: 'none' };
 
 function youtubeId(url: string): string | null {
@@ -72,6 +76,12 @@ export function resolveVideoSource(input: string): VideoSource {
   const tiktok = url.match(/tiktok\.com\/.*?\/video\/(\d+)/);
   if (tiktok) return { kind: 'tiktok', videoId: tiktok[1], watchUrl: url };
 
+  // The Share button hands out vt./vm.tiktok.com links, which carry no id at
+  // all: it sits behind a redirect and has to be looked up on the server.
+  if (/^https?:\/\/(vt|vm)\.tiktok\.com\//i.test(url) || /tiktok\.com\/t\//i.test(url)) {
+    return { kind: 'tiktok-short', shortUrl: url };
+  }
+
   if (/facebook\.com|fb\.watch/.test(url)) {
     return {
       kind: 'embed',
@@ -93,6 +103,31 @@ export function resolveVideoSource(input: string): VideoSource {
     };
   }
 
-  // Something else entirely: hand it to an iframe and hope it is embeddable.
-  return { kind: 'embed', provider: 'the original site', autoplays: false, watchUrl: url, src: url };
+  // Something else entirely. Framing an arbitrary page usually ends in the
+  // browser refusing it and the visitor seeing nothing, so offer the link.
+  return { kind: 'link', provider: 'the original site', watchUrl: url };
+}
+
+/**
+ * Turns a vt./vm.tiktok.com share link into a video id by following its
+ * redirect. Runs on the server and is cached for a day, because a share link
+ * always points at the same video.
+ */
+export async function resolveTikTokShortLink(shortUrl: string): Promise<string | null> {
+  try {
+    const res = await fetch(shortUrl, {
+      redirect: 'follow',
+      headers: {
+        // TikTok answers short links differently without a browser agent.
+        'user-agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      },
+      signal: AbortSignal.timeout(6000),
+      next: { revalidate: 86400 },
+    });
+    const match = (res.url ?? '').match(/\/video\/(\d+)/);
+    return match ? match[1] : null;
+  } catch {
+    return null;
+  }
 }

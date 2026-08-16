@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
 import { getSiteConfig } from '@/lib/site-config';
 import { img, video, videoPoster, mediaPoster } from '@/lib/media';
-import { resolveVideoSource } from '@/lib/video-embed';
+import { resolveVideoSource, resolveTikTokShortLink } from '@/lib/video-embed';
 import { TikTokEmbed } from '@/components/TikTokEmbed';
 
 export const metadata: Metadata = {
@@ -17,7 +17,16 @@ export const metadata: Metadata = {
 export default async function VirtualTourPage() {
   const { virtualTour: vt } = await getSiteConfig();
   // An uploaded file, or any video link pasted into the same field.
-  const source = resolveVideoSource(vt.videoUrl);
+  let source = resolveVideoSource(vt.videoUrl);
+
+  // A TikTok share link hides its video id behind a redirect; resolve it here so
+  // the page can use TikTok's own player instead of framing a page they refuse.
+  if (source.kind === 'tiktok-short') {
+    const id = await resolveTikTokShortLink(source.shortUrl);
+    source = id
+      ? { kind: 'tiktok', videoId: id, watchUrl: source.shortUrl }
+      : { kind: 'link', provider: 'TikTok', watchUrl: source.shortUrl };
+  }
 
   return (
     <>
@@ -64,14 +73,31 @@ export default async function VirtualTourPage() {
             ) : (
               <div
                 className="flex aspect-video items-center justify-center bg-cover bg-center"
-                style={{ backgroundImage: `url('${img(vt.viewerImage, 1600)}')` }}
+                style={vt.viewerImage ? { backgroundImage: `url('${img(vt.viewerImage, 1600)}')` } : undefined}
               >
-                <div className="flex flex-col items-center gap-3 rounded-2xl bg-maroon-950/40 px-8 py-6 text-center text-white backdrop-blur-sm sm:px-10 sm:py-8">
-                  <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-gold-400 text-maroon-900 sm:h-16 sm:w-16">
-                    <Icon name="play" size={28} />
-                  </span>
-                  <span className="font-display text-lg sm:text-xl">Tour coming soon</span>
-                </div>
+                {source.kind === 'link' ? (
+                  /* The platform will not allow its page to be embedded, so send
+                     the visitor to it rather than show them an empty frame. */
+                  <a
+                    href={source.watchUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center gap-3 rounded-2xl bg-maroon-950/50 px-8 py-6 text-center text-white backdrop-blur-sm transition-transform hover:scale-[1.02] sm:px-10 sm:py-8"
+                  >
+                    <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-gold-400 text-maroon-900 sm:h-16 sm:w-16">
+                      <Icon name="play" size={28} />
+                    </span>
+                    <span className="font-display text-lg sm:text-xl">Watch the tour on {source.provider}</span>
+                    <span className="text-sm text-paper/80">Opens in a new tab</span>
+                  </a>
+                ) : (
+                  <div className="flex flex-col items-center gap-3 rounded-2xl bg-maroon-950/40 px-8 py-6 text-center text-white backdrop-blur-sm sm:px-10 sm:py-8">
+                    <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-gold-400 text-maroon-900 sm:h-16 sm:w-16">
+                      <Icon name="play" size={28} />
+                    </span>
+                    <span className="font-display text-lg sm:text-xl">Tour coming soon</span>
+                  </div>
+                )}
               </div>
             )}
           </div>
