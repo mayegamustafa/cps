@@ -69,6 +69,11 @@ export type SiteConfig = {
     backgroundVideo: string;
     /** Background image shown when no video is set (also the video poster). */
     backgroundImage: string;
+    /**
+     * How much maroon is laid over the hero photo or video.
+     * 'strong' is the original look, 'none' shows the media untouched.
+     */
+    overlay: 'strong' | 'soft' | 'none';
     primaryCta: CtaLink;
     secondaryCta: CtaLink;
     stats: { value: string; label: string }[];
@@ -324,6 +329,7 @@ export const siteDefaults: SiteConfig = {
     backgroundVideo: '',
     backgroundImage:
       'https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=2000&q=70',
+    overlay: 'strong',
     primaryCta: { label: 'Begin Admission', href: '/admissions' },
     secondaryCta: { label: 'Take the Virtual Tour', href: '/virtual-tour' },
     stats: [

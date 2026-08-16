@@ -6,6 +6,7 @@ import { siteDefaults, waLink, type SiteConfig } from '@/lib/site';
 
 export function Hero({ config = siteDefaults }: { config?: SiteConfig }) {
   const { hero, contact, brand } = config;
+  const overlay = hero.overlay ?? 'strong';
   // Still frame priority: the configured image, else a frame lifted from the
   // video, else the packaged default. Never leave the hero without a first paint.
   const poster =
@@ -19,14 +20,24 @@ export function Hero({ config = siteDefaults }: { config?: SiteConfig }) {
 
       {/* Scrim. On mobile the copy spans the full width, so it needs a bottom-up
           gradient; the left-to-right one only works for the desktop two-column
-          layout, where it keeps the photograph visible on the right. */}
-      <div
-        aria-hidden
-        className="absolute inset-0 -z-10 bg-gradient-to-t from-maroon-950 via-maroon-950/75 to-maroon-950/20 lg:bg-gradient-to-r lg:from-maroon-950/80 lg:via-maroon-950/45 lg:to-maroon-900/10"
-      />
+          layout, where it keeps the photograph visible on the right.
+
+          The strength is admin-controlled. At 'none' the photo is untouched, so
+          the copy carries a drop shadow instead: white text on an unknown
+          photograph is otherwise a coin toss to read. */}
+      {overlay !== 'none' ? (
+        <div
+          aria-hidden
+          className={
+            overlay === 'soft'
+              ? 'absolute inset-0 -z-10 bg-gradient-to-t from-maroon-950/70 via-maroon-950/35 to-transparent lg:bg-gradient-to-r lg:from-maroon-950/55 lg:via-maroon-950/20 lg:to-transparent'
+              : 'absolute inset-0 -z-10 bg-gradient-to-t from-maroon-950 via-maroon-950/75 to-maroon-950/20 lg:bg-gradient-to-r lg:from-maroon-950/80 lg:via-maroon-950/45 lg:to-maroon-900/10'
+          }
+        />
+      ) : null}
 
       <div className="container-page flex min-h-[86svh] flex-col justify-end gap-10 pb-14 pt-28 lg:grid lg:min-h-[88vh] lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:py-20">
-        <div className="max-w-2xl animate-rise">
+        <div className={`max-w-2xl animate-rise ${overlay === 'none' ? '[text-shadow:0_2px_12px_rgb(42_12_13_/_0.85)]' : ''}`}>
           <span className="eyebrow !text-gold-300">{hero.eyebrow}</span>
 
           {/* Fluid so a long word like "character." never runs off a 360px screen. */}

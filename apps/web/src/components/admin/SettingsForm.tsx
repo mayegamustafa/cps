@@ -314,6 +314,23 @@ export function SettingsForm() {
               value={cfg.hero.backgroundVideo}
               onChange={(url) => patch((d) => { d.hero.backgroundVideo = url; })}
             />
+            <div>
+              <SelectField
+                label="Maroon blend over the hero"
+                id="h-overlay"
+                value={cfg.hero.overlay ?? 'strong'}
+                onChange={(e) => patch((d) => { d.hero.overlay = e.target.value as typeof d.hero.overlay; })}
+              >
+                <option value="strong">Strong (default)</option>
+                <option value="soft">Soft, photo more visible</option>
+                <option value="none">None, photo fully clear</option>
+              </SelectField>
+              <p className="mt-1 text-xs text-ink-muted">
+                The blend is what keeps the white headline readable. With it off, the
+                headline gets a drop shadow instead, but check the hero on a phone if
+                your photo is bright.
+              </p>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <Field label="Primary button" id="hpc" value={cfg.hero.primaryCta.label} onChange={(e) => patch((d) => { d.hero.primaryCta.label = e.target.value; })} />
               <Field label="Primary link" id="hpl" value={cfg.hero.primaryCta.href} onChange={(e) => patch((d) => { d.hero.primaryCta.href = e.target.value; })} />
