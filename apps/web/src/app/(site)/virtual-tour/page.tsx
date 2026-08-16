@@ -6,6 +6,7 @@ import { Icon } from '@/components/Icon';
 import { getSiteConfig } from '@/lib/site-config';
 import { img, video, videoPoster, mediaPoster } from '@/lib/media';
 import { resolveVideoSource } from '@/lib/video-embed';
+import { TikTokEmbed } from '@/components/TikTokEmbed';
 
 export const metadata: Metadata = {
   title: 'Campus Tour',
@@ -45,14 +46,18 @@ export default async function VirtualTourPage() {
                 preload="metadata"
                 className="aspect-video w-full bg-black object-contain"
               />
+            ) : source.kind === 'tiktok' ? (
+              <TikTokEmbed videoId={source.videoId} url={source.watchUrl} />
             ) : source.kind === 'embed' ? (
-              /* A link pasted from YouTube, Vimeo, TikTok and the like. Whether
-                 it starts on its own is the platform's rule, not ours. */
+              /* A link pasted from YouTube, Vimeo and the like. Whether it starts
+                 on its own is the platform's rule, not ours. The `allow` list is
+                 kept to features browsers actually recognise; the longer one
+                 filled the console with "unsupported feature name" warnings. */
               <iframe
                 src={source.src}
                 title={`Campus tour on ${source.provider}`}
                 className="aspect-video w-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
                 allowFullScreen
                 loading="lazy"
               />
@@ -70,6 +75,23 @@ export default async function VirtualTourPage() {
               </div>
             )}
           </div>
+
+          {/* Every platform can refuse to be embedded, and some do it silently.
+              A way to reach the video is always offered. */}
+          {source.kind === 'embed' || source.kind === 'tiktok' ? (
+            <p className="mt-3 text-center text-sm text-ink-muted">
+              Not playing?{' '}
+              <a
+                href={source.watchUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-maroon-700 hover:text-maroon-800"
+              >
+                Open the tour in a new tab
+              </a>
+              .
+            </p>
+          ) : null}
         </div>
       </section>
 

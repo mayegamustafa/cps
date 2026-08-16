@@ -19,7 +19,9 @@ import { isVideoUrl } from '@/lib/media';
 
 export type VideoSource =
   | { kind: 'file'; src: string; autoplays: true }
-  | { kind: 'embed'; src: string; provider: string; autoplays: boolean }
+  | { kind: 'embed'; src: string; provider: string; autoplays: boolean; watchUrl: string }
+  /** TikTok refuses to be framed directly and needs its own script. */
+  | { kind: 'tiktok'; videoId: string; watchUrl: string }
   | { kind: 'none' };
 
 function youtubeId(url: string): string | null {
@@ -50,6 +52,7 @@ export function resolveVideoSource(input: string): VideoSource {
       kind: 'embed',
       provider: 'YouTube',
       autoplays: true,
+      watchUrl: url,
       src: `https://www.youtube.com/embed/${yt}?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1`,
     };
   }
@@ -60,26 +63,21 @@ export function resolveVideoSource(input: string): VideoSource {
       kind: 'embed',
       provider: 'Vimeo',
       autoplays: true,
+      watchUrl: url,
       src: `https://player.vimeo.com/video/${vimeo[1]}?autoplay=1&muted=1&playsinline=1`,
     };
   }
 
   // TikTok video ids are the long number at the end of a share link.
   const tiktok = url.match(/tiktok\.com\/.*?\/video\/(\d+)/);
-  if (tiktok) {
-    return {
-      kind: 'embed',
-      provider: 'TikTok',
-      autoplays: false,
-      src: `https://www.tiktok.com/embed/v2/${tiktok[1]}`,
-    };
-  }
+  if (tiktok) return { kind: 'tiktok', videoId: tiktok[1], watchUrl: url };
 
   if (/facebook\.com|fb\.watch/.test(url)) {
     return {
       kind: 'embed',
       provider: 'Facebook',
       autoplays: false,
+      watchUrl: url,
       src: `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}&show_text=false&autoplay=false`,
     };
   }
@@ -90,10 +88,11 @@ export function resolveVideoSource(input: string): VideoSource {
       kind: 'embed',
       provider: 'Instagram',
       autoplays: false,
+      watchUrl: url,
       src: `${clean}/embed`,
     };
   }
 
   // Something else entirely: hand it to an iframe and hope it is embeddable.
-  return { kind: 'embed', provider: 'the link', autoplays: false, src: url };
+  return { kind: 'embed', provider: 'the original site', autoplays: false, watchUrl: url, src: url };
 }
