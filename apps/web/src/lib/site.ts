@@ -483,8 +483,8 @@ export const siteDefaults: SiteConfig = {
           name: 'Day Section',
           icon: 'globe',
           summary:
-            'For families who prefer their children to learn with us by day and return home each evening, with safe, GPS-tracked transport across Kampala.',
-          features: ['Flexible drop-off and pick-up', 'Supervised lunch and breaks', 'After-school clubs', 'GPS-tracked bus routes'],
+            'For families who prefer their children to learn with us by day and return home each evening.',
+          features: ['Flexible drop-off and pick-up', 'Supervised lunch and breaks', 'After-school clubs', 'Independent transport providers on request'],
         },
         {
           name: 'Boarding Section',

@@ -593,7 +593,7 @@ export function SettingsForm() {
                     </div>
                     <ImageInput label="Image (optional: replaces the icon when set)" value={item.image ?? ''} onChange={(v) => update({ image: v })} />
                     <TextAreaField label="Summary" id={`ac-db-s-${item.name}`} value={item.summary} onChange={(e) => update({ summary: e.target.value })} />
-                    <StringList label="Features" items={item.features} placeholder="e.g. GPS-tracked bus routes" onChange={(v) => update({ features: v })} />
+                    <StringList label="Features" items={item.features} placeholder="e.g. After-school clubs" onChange={(v) => update({ features: v })} />
                   </>
                 )}
               </Repeater>

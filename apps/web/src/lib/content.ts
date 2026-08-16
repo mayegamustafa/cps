@@ -78,8 +78,8 @@ export const boardingOptions: {
     name: 'Day Section',
     icon: 'globe',
     summary:
-      'For families who prefer their children to learn with us by day and return home each evening, with safe, GPS-tracked transport across Kampala.',
-    features: ['Flexible drop-off and pick-up', 'Supervised lunch and breaks', 'After-school clubs', 'GPS-tracked bus routes'],
+      'For families who prefer their children to learn with us by day and return home each evening.',
+    features: ['Flexible drop-off and pick-up', 'Supervised lunch and breaks', 'After-school clubs', 'Independent transport providers on request'],
   },
   {
     name: 'Boarding Section',
@@ -107,7 +107,7 @@ export const feeStructure = [
 export const faqs = [
   { q: 'What is the minimum age for Pre-Primary?', a: 'Children must be at least 3 years old by the start of the school year to join KG1.' },
   { q: 'Do you have a boarding section?', a: 'Yes. We offer a day section for all classes and a nurturing boarding section for upper Primary pupils.' },
-  { q: 'Do you offer transport?', a: 'Yes. We operate safe, GPS-tracked school buses across major routes in Kampala for day pupils.' },
+  { q: 'Do you offer transport?', a: 'The school does not run its own buses. Several independent transport providers serve our families across Kampala, and the admissions office can put you in touch with the operators covering your route.' },
   { q: 'When does the admissions window open?', a: 'Applications for the 2026 and 2027 academic years are open now and close one month before each term.' },
   { q: 'Are there scholarships?', a: 'We offer a limited number of merit and need-based bursaries each year. Contact admissions for details.' },
 ];
