@@ -74,6 +74,26 @@ export function videoPoster(url: string): string {
   return posterUrl === url ? '' : posterUrl.replace(/\.(mp4|webm|mov|m4v)$/i, '.jpg');
 }
 
+const VIDEO_EXT = /\.(mp4|webm|mov|m4v|ogv|avi|mkv|wmv|flv|3gp|mpe?g|ts)(\?|#|$)/i;
+
+/** True when a stored media URL points at a video rather than a still. */
+export function isVideoUrl(url: string): boolean {
+  if (!url) return false;
+  return VIDEO_EXT.test(url) || /res\.cloudinary\.com\/[^/]+\/video\/upload\//.test(url);
+}
+
+/**
+ * A still image for any media URL: the URL itself for photos, and a frame
+ * grabbed from the start for videos. Album covers and grid tiles are `<img>`
+ * elements, so without this a video in an album renders as a broken picture.
+ */
+export function mediaPoster(url: string, width?: number): string {
+  if (!url) return url;
+  if (!isVideoUrl(url)) return img(url, width);
+  const poster = videoPoster(url);
+  return poster ? img(poster, width) : '';
+}
+
 /** Everything an `<img>` needs for responsive delivery, spread straight onto the tag. */
 export function imgProps(url: string, sizes: string, width = 1600) {
   const srcSet = imgSrcSet(url);

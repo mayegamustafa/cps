@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { Icon } from '@/components/Icon';
+import { isVideoUrl } from '@/lib/media';
 
 const inputCls =
   'w-full rounded-xl border border-line bg-white px-4 py-2.5 text-ink shadow-sm transition-colors placeholder:text-ink-muted focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20';
@@ -213,15 +214,13 @@ export function FileUpload({
     setPending(null);
   }
 
-  const isImage = accept.startsWith('image');
+  const isVideo = value ? isVideoUrl(value) : false;
+  const isImage = !!value && !isVideo && (accept.startsWith('image') || /\.(png|jpe?g|gif|webp|avif|svg)(\?|#|$)/i.test(value));
 
   return (
     <div>
       <label className="mb-1.5 block text-sm font-medium text-ink">{label}</label>
       <div className="flex items-center gap-3">
-        {value && isImage ? (
-          <span className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-line bg-cover bg-center" style={{ backgroundImage: `url('${value}')` }} />
-        ) : null}
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
@@ -265,6 +264,38 @@ export function FileUpload({
         className={`${inputCls} mt-2`}
       />
       {error ? <p className="mt-1 text-xs text-maroon-600">{error} You can also paste a URL instead.</p> : null}
+
+      {/* Show the actual file, not just its address. A URL alone gives no way to
+          tell whether an upload replaced what was there before. */}
+      {value && !busy ? (
+        <div className="mt-3 overflow-hidden rounded-xl border border-line bg-paper-dark/30">
+          {isVideo ? (
+            <video
+              key={value}
+              src={value}
+              controls
+              muted
+              playsInline
+              preload="metadata"
+              className="block max-h-64 w-full bg-black object-contain"
+            />
+          ) : isImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={value} alt="" className="block max-h-64 w-full object-contain" />
+          ) : (
+            <a
+              href={value}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-maroon-700 hover:bg-maroon-50"
+            >
+              <Icon name="download" size={16} />
+              Open uploaded file
+            </a>
+          )}
+          <p className="truncate border-t border-line px-3 py-1.5 text-[0.7rem] text-ink-muted">{value}</p>
+        </div>
+      ) : null}
     </div>
   );
 }

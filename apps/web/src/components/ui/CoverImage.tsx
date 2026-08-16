@@ -1,4 +1,4 @@
-import { imgProps } from '@/lib/media';
+import { imgProps, isVideoUrl, videoPoster } from '@/lib/media';
 
 type Props = {
   src: string;
@@ -20,10 +20,14 @@ type Props = {
  */
 export function CoverImage({ src, alt = '', sizes = '100vw', className = '', priority = false }: Props) {
   if (!src) return null;
+  // An album whose first item is a video hands us an .mp4 as its cover; a still
+  // from the start of it is what belongs in an <img>.
+  const still = isVideoUrl(src) ? videoPoster(src) : src;
+  if (!still) return null;
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      {...imgProps(src, sizes)}
+      {...imgProps(still, sizes)}
       alt={alt}
       aria-hidden={alt ? undefined : true}
       loading={priority ? 'eager' : 'lazy'}

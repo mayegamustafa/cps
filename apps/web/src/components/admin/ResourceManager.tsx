@@ -7,6 +7,7 @@ import { FileUpload } from '@/components/admin/FileUpload';
 import { uploadFile } from '@/components/admin/FileUpload';
 import { FieldDesigner, type FormField as DesignerField } from '@/components/admin/FieldDesigner';
 import { siteDefaults } from '@/lib/site';
+import { isVideoUrl, mediaPoster } from '@/lib/media';
 
 const API = ''; // same-origin; proxied to the backend
 
@@ -810,20 +811,40 @@ function MultiImageInput({
       <label className="mb-1.5 block text-sm font-medium text-ink">{label}</label>
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" onClick={() => fileRef.current?.click()} disabled={busy} className="inline-flex items-center gap-1.5 rounded-full border border-maroon-700/30 px-3.5 py-2 text-sm font-medium text-maroon-800 hover:bg-maroon-50 disabled:opacity-50">
-          <Icon name="image" size={16} /> {busy ? 'Uploading…' : 'Upload photos'}
+          <Icon name="image" size={16} /> {busy ? 'Uploading…' : 'Upload photos or videos'}
         </button>
-        <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { const files = e.target.files; if (files?.length) onPick(Array.from(files)); e.target.value = ''; }} />
-        <input type="url" value={paste} placeholder="…or paste an image URL" onChange={(e) => setPaste(e.target.value)} className="min-w-48 flex-1 rounded-xl border border-line bg-white px-4 py-2 text-sm focus:border-maroon-500 focus:outline-none" />
+        {/* Extensions alongside the wildcards: browsers have no MIME type for
+            .mkv or .avi, so those files are greyed out by video/* alone. */}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*,video/*,.mp4,.mov,.m4v,.webm,.mkv,.avi,.wmv,.flv,.3gp,.mpeg,.mpg,.ogv,.ts"
+          multiple
+          className="hidden"
+          onChange={(e) => { const files = e.target.files; if (files?.length) onPick(Array.from(files)); e.target.value = ''; }}
+        />
+        <input type="url" value={paste} placeholder="…or paste a photo or video URL" onChange={(e) => setPaste(e.target.value)} className="min-w-48 flex-1 rounded-xl border border-line bg-white px-4 py-2 text-sm focus:border-maroon-500 focus:outline-none" />
         <button type="button" onClick={() => { if (paste.trim()) { add(paste.trim()); setPaste(''); } }} className="rounded-full border border-line px-3 py-2 text-sm hover:bg-maroon-50">Add</button>
       </div>
       {error ? <p className="mt-1 text-xs text-maroon-600">{error}</p> : null}
       {urls.length > 0 ? (
         <div className="mt-3 flex flex-wrap gap-2">
-          {urls.map((u, i) => (
-            <span key={i} className="group relative h-16 w-16 overflow-hidden rounded-lg border border-line bg-cover bg-center" style={{ backgroundImage: `url('${u}')` }}>
-              <button type="button" onClick={() => removeAt(i)} aria-label="Remove" className="absolute right-0 top-0 bg-maroon-900/80 px-1.5 text-xs text-white opacity-0 group-hover:opacity-100">×</button>
-            </span>
-          ))}
+          {urls.map((u, i) => {
+            const video = isVideoUrl(u);
+            // Videos show a poster frame with a play badge, so an album's
+            // contents are readable at a glance rather than a row of blanks.
+            const thumb = video ? mediaPoster(u, 160) : u;
+            return (
+              <span key={i} className="group relative h-16 w-16 overflow-hidden rounded-lg border border-line bg-paper-dark bg-cover bg-center" style={thumb ? { backgroundImage: `url('${thumb}')` } : undefined}>
+                {video ? (
+                  <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-maroon-950/35 text-white">
+                    <Icon name="play" size={18} />
+                  </span>
+                ) : null}
+                <button type="button" onClick={() => removeAt(i)} aria-label="Remove" className="absolute right-0 top-0 bg-maroon-900/80 px-1.5 text-xs text-white opacity-0 group-hover:opacity-100">×</button>
+              </span>
+            );
+          })}
         </div>
       ) : null}
     </div>

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Icon } from '@/components/Icon';
+import { isVideoUrl, mediaPoster } from '@/lib/media';
 
 /** Photo grid with a full-screen lightbox (keyboard + swipe-friendly nav). */
 export function AlbumGallery({ images, title }: { images: string[]; title: string }) {
@@ -35,21 +36,33 @@ export function AlbumGallery({ images, title }: { images: string[]; title: strin
   return (
     <>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        {images.map((src, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => setOpen(i)}
-            aria-label={`Open photo ${i + 1}`}
-            className="group relative aspect-square overflow-hidden rounded-xl"
-          >
-            <div
-              className="h-full w-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-              style={{ backgroundImage: `url('${src}')` }}
-            />
-            <span className="absolute inset-0 bg-maroon-950/0 transition-colors group-hover:bg-maroon-950/20" />
-          </button>
-        ))}
+        {images.map((src, i) => {
+          const video = isVideoUrl(src);
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setOpen(i)}
+              aria-label={video ? `Play video ${i + 1}` : `Open photo ${i + 1}`}
+              className="group relative aspect-square overflow-hidden rounded-xl"
+            >
+              {/* A video tile shows a frame from the start of the clip: the file
+                  itself is never fetched until someone opens it. */}
+              <div
+                className="h-full w-full bg-maroon-950/10 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
+                style={{ backgroundImage: `url('${mediaPoster(src, 640)}')` }}
+              />
+              <span className="absolute inset-0 bg-maroon-950/0 transition-colors group-hover:bg-maroon-950/20" />
+              {video ? (
+                <span className="absolute inset-0 flex items-center justify-center">
+                  <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-maroon-950/60 text-white backdrop-blur-sm transition-transform group-hover:scale-110">
+                    <Icon name="play" size={22} />
+                  </span>
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
       </div>
 
       {open !== null ? (
@@ -87,13 +100,26 @@ export function AlbumGallery({ images, title }: { images: string[]; title: strin
             </>
           ) : null}
 
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={images[open]}
-            alt={`${title} photo ${open + 1}`}
-            className="max-h-[85vh] max-w-[90vw] rounded-lg object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
+          {isVideoUrl(images[open]) ? (
+            <video
+              key={images[open]}
+              src={images[open]}
+              poster={mediaPoster(images[open], 1200) || undefined}
+              controls
+              autoPlay
+              playsInline
+              className="max-h-[85vh] max-w-[90vw] rounded-lg bg-black object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={images[open]}
+              alt={`${title} photo ${open + 1}`}
+              className="max-h-[85vh] max-w-[90vw] rounded-lg object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+          )}
 
           <span className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-sm text-white">
             {open + 1} / {images.length}

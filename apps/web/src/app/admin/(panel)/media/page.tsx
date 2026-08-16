@@ -4,7 +4,7 @@ import { ResourceManager, type ResourceConfig } from '@/components/admin/Resourc
 
 const config: ResourceConfig = {
   title: 'Gallery & Media',
-  description: 'Photo albums shown on the public Gallery page. The album cover is taken from the first photo automatically.',
+  description: 'Photo and video albums shown on the public Gallery page. The album cover is taken from the first item automatically; for a video, a frame from the start of it is used.',
   listUrl: '/api/gallery/admin/list',
   createUrl: '/api/gallery',
   itemUrl: (row) => `/api/gallery/${row.id}`,
@@ -16,7 +16,7 @@ const config: ResourceConfig = {
       { value: 'PUBLISHED', label: 'Published' },
       { value: 'ARCHIVED', label: 'Archived' },
     ] },
-    { key: 'images', label: 'Photos', type: 'multiImage' },
+    { key: 'images', label: 'Photos and videos', type: 'multiImage' },
     { key: 'description', label: 'Description', type: 'textarea' },
   ],
 };

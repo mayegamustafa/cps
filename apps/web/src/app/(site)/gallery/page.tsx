@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ConfigurablePageHero } from '@/components/ui/ConfigurablePageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Icon } from '@/components/Icon';
+import { mediaPoster } from '@/lib/media';
 import { recordings } from '@/lib/content';
 import { getAlbums } from '@/lib/public-data';
 
@@ -27,14 +28,14 @@ export default async function GalleryPage() {
       />
 
       {/* Photo albums */}
-      <section className="py-24">
+      <section className="section">
         <div className="container-page">
           <SectionHeading eyebrow="Photo albums" title="Captured moments" />
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {galleryAlbums.map((a, i) => {
               const Card = (
                 <>
-                  <div className="h-full w-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: `url('${a.image}')` }} />
+                  <div className="h-full w-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: `url('${mediaPoster(a.image, 800)}')` }} />
                   <div className="absolute inset-0 bg-gradient-to-t from-maroon-950/85 via-maroon-950/20 to-transparent" />
                   <div className="absolute inset-x-0 bottom-0 p-5 text-white">
                     <span className="text-xs font-semibold uppercase tracking-wide text-gold-300">{a.category}</span>
