@@ -181,21 +181,35 @@ export function SettingsForm() {
   const [cfg, setCfg] = useState<SiteConfig>(siteDefaults);
   const [status, setStatus] = useState<'idle' | 'loading' | 'saving' | 'saved' | 'error'>('loading');
   const [tab, setTab] = useState<Tab>('Brand');
+  /**
+   * Whether the saved settings were actually read back.
+   *
+   * This form is seeded with siteDefaults for its shape and then saves the WHOLE
+   * config, every tab at once. So if the API was unreachable when the page
+   * opened, the form silently held demo content, and pressing Save on any single
+   * card wrote that demo content over the school's real site. Nothing may be
+   * edited or saved until a load has genuinely succeeded.
+   */
+  const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState('');
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch(`${API}/api/settings`);
-        if (res.ok) {
-          const saved = await res.json();
-          setCfg((prev) => deepMerge(prev, saved));
-        }
-      } catch {
-        /* API offline: keep defaults */
-      }
-      setStatus('idle');
-    })();
-  }, []);
+  async function load() {
+    setStatus('loading');
+    setLoadError('');
+    try {
+      const res = await fetch(`${API}/api/settings`, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`the server answered ${res.status}`);
+      const saved = await res.json();
+      setCfg(deepMerge(siteDefaults, saved));
+      setLoaded(true);
+    } catch (e) {
+      setLoaded(false);
+      setLoadError((e as Error).message || 'the server could not be reached');
+    }
+    setStatus('idle');
+  }
+
+  useEffect(() => { void load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
   function patch(updater: (draft: SiteConfig) => void) {
     setCfg((prev) => {
@@ -206,6 +220,11 @@ export function SettingsForm() {
   }
 
   async function save(): Promise<boolean> {
+    // Never write the seeded defaults over live content.
+    if (!loaded) {
+      setStatus('error');
+      return false;
+    }
     setStatus('saving');
     try {
       const token = typeof window !== 'undefined' ? sessionStorage.getItem('cps_token') : null;
@@ -229,6 +248,31 @@ export function SettingsForm() {
   }
 
   const h = cfg.home;
+
+  // Editing is blocked outright rather than merely warned about: a form full of
+  // demo content is one click away from replacing the real site.
+  if (!loaded) {
+    return (
+      <div className="rounded-2xl border border-line bg-white p-8 text-center">
+        <h1 className="font-display text-2xl text-maroon-900">
+          {status === 'loading' ? 'Loading your settings…' : 'Could not load your settings'}
+        </h1>
+        {status === 'loading' ? null : (
+          <>
+            <p className="mx-auto mt-2 max-w-lg text-sm text-ink-soft">
+              Editing is disabled because {loadError}. Saving now would replace your live
+              website with the built-in demo content, so this form stays closed until your
+              real settings load. This usually clears on its own a few seconds after a
+              deployment.
+            </p>
+            <div className="mt-5">
+              <Button onClick={load} icon="arrow-right">Try again</Button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
 
   return (
     <>
