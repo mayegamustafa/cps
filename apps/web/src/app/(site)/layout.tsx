@@ -1,6 +1,7 @@
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { AnnouncementBar } from '@/components/AnnouncementBar';
+import { AnnouncementBanner } from '@/components/AnnouncementBanner';
 import { AnnouncementPopup } from '@/components/AnnouncementPopup';
 import { ApplyNowFab } from '@/components/ApplyNowFab';
 import { AnalyticsBeacon } from '@/components/AnalyticsBeacon';
@@ -32,6 +33,7 @@ export default async function SiteLayout({
       <a href="#main" className="skip-link">Skip to content</a>
       <AnnouncementBar />
       <Header config={config} />
+      <AnnouncementBanner />
       <main id="main">{children}</main>
       <Footer config={config} />
       <AnnouncementPopup />

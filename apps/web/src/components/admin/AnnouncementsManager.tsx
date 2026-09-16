@@ -81,11 +81,12 @@ export function AnnouncementsManager() {
   // A poster is the picture on its own; it only ever makes sense as a pop-up.
   const poster = form.layout === 'image';
   function setLayout(layout: string) {
-    // A picture with no words cannot fill the slim banner, so that switches off with it.
     setForm((f) => ({
       ...f,
       layout,
-      ...(layout === 'image' ? { popup: true, showInBanner: false } : { showInBanner: true }),
+      // A poster reads best as the band under the menu, and a notice as the slim
+      // strip it has always used, so either way this starts switched on.
+      showInBanner: true,
     }));
   }
 
@@ -107,6 +108,7 @@ export function AnnouncementsManager() {
     e.preventDefault();
     if (poster && !form.imageUrl) { setMsg('Add the image first: a plain image announcement is only the picture.'); return; }
     if (!poster && !form.message.trim()) { setMsg('Add a message, or switch to a plain image announcement.'); return; }
+    if (!form.popup && !form.showInBanner) { setMsg('Choose where it appears: as a banner, as a pop-up, or both.'); return; }
     const payload: Record<string, unknown> = {
       title: form.title || undefined,
       message: form.message,
@@ -257,24 +259,31 @@ export function AnnouncementsManager() {
           <Field label="Stop showing (optional)" id="ea" type="datetime-local" value={form.endsAt} onChange={(e) => setForm({ ...form, endsAt: e.target.value })} />
         </div>
 
-        {poster ? (
-          <p className="rounded-xl border border-line bg-paper-dark/30 p-3 text-sm text-ink-soft md:col-span-2">
-            A plain image always opens as a centered pop-up, with nothing but a close button.
-          </p>
-        ) : (
-          <div className="grid gap-3 md:col-span-2">
-            <label className="flex items-center gap-2 rounded-xl border border-line p-3 text-sm font-medium text-ink">
-              <input type="checkbox" checked={form.popup} onChange={(e) => setForm({ ...form, popup: e.target.checked })} className="h-4 w-4 rounded border-line" />
-              Show as a centered pop-up
-            </label>
-            <label className="flex items-center gap-2 rounded-xl border border-line p-3 text-sm font-medium text-ink">
-              <input type="checkbox" checked={form.showInBanner} onChange={(e) => setForm({ ...form, showInBanner: e.target.checked })} className="h-4 w-4 rounded border-line" />
-              Also show in the slim banner across the top of the site
-            </label>
-          </div>
-        )}
+        <div className="grid gap-3 md:col-span-2">
+          <span className="text-sm font-medium text-ink">Where it appears</span>
+          <label className="flex items-start gap-2 rounded-xl border border-line p-3 text-sm font-medium text-ink">
+            <input type="checkbox" checked={form.showInBanner} onChange={(e) => setForm({ ...form, showInBanner: e.target.checked })} className="mt-0.5 h-4 w-4 rounded border-line" />
+            <span>
+              {poster ? 'As a banner across the top of the page' : 'In the slim strip above the menu'}
+              <span className="mt-0.5 block text-xs font-normal text-ink-soft">
+                {poster
+                  ? 'The poster sits under the menu, shown whole, on every page you target below.'
+                  : 'One line of text above the menu, in the colour set by the severity.'}
+              </span>
+            </span>
+          </label>
+          <label className="flex items-start gap-2 rounded-xl border border-line p-3 text-sm font-medium text-ink">
+            <input type="checkbox" checked={form.popup} onChange={(e) => setForm({ ...form, popup: e.target.checked })} className="mt-0.5 h-4 w-4 rounded border-line" />
+            <span>
+              As a centered pop-up
+              <span className="mt-0.5 block text-xs font-normal text-ink-soft">
+                Opens in front of the page {poster ? 'with nothing but a close button.' : 'until it is dismissed.'}
+              </span>
+            </span>
+          </label>
+        </div>
 
-        {form.popup ? (
+        {form.popup || form.showInBanner ? (
           <>
             <SelectField label="Show on" id="aud" value={form.audience} onChange={(e) => setForm({ ...form, audience: e.target.value })}>
               <option value="all">Entire website</option>
@@ -291,10 +300,12 @@ export function AnnouncementsManager() {
                 <Field label="Page paths (comma separated)" id="pgs" value={form.pages} placeholder="/admissions, /news" onChange={(e) => setForm({ ...form, pages: e.target.value })} />
               </div>
             ) : null}
-            <SelectField label="Frequency" id="freq" value={form.frequency} onChange={(e) => setForm({ ...form, frequency: e.target.value })}>
-              <option value="session">Once per visit (session)</option>
-              <option value="always">Every page load</option>
-            </SelectField>
+            {form.popup ? (
+              <SelectField label="Pop-up frequency" id="freq" value={form.frequency} onChange={(e) => setForm({ ...form, frequency: e.target.value })}>
+                <option value="session">Once per visit (session)</option>
+                <option value="always">Every page load</option>
+              </SelectField>
+            ) : null}
           </>
         ) : null}
 
@@ -322,6 +333,7 @@ export function AnnouncementsManager() {
                     <span className="rounded-full bg-paper-dark px-2 py-0.5 text-xs font-semibold text-ink-soft">{a.severity}</span>
                     <StatusBadge status={a.isActive ? 'published' : 'draft'} />
                     {a.popup ? <span className="rounded-full bg-gold-100 px-2 py-0.5 text-xs font-semibold text-maroon-800">Pop-up</span> : null}
+                    {a.showInBanner !== false ? <span className="rounded-full bg-gold-100 px-2 py-0.5 text-xs font-semibold text-maroon-800">Banner</span> : null}
                     {a.layout === 'image' ? <span className="rounded-full bg-paper-dark px-2 py-0.5 text-xs font-semibold text-ink-soft">Image only</span> : null}
                   </div>
                   {a.title ? <p className="mt-1 font-semibold text-ink">{a.title}</p> : null}
