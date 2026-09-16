@@ -113,7 +113,14 @@ export class MailboxController {
     ]);
     // Prefer the API's own public origin: pointing the provider straight at it
     // avoids buffering a 25MB message through the web proxy on the way in.
-    const origin = (process.env.API_URL ?? '').replace(/\/+$/, '');
+    //
+    // Platforms commonly set this host-only ("app.up.railway.app"). A URL with
+    // no scheme is not a URL the Worker's fetch() can use, and it fails at
+    // delivery time rather than at setup, so the scheme is added here.
+    const configured = (process.env.API_URL ?? '').trim().replace(/\/+$/, '');
+    const origin = configured && !/^https?:\/\//i.test(configured)
+      ? `https://${configured}`
+      : configured;
     return {
       inboundReady: Boolean(secret),
       // Never returns the secret itself; it is shown once, at rotation.
