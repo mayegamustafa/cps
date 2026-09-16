@@ -97,9 +97,9 @@ function r2Client() {
   });
 }
 
-async function uploadToR2(file: MulterFile): Promise<string> {
+async function uploadToR2(file: MulterFile, prefix = 'uploads'): Promise<string> {
   const safe = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '_').slice(-60);
-  const key = `uploads/${Date.now()}-${randomBytes(4).toString('hex')}-${safe}`;
+  const key = `${prefix}/${Date.now()}-${randomBytes(4).toString('hex')}-${safe}`;
   await r2Client().send(
     new PutObjectCommand({
       Bucket: process.env.R2_BUCKET,
@@ -111,6 +111,31 @@ async function uploadToR2(file: MulterFile): Promise<string> {
   const base = (process.env.R2_PUBLIC_URL ?? '').replace(/\/+$/, '');
   return `${base}/${key}`;
 }
+
+/**
+ * Stores a file using whichever provider is configured, Cloudinary first then
+ * R2. Shared with the mailbox module so an email attachment lands in the same
+ * place as any other upload. Returns null when no storage is configured, which
+ * callers treat as "keep the record, drop the file" rather than an error.
+ */
+export async function storeFile(
+  integrations: IntegrationsService,
+  file: MulterFile,
+  prefix = 'uploads',
+): Promise<{ url: string; provider: 'cloudinary' | 'r2' } | null> {
+  const cloudinary = await resolveCloudinary(integrations);
+  if (cloudinary) {
+    const url = await uploadToCloudinary(cloudinary, file);
+    return { url, provider: 'cloudinary' };
+  }
+  if (r2Configured()) {
+    const url = await uploadToR2(file, prefix);
+    return { url, provider: 'r2' };
+  }
+  return null;
+}
+
+export type StorableFile = MulterFile;
 
 @ApiTags('media')
 @Controller('media')

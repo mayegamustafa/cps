@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { execFile } from 'node:child_process';
@@ -44,7 +45,13 @@ async function runMigrations() {
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // A delivered email arrives as one JSON body with its attachments inlined, so
+  // the 100kb default would reject anything with a photo or PDF on it. The
+  // mailbox webhook rejects oversized attachments itself before storing them.
+  app.useBodyParser('json', { limit: '30mb' });
+  app.useBodyParser('urlencoded', { limit: '30mb', extended: true });
 
   app.use(helmet());
   app.enableCors({

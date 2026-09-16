@@ -41,6 +41,13 @@ export type IntegrationsConfig = {
     // Free media storage/CDN (images, video, documents).
     cloudinary?: { cloudName?: string; apiKey?: string; apiSecret?: string };
   };
+  mailbox?: {
+    // Shared secret the inbound mail webhook must present. Anyone holding this
+    // can inject mail into the portal, so it is masked like any other secret.
+    inboundSecret?: string;
+    // Domain the school receives mail on, used to build reply addresses.
+    domain?: string;
+  };
 };
 
 /**
@@ -103,6 +110,9 @@ function maskConfig(c: IntegrationsConfig): IntegrationsConfig {
             : undefined,
         }
       : undefined,
+    mailbox: c.mailbox
+      ? { ...c.mailbox, inboundSecret: mask(c.mailbox.inboundSecret) }
+      : undefined,
   };
 }
 
@@ -143,6 +153,11 @@ function mergeSecrets(stored: IntegrationsConfig, incoming: IntegrationsConfig):
         ...incoming.media?.cloudinary,
         apiSecret: keep(incoming.media?.cloudinary?.apiSecret, stored.media?.cloudinary?.apiSecret),
       },
+    },
+    mailbox: {
+      ...stored.mailbox,
+      ...incoming.mailbox,
+      inboundSecret: keep(incoming.mailbox?.inboundSecret, stored.mailbox?.inboundSecret),
     },
   };
 }

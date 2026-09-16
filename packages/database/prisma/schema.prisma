@@ -145,19 +145,19 @@ enum DonationStatus {
 // ─────────────────────────────────────────────────────────────
 
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  passwordHash  String?  // null for OAuth-only accounts
+  id            String  @id @default(cuid())
+  email         String  @unique
+  passwordHash  String? // null for OAuth-only accounts
   firstName     String
   lastName      String
   phone         String?
   avatarUrl     String?
-  roles         Role[]   @default([])
-  isActive      Boolean  @default(true)
-  emailVerified Boolean  @default(false)
+  roles         Role[]  @default([])
+  isActive      Boolean @default(true)
+  emailVerified Boolean @default(false)
 
   // Two-factor authentication (TOTP)
-  twoFactorEnabled Boolean @default(false)
+  twoFactorEnabled Boolean  @default(false)
   twoFactorSecret  String?
   backupCodes      String[] @default([])
 
@@ -165,22 +165,24 @@ model User {
   resetTokenHash      String?
   resetTokenExpiresAt DateTime?
 
-  lastLoginAt   DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  deletedAt     DateTime?
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
 
   oauthAccounts   OAuthAccount[]
   refreshTokens   RefreshToken[]
   auditLogs       AuditLog[]
-  authoredNews    NewsArticle[]   @relation("NewsAuthor")
-  uploadedMedia   MediaAsset[]    @relation("MediaUploader")
+  authoredNews    NewsArticle[]    @relation("NewsAuthor")
+  uploadedMedia   MediaAsset[]     @relation("MediaUploader")
   reviewedJobApps JobApplication[] @relation("JobAppReviewer")
-  hostedStreams   LiveStream[]    @relation("StreamHost")
+  hostedStreams   LiveStream[]     @relation("StreamHost")
+  assignedThreads MailThread[]     @relation("MailAssignee")
+  sentMail        MailMessage[]    @relation("MailSender")
 
-  parentProfile  ParentProfile?
-  alumniProfile  AlumniProfile?
-  staffProfile   StaffProfile?
+  parentProfile ParentProfile?
+  alumniProfile AlumniProfile?
+  staffProfile  StaffProfile?
 
   @@index([email])
   @@map("users")
@@ -188,7 +190,7 @@ model User {
 
 model OAuthAccount {
   id             String   @id @default(cuid())
-  provider       String   // google | microsoft
+  provider       String // google | microsoft
   providerUserId String
   userId         String
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -199,15 +201,15 @@ model OAuthAccount {
 }
 
 model RefreshToken {
-  id        String   @id @default(cuid())
-  tokenHash String   @unique
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userAgent String?
   ip        String?
   expiresAt DateTime
   revokedAt DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@index([userId])
   @@map("refresh_tokens")
@@ -218,7 +220,7 @@ model AuditLog {
   userId     String?
   user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   actorEmail String?
-  action     String   // e.g. "POST /api/news", "auth.login_failed"
+  action     String // e.g. "POST /api/news", "auth.login_failed"
   status     String   @default("ok") // ok | error
   entityType String?
   entityId   String?
@@ -247,16 +249,16 @@ model MediaAsset {
   sizeBytes  Int
   width      Int?
   height     Int?
-  durationS  Int?      // for video/audio
-  alt        String?   // accessibility / SEO (auto-generated, editable)
+  durationS  Int? // for video/audio
+  alt        String? // accessibility / SEO (auto-generated, editable)
   caption    String?
-  blurhash   String?   // low-res placeholder for fast loads
+  blurhash   String? // low-res placeholder for fast loads
 
   uploadedById String?
-  uploadedBy   User?    @relation("MediaUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+  uploadedBy   User?   @relation("MediaUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
 
   galleryItems GalleryItem[]
-  createdAt    DateTime  @default(now())
+  createdAt    DateTime      @default(now())
   deletedAt    DateTime?
 
   @@index([type])
@@ -302,13 +304,13 @@ model SeoMeta {
   id              String   @id @default(cuid())
   pageId          String?  @unique
   page            Page?    @relation(fields: [pageId], references: [id], onDelete: Cascade)
-  entityType      String?  // for news/event/etc when not a Page
+  entityType      String? // for news/event/etc when not a Page
   entityId        String?
   metaTitle       String?
   metaDescription String?
   ogImageUrl      String?
   canonicalUrl    String?
-  jsonLd          Json?    // structured data
+  jsonLd          Json? // structured data
   noindex         Boolean  @default(false)
   updatedAt       DateTime @updatedAt
 
@@ -352,23 +354,23 @@ model NewsArticle {
 }
 
 model Event {
-  id            String         @id @default(cuid())
-  slug          String         @unique
+  id            String              @id @default(cuid())
+  slug          String              @unique
   title         String
-  description   String         @db.Text
+  description   String              @db.Text
   coverImage    String?
   location      String?
   startsAt      DateTime
   endsAt        DateTime?
-  allDay        Boolean        @default(false)
-  category      String?        // sports | academics | graduation | trip | pta
+  allDay        Boolean             @default(false)
+  category      String? // sports | academics | graduation | trip | pta
   capacity      Int?
-  status        PublishStatus  @default(DRAFT)
-  liveStreamId  String?        @unique
-  liveStream    LiveStream?    @relation(fields: [liveStreamId], references: [id], onDelete: SetNull)
+  status        PublishStatus       @default(DRAFT)
+  liveStreamId  String?             @unique
+  liveStream    LiveStream?         @relation(fields: [liveStreamId], references: [id], onDelete: SetNull)
   registrations EventRegistration[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
   deletedAt     DateTime?
 
   @@index([startsAt])
@@ -400,7 +402,7 @@ model Gallery {
   slug        String        @unique
   title       String
   description String?
-  category    String?       // sports | academics | graduation | trips | events
+  category    String? // sports | academics | graduation | trips | events
   coverImage  String?
   images      String[]      @default([]) // photo URLs in the album
   status      PublishStatus @default(DRAFT)
@@ -470,50 +472,50 @@ model SocialPost {
 // ─────────────────────────────────────────────────────────────
 
 model JobVacancy {
-  id            String           @id @default(cuid())
-  slug          String           @unique
-  title         String
-  department    String
-  type          JobType          @default(FULL_TIME)
-  location      String           @default("Kampala, Uganda")
-  description   String           @db.Text
-  requirements  String[]         @default([])
-  responsibilities String[]      @default([])
-  salaryRange   String?
-  deadline      DateTime?
-  status        JobStatus        @default(DRAFT)
+  id                String           @id @default(cuid())
+  slug              String           @unique
+  title             String
+  department        String
+  type              JobType          @default(FULL_TIME)
+  location          String           @default("Kampala, Uganda")
+  description       String           @db.Text
+  requirements      String[]         @default([])
+  responsibilities  String[]         @default([])
+  salaryRange       String?
+  deadline          DateTime?
+  status            JobStatus        @default(DRAFT)
   /// Admin-defined extra application questions (FormField[]), per vacancy.
-  applicationFields Json         @default("[]")
-  applications  JobApplication[]
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  deletedAt     DateTime?
+  applicationFields Json             @default("[]")
+  applications      JobApplication[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  deletedAt         DateTime?
 
   @@index([status, deadline])
   @@map("job_vacancies")
 }
 
 model JobApplication {
-  id            String            @id @default(cuid())
-  vacancyId     String
-  vacancy       JobVacancy        @relation(fields: [vacancyId], references: [id], onDelete: Cascade)
-  firstName     String
-  lastName      String
-  email         String
-  phone         String
-  cvUrl         String
+  id             String                @id @default(cuid())
+  vacancyId      String
+  vacancy        JobVacancy            @relation(fields: [vacancyId], references: [id], onDelete: Cascade)
+  firstName      String
+  lastName       String
+  email          String
+  phone          String
+  cvUrl          String
   coverLetterUrl String?
   /// Answers to the vacancy's custom application questions (key → value).
-  extraData     Json?
-  documents     ApplicationDocument[]
-  status        ApplicationStatus @default(SUBMITTED)
-  score         Int?              // recruiter ranking
-  notes         String?           @db.Text
-  reviewedById  String?
-  reviewedBy    User?             @relation("JobAppReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
-  interviews    Interview[]
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  extraData      Json?
+  documents      ApplicationDocument[]
+  status         ApplicationStatus     @default(SUBMITTED)
+  score          Int? // recruiter ranking
+  notes          String?               @db.Text
+  reviewedById   String?
+  reviewedBy     User?                 @relation("JobAppReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  interviews     Interview[]
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
 
   @@index([vacancyId, status])
   @@map("job_applications")
@@ -523,7 +525,7 @@ model ApplicationDocument {
   id            String         @id @default(cuid())
   applicationId String
   application   JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  label         String         // "National ID", "Degree Certificate"
+  label         String // "National ID", "Degree Certificate"
   url           String
   createdAt     DateTime       @default(now())
 
@@ -535,7 +537,7 @@ model Interview {
   applicationId String
   application   JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   scheduledAt   DateTime
-  location      String?        // physical room or video link
+  location      String? // physical room or video link
   panel         String[]       @default([])
   outcome       String?
   createdAt     DateTime       @default(now())
@@ -548,64 +550,64 @@ model Interview {
 // ─────────────────────────────────────────────────────────────
 
 model AdmissionApplication {
-  id              String            @id @default(cuid())
-  reference       String            @unique // human-friendly tracking code
+  id                  String              @id @default(cuid())
+  reference           String              @unique // human-friendly tracking code
   // Pupil
-  pupilFirstName  String
-  pupilLastName   String
-  pupilDob        DateTime
-  gender          String?
-  nationality     String?
-  religion        String?
-  section         SchoolSection
-  gradeApplyingFor String
-  residence       Residence         @default(DAY)
+  pupilFirstName      String
+  pupilLastName       String
+  pupilDob            DateTime
+  gender              String?
+  nationality         String?
+  religion            String?
+  section             SchoolSection
+  gradeApplyingFor    String
+  residence           Residence           @default(DAY)
   // Father / guardian — section B(i) of the paper form
-  guardianName    String
-  guardianEmail   String
-  guardianPhone   String
-  relationship    String?
-  guardianOccupation String?
-  guardianWorkplace  String?
-  guardianResidence  String?
-  guardianDistrict   String?
+  guardianName        String
+  guardianEmail       String
+  guardianPhone       String
+  relationship        String?
+  guardianOccupation  String?
+  guardianWorkplace   String?
+  guardianResidence   String?
+  guardianDistrict    String?
   // Mother — section B(ii)
-  motherName      String?
-  motherPhone     String?
-  motherEmail     String?
-  motherOccupation String?
-  motherWorkplace String?
-  motherResidence String?
-  motherDistrict  String?
+  motherName          String?
+  motherPhone         String?
+  motherEmail         String?
+  motherOccupation    String?
+  motherWorkplace     String?
+  motherResidence     String?
+  motherDistrict      String?
   // Other immediate contact person — section B(iii)
-  contactName     String?
-  contactPhone    String?
-  contactEmail    String?
-  contactOccupation String?
-  contactWorkplace String?
-  contactResidence String?
-  contactDistrict String?
+  contactName         String?
+  contactPhone        String?
+  contactEmail        String?
+  contactOccupation   String?
+  contactWorkplace    String?
+  contactResidence    String?
+  contactDistrict     String?
   contactRelationship String?
   // Former school — section C
-  formerSchool    String?
-  formerClass     String?
-  heardAboutUs    String?
+  formerSchool        String?
+  formerClass         String?
+  heardAboutUs        String?
   // Health background — section D
-  specialIllness  String?           @db.Text
-  siblingName     String?
-  siblingClass    String?
+  specialIllness      String?             @db.Text
+  siblingName         String?
+  siblingClass        String?
   // Declaration — the printed copy still carries the wet signature
-  declarationName String?
+  declarationName     String?
   // Workflow
-  status          ApplicationStatus @default(SUBMITTED)
-  decisionNote    String?           @db.Text
-  letterUrl       String?           // generated admission letter (R2)
+  status              ApplicationStatus   @default(SUBMITTED)
+  decisionNote        String?             @db.Text
+  letterUrl           String? // generated admission letter (R2)
   /// Answers to admin-defined extra admission questions (key → value).
-  extraData       Json?
-  documents       AdmissionDocument[]
-  updates         AdmissionUpdate[]
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  extraData           Json?
+  documents           AdmissionDocument[]
+  updates             AdmissionUpdate[]
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
 
   @@index([status])
   @@map("admission_applications")
@@ -638,41 +640,41 @@ model AdmissionUpdate {
 // ─────────────────────────────────────────────────────────────
 
 model LiveStream {
-  id            String        @id @default(cuid())
-  slug          String        @unique // public viewing URL segment
-  title         String
-  description   String?       @db.Text
-  status        StreamStatus  @default(SCHEDULED)
-  provider      StreamProvider @default(RTMP)
-  embedUrl      String?       // external watch/embed URL (YouTube/Facebook/Zoom)
-  scheduledAt   DateTime?
-  startedAt     DateTime?
-  endedAt       DateTime?
-  ingestKey     String        @unique // RTMP stream key (secret)
-  hlsUrl        String?       // HLS playback URL once live
-  recordingUrl  String?       // archived recording (R2) after processing
-  thumbnailUrl  String?
-  peakViewers   Int           @default(0)
-  totalViews    Int           @default(0)
-  hostId        String?
-  host          User?         @relation("StreamHost", fields: [hostId], references: [id], onDelete: SetNull)
-  event         Event?
-  chatMessages  StreamChatMessage[]
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id           String              @id @default(cuid())
+  slug         String              @unique // public viewing URL segment
+  title        String
+  description  String?             @db.Text
+  status       StreamStatus        @default(SCHEDULED)
+  provider     StreamProvider      @default(RTMP)
+  embedUrl     String? // external watch/embed URL (YouTube/Facebook/Zoom)
+  scheduledAt  DateTime?
+  startedAt    DateTime?
+  endedAt      DateTime?
+  ingestKey    String              @unique // RTMP stream key (secret)
+  hlsUrl       String? // HLS playback URL once live
+  recordingUrl String? // archived recording (R2) after processing
+  thumbnailUrl String?
+  peakViewers  Int                 @default(0)
+  totalViews   Int                 @default(0)
+  hostId       String?
+  host         User?               @relation("StreamHost", fields: [hostId], references: [id], onDelete: SetNull)
+  event        Event?
+  chatMessages StreamChatMessage[]
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
 
   @@index([status, scheduledAt])
   @@map("live_streams")
 }
 
 model StreamChatMessage {
-  id        String     @id @default(cuid())
-  streamId  String
-  stream    LiveStream @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  id         String     @id @default(cuid())
+  streamId   String
+  stream     LiveStream @relation(fields: [streamId], references: [id], onDelete: Cascade)
   authorName String
-  message   String
-  hidden    Boolean    @default(false)
-  createdAt DateTime   @default(now())
+  message    String
+  hidden     Boolean    @default(false)
+  createdAt  DateTime   @default(now())
 
   @@index([streamId, createdAt])
   @@map("stream_chat_messages")
@@ -683,19 +685,19 @@ model StreamChatMessage {
 // ─────────────────────────────────────────────────────────────
 
 model StaffProfile {
-  id          String   @id @default(cuid())
-  userId      String?  @unique
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  fullName    String
-  title       String   // "Head Teacher"
-  department  String?
-  bio         String?  @db.Text
-  photoUrl    String?
-  email       String?
-  isLeadership Boolean @default(false)
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  userId       String?  @unique
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  fullName     String
+  title        String // "Head Teacher"
+  department   String?
+  bio          String?  @db.Text
+  photoUrl     String?
+  email        String?
+  isLeadership Boolean  @default(false)
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@map("staff_profiles")
 }
@@ -705,16 +707,16 @@ model StaffProfile {
 // ─────────────────────────────────────────────────────────────
 
 model Download {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  category    String   // prospectus | forms | policies | newsletters
-  fileUrl     String
-  fileSize    Int?
-  downloadCount Int    @default(0)
-  isPublic    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  title         String
+  description   String?
+  category      String // prospectus | forms | policies | newsletters
+  fileUrl       String
+  fileSize      Int?
+  downloadCount Int      @default(0)
+  isPublic      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@index([category])
   @@map("downloads")
@@ -725,15 +727,15 @@ model Download {
 // ─────────────────────────────────────────────────────────────
 
 model Testimonial {
-  id        String           @id @default(cuid())
+  id         String           @id @default(cuid())
   authorName String
-  role      String?          // "Parent", "Alumnus, Class of 2010"
-  quote     String           @db.Text
-  photoUrl  String?
-  rating    Int?
-  status    ModerationStatus @default(PENDING)
-  featured  Boolean          @default(false)
-  createdAt DateTime         @default(now())
+  role       String? // "Parent", "Alumnus, Class of 2010"
+  quote      String           @db.Text
+  photoUrl   String?
+  rating     Int?
+  status     ModerationStatus @default(PENDING)
+  featured   Boolean          @default(false)
+  createdAt  DateTime         @default(now())
 
   @@map("testimonials")
 }
@@ -743,37 +745,37 @@ model Testimonial {
 // ─────────────────────────────────────────────────────────────
 
 model AlumniProfile {
-  id            String   @id @default(cuid())
-  userId        String?  @unique
-  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  fullName      String
+  id             String       @id @default(cuid())
+  userId         String?      @unique
+  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  fullName       String
   graduationYear Int
-  classOf       String?
-  currentRole   String?
-  organisation  String?
-  city          String?
-  country       String?  @default("Uganda")
-  bio           String?  @db.Text
-  photoUrl      String?
-  isPublic      Boolean  @default(true)
-  story         AlumniStory?
-  donations     Donation[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  classOf        String?
+  currentRole    String?
+  organisation   String?
+  city           String?
+  country        String?      @default("Uganda")
+  bio            String?      @db.Text
+  photoUrl       String?
+  isPublic       Boolean      @default(true)
+  story          AlumniStory?
+  donations      Donation[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   @@index([graduationYear])
   @@map("alumni_profiles")
 }
 
 model AlumniStory {
-  id        String        @id @default(cuid())
-  alumniId  String        @unique
-  alumni    AlumniProfile @relation(fields: [alumniId], references: [id], onDelete: Cascade)
-  title     String
-  body      String        @db.Text
+  id         String        @id @default(cuid())
+  alumniId   String        @unique
+  alumni     AlumniProfile @relation(fields: [alumniId], references: [id], onDelete: Cascade)
+  title      String
+  body       String        @db.Text
   coverImage String?
-  status    PublishStatus @default(DRAFT)
-  createdAt DateTime      @default(now())
+  status     PublishStatus @default(DRAFT)
+  createdAt  DateTime      @default(now())
 
   @@map("alumni_stories")
 }
@@ -800,8 +802,8 @@ model Donation {
 
 model SchoolStat {
   id        String   @id @default(cuid())
-  label     String   // "Students Enrolled"
-  value     String   // "2,400+"
+  label     String // "Students Enrolled"
+  value     String // "2,400+"
   icon      String?
   order     Int      @default(0)
   updatedAt DateTime @updatedAt
@@ -810,29 +812,29 @@ model SchoolStat {
 }
 
 model Achievement {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   title       String
-  description String?  @db.Text
-  category    String?  // academics | sports | arts
+  description String?   @db.Text
+  category    String? // academics | sports | arts
   studentName String?
   imageUrl    String?
   awardedAt   DateTime?
-  featured    Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  featured    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
 
   @@map("achievements")
 }
 
 model House {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  color     String   // hex
+  id        String       @id @default(cuid())
+  name      String       @unique
+  color     String // hex
   motto     String?
-  points    Int      @default(0)
+  points    Int          @default(0)
   emblemUrl String?
   scores    HouseScore[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 
   @@map("houses")
 }
@@ -841,7 +843,7 @@ model HouseScore {
   id        String   @id @default(cuid())
   houseId   String
   house     House    @relation(fields: [houseId], references: [id], onDelete: Cascade)
-  category  String   // sports | academics | discipline
+  category  String // sports | academics | discipline
   points    Int
   reason    String?
   awardedAt DateTime @default(now())
@@ -858,7 +860,7 @@ model MagazineIssue {
   id          String        @id @default(cuid())
   slug        String        @unique
   title       String
-  edition     String?       // "Term 1, 2026"
+  edition     String? // "Term 1, 2026"
   coverImage  String?
   pdfUrl      String?
   flipbookUrl String?
@@ -911,12 +913,12 @@ model ContactMessage {
 }
 
 model NewsletterSubscriber {
-  id           String    @id @default(cuid())
-  email        String    @unique
-  name         String?
-  isConfirmed  Boolean   @default(false)
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String?
+  isConfirmed    Boolean   @default(false)
   unsubscribedAt DateTime?
-  createdAt    DateTime  @default(now())
+  createdAt      DateTime  @default(now())
 
   @@map("newsletter_subscribers")
 }
@@ -992,15 +994,15 @@ model Department {
 }
 
 model Programme {
-  id           String     @id @default(cuid())
-  slug         String     @unique
-  name         String     // "Lower Primary", "Cambridge IGCSE"
+  id           String      @id @default(cuid())
+  slug         String      @unique
+  name         String // "Lower Primary", "Cambridge IGCSE"
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  description  String?    @db.Text
-  curriculum   String?    @db.Text
+  description  String?     @db.Text
+  curriculum   String?     @db.Text
   imageUrl     String?
-  createdAt    DateTime   @default(now())
+  createdAt    DateTime    @default(now())
 
   @@map("programmes")
 }
@@ -1010,31 +1012,173 @@ model Programme {
 // ─────────────────────────────────────────────────────────────
 
 model ParentProfile {
-  id        String          @id @default(cuid())
-  userId    String          @unique
-  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String           @id @default(cuid())
+  userId    String           @unique
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   phone     String?
   address   String?
   children  StudentProfile[]
-  createdAt DateTime        @default(now())
+  createdAt DateTime         @default(now())
 
   @@map("parent_profiles")
 }
 
 model StudentProfile {
-  id            String         @id @default(cuid())
-  admissionNo   String?        @unique
-  firstName     String
-  lastName      String
-  section       SchoolSection
-  residence     Residence      @default(DAY)
-  className     String?        // "P5 Blue"
-  houseId       String?
-  photoUrl      String?
-  parentId      String?
-  parent        ParentProfile? @relation(fields: [parentId], references: [id], onDelete: SetNull)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id          String         @id @default(cuid())
+  admissionNo String?        @unique
+  firstName   String
+  lastName    String
+  section     SchoolSection
+  residence   Residence      @default(DAY)
+  className   String? // "P5 Blue"
+  houseId     String?
+  photoUrl    String?
+  parentId    String?
+  parent      ParentProfile? @relation(fields: [parentId], references: [id], onDelete: SetNull)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 
   @@map("student_profiles")
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Mailbox — real email at @cityparentsschool.co.ug, delivered
+//  into this portal by an inbound provider (Cloudflare Email
+//  Routing, SendGrid, Mailgun or Postmark) hitting the webhook.
+// ─────────────────────────────────────────────────────────────
+
+enum MailDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MailThreadState {
+  OPEN
+  ARCHIVED
+  SPAM
+  TRASH
+}
+
+/// One school address (info@, admissions@, headteacher@ ...). Created from the
+/// admin panel; no DNS change is needed to add another one.
+model Mailbox {
+  id          String  @id @default(cuid())
+  address     String  @unique // info@cityparentsschool.co.ug
+  displayName String // "City Parents School" — the From name on replies
+  description String?
+  /// Receives mail addressed to any unmatched address on the domain.
+  isCatchAll  Boolean @default(false)
+  isActive    Boolean @default(true)
+  sortOrder   Int     @default(0)
+
+  /// Appended to outgoing replies from this address.
+  signature        String? @db.Text
+  autoReplyEnabled Boolean @default(false)
+  autoReplySubject String?
+  autoReplyBody    String? @db.Text
+
+  threads   MailThread[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([isActive, sortOrder])
+  @@map("mailboxes")
+}
+
+/// A conversation inside one mailbox. Inbound replies are matched back onto it
+/// by Message-ID first, then by subject plus counterpart address.
+model MailThread {
+  id        String  @id @default(cuid())
+  mailboxId String
+  mailbox   Mailbox @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+
+  subject         String
+  /// Lowercased subject with Re:/Fwd: prefixes stripped, for fallback matching.
+  subjectKey      String
+  /// The other party's address, for fallback matching.
+  participant     String
+  participantName String?
+  /// Plain-text preview of the most recent message.
+  snippet         String  @db.Text
+
+  state          MailThreadState @default(OPEN)
+  isRead         Boolean         @default(false)
+  isStarred      Boolean         @default(false)
+  messageCount   Int             @default(0)
+  hasAttachments Boolean         @default(false)
+
+  assignedToId String?
+  assignedTo   User?   @relation("MailAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  lastMessageAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  messages MailMessage[]
+
+  @@index([mailboxId, state, lastMessageAt])
+  @@index([mailboxId, subjectKey, participant])
+  @@index([assignedToId])
+  @@index([state, isRead])
+  @@map("mail_threads")
+}
+
+model MailMessage {
+  id       String     @id @default(cuid())
+  threadId String
+  thread   MailThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  direction MailDirection
+
+  /// RFC 5322 Message-ID. Unique so a provider retry cannot double-deliver.
+  messageId  String?  @unique
+  inReplyTo  String?
+  references String[] @default([])
+
+  fromName  String?
+  fromEmail String
+  toEmails  String[] @default([])
+  ccEmails  String[] @default([])
+  subject   String
+  text      String?  @db.Text
+  html      String?  @db.Text
+
+  /// Provider spam verdict, when one is supplied.
+  spamScore Float?
+  isSpam    Boolean @default(false)
+  /// SPF/DKIM/DMARC results and any other headers worth keeping.
+  headers   Json?
+  sizeBytes Int?
+
+  /// Staff member who sent an outbound reply.
+  sentById      String?
+  sentBy        User?   @relation("MailSender", fields: [sentById], references: [id], onDelete: SetNull)
+  deliveryError String?
+
+  attachments MailAttachment[]
+  createdAt   DateTime         @default(now())
+
+  @@index([threadId, createdAt])
+  @@map("mail_messages")
+}
+
+model MailAttachment {
+  id        String      @id @default(cuid())
+  messageId String
+  message   MailMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  fileName   String
+  mimeType   String
+  sizeBytes  Int
+  /// Where the file was stored (Cloudinary or R2). Null when storage was not
+  /// configured at delivery time, so the message itself is never lost.
+  url        String?
+  storageKey String?
+  /// cid: reference for images embedded in the HTML body.
+  contentId  String?
+  isInline   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([messageId])
+  @@map("mail_attachments")
 }

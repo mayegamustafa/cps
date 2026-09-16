@@ -1,0 +1,299 @@
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  ForbiddenException,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UnauthorizedException,
+  UseGuards,
+  UseInterceptors,
+  UploadedFiles,
+} from '@nestjs/common';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
+import { Throttle } from '@nestjs/throttler';
+import { ApiTags, ApiBearerAuth, ApiExcludeEndpoint } from '@nestjs/swagger';
+import { timingSafeEqual } from 'node:crypto';
+import { MailThreadState, Role } from '@cps/database';
+import { PrismaService } from '../../prisma/prisma.service';
+import { JwtAuthGuard, RolesGuard } from '../../auth/guards';
+import { Roles } from '../../auth/roles.decorator';
+import { MailService } from '../mail/mail.module';
+import { MailboxService } from './mailbox.service';
+import { IncomingFile, normalizeInbound } from './mail-parse';
+import {
+  AssignThreadDto,
+  ComposeDto,
+  CreateMailboxDto,
+  ReplyDto,
+  UpdateMailboxDto,
+  UpdateThreadDto,
+} from './mailbox.dto';
+
+/** Staff who may read and answer school mail. */
+const MAIL_ROLES = [Role.SUPER_ADMIN, Role.MARKETING_ADMIN, Role.ADMISSIONS_ADMIN];
+
+type AuthedRequest = { user?: { id?: string; email?: string } };
+
+/** Constant-time compare, so the webhook secret cannot be guessed byte by byte. */
+function secretMatches(provided: string, expected: string): boolean {
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
+}
+
+@ApiTags('mailbox')
+@Controller('mailbox')
+export class MailboxController {
+  constructor(
+    private mailbox: MailboxService,
+    private prisma: PrismaService,
+    private mail: MailService,
+  ) {}
+
+  // ── Inbound webhook ────────────────────────────────────────────────────────
+
+  /**
+   * Where delivered mail arrives. Called by the provider, not by a person, so
+   * it is guarded by a shared secret rather than a JWT.
+   *
+   * The body shape differs per provider and is normalised downstream, so it is
+   * deliberately untyped: the global ValidationPipe would otherwise reject the
+   * provider's own field names as unknown properties.
+   */
+  @ApiExcludeEndpoint()
+  @Throttle({ default: { limit: 600, ttl: 60_000 } })
+  @UseInterceptors(AnyFilesInterceptor({ limits: { fileSize: 20 * 1024 * 1024, files: 20 } }))
+  @Post('inbound')
+  async inbound(
+    @Body() body: Record<string, unknown>,
+    @UploadedFiles() files: IncomingFile[] | undefined,
+    @Req() req: { headers: Record<string, string | string[] | undefined> },
+    @Query('secret') secretQuery?: string,
+  ) {
+    const expected = await this.mailbox.inboundSecret();
+    if (!expected) {
+      throw new ForbiddenException(
+        'Inbound mail is not enabled. Generate a webhook secret under Admin, Mailbox, Setup.',
+      );
+    }
+
+    const header = req.headers['x-mailbox-secret'];
+    const provided = (Array.isArray(header) ? header[0] : header) ?? secretQuery ?? '';
+    if (!provided || !secretMatches(provided, expected)) {
+      throw new UnauthorizedException('Invalid webhook secret.');
+    }
+
+    const mail = normalizeInbound(body ?? {}, files ?? []);
+    if (!mail) throw new BadRequestException('Payload carried no sender address.');
+
+    const result = await this.mailbox.deliver(mail);
+    // A 200 with delivered:false stops the provider retrying mail that will
+    // never route; the admin sees the unrouted address in the response log.
+    return result;
+  }
+
+  // ── Setup ──────────────────────────────────────────────────────────────────
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  @Get('setup')
+  async setup() {
+    const [secret, smtpReady, mailboxCount] = await Promise.all([
+      this.mailbox.inboundSecret(),
+      this.mail.isConfigured(),
+      this.prisma.mailbox.count(),
+    ]);
+    // Prefer the API's own public origin: pointing the provider straight at it
+    // avoids buffering a 25MB message through the web proxy on the way in.
+    const origin = (process.env.API_URL ?? '').replace(/\/+$/, '');
+    return {
+      inboundReady: Boolean(secret),
+      // Never returns the secret itself; it is shown once, at rotation.
+      sendingReady: smtpReady,
+      mailboxCount,
+      webhookPath: '/api/mailbox/inbound',
+      webhookUrl: origin ? `${origin}/api/mailbox/inbound` : null,
+    };
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  @Post('setup/secret')
+  async rotateSecret() {
+    const secret = await this.mailbox.rotateInboundSecret();
+    return { secret };
+  }
+
+  // ── Mailboxes ──────────────────────────────────────────────────────────────
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...MAIL_ROLES)
+  @Get('mailboxes')
+  listMailboxes() {
+    return this.prisma.mailbox.findMany({ orderBy: [{ sortOrder: 'asc' }, { address: 'asc' }] });
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  @Post('mailboxes')
+  async createMailbox(@Body() dto: CreateMailboxDto) {
+    const address = dto.address.trim().toLowerCase();
+    const existing = await this.prisma.mailbox.findUnique({ where: { address } });
+    if (existing) throw new BadRequestException(`${address} already exists.`);
+    // Only one catch-all can win, so creating a new one retires the old.
+    if (dto.isCatchAll) {
+      await this.prisma.mailbox.updateMany({ where: { isCatchAll: true }, data: { isCatchAll: false } });
+    }
+    return this.prisma.mailbox.create({ data: { ...dto, address } });
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  @Patch('mailboxes/:id')
+  async updateMailbox(@Param('id') id: string, @Body() dto: UpdateMailboxDto) {
+    if (dto.isCatchAll) {
+      await this.prisma.mailbox.updateMany({
+        where: { isCatchAll: true, id: { not: id } },
+        data: { isCatchAll: false },
+      });
+    }
+    const data = { ...dto, ...(dto.address ? { address: dto.address.trim().toLowerCase() } : {}) };
+    return this.prisma.mailbox.update({ where: { id }, data });
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  @Delete('mailboxes/:id')
+  async deleteMailbox(@Param('id') id: string) {
+    // Deleting cascades to every conversation in it, so the count is surfaced
+    // first and the admin screen confirms against it.
+    const threads = await this.prisma.mailThread.count({ where: { mailboxId: id } });
+    await this.prisma.mailbox.delete({ where: { id } });
+    return { deleted: true, threadsRemoved: threads };
+  }
+
+  // ── Conversations ──────────────────────────────────────────────────────────
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...MAIL_ROLES)
+  @Get('counts')
+  counts() {
+    return this.mailbox.counts();
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...MAIL_ROLES)
+  @Get('staff')
+  staff() {
+    return this.prisma.user.findMany({
+      where: { isActive: true, deletedAt: null, roles: { hasSome: MAIL_ROLES } },
+      select: { id: true, firstName: true, lastName: true, email: true },
+      orderBy: { firstName: 'asc' },
+    });
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...MAIL_ROLES)
+  @Get('threads')
+  threads(
+    @Query('mailboxId') mailboxId?: string,
+    @Query('state') state?: string,
+    @Query('search') search?: string,
+    @Query('starred') starred?: string,
+    @Query('unread') unread?: string,
+    @Query('assignedToId') assignedToId?: string,
+    @Query('take') take?: string,
+    @Query('skip') skip?: string,
+  ) {
+    const validState =
+      state && (Object.values(MailThreadState) as string[]).includes(state)
+        ? (state as MailThreadState)
+        : undefined;
+    return this.mailbox.listThreads({
+      mailboxId: mailboxId || undefined,
+      state: validState,
+      search: search || undefined,
+      starred: starred === 'true',
+      unread: unread === 'true',
+      assignedToId: assignedToId || undefined,
+      take: take ? Number(take) : undefined,
+      skip: skip ? Number(skip) : undefined,
+    });
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...MAIL_ROLES)
+  @Get('threads/:id')
+  async thread(@Param('id') id: string) {
+    const thread = await this.mailbox.getThread(id);
+    if (!thread.isRead) await this.mailbox.markRead(id, true);
+    return { ...thread, isRead: true };
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...MAIL_ROLES)
+  @Patch('threads/:id')
+  async updateThread(@Param('id') id: string, @Body() dto: UpdateThreadDto) {
+    if (dto.state) return this.mailbox.setState(id, dto.state);
+    if (dto.isStarred !== undefined) return this.mailbox.setStarred(id, dto.isStarred);
+    if (dto.isRead !== undefined) return this.mailbox.markRead(id, dto.isRead);
+    throw new BadRequestException('Nothing to update.');
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...MAIL_ROLES)
+  @Patch('threads/:id/assign')
+  assign(@Param('id') id: string, @Body() dto: AssignThreadDto) {
+    return this.mailbox.assign(id, dto.assignedToId ?? null);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...MAIL_ROLES)
+  @Post('threads/:id/reply')
+  reply(@Param('id') id: string, @Body() dto: ReplyDto, @Req() req: AuthedRequest) {
+    return this.mailbox.reply(id, req.user?.id ?? null, dto.body, dto.cc);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(...MAIL_ROLES)
+  @Post('compose')
+  compose(@Body() dto: ComposeDto, @Req() req: AuthedRequest) {
+    return this.mailbox.compose({
+      mailboxId: dto.mailboxId,
+      userId: req.user?.id ?? null,
+      to: dto.to,
+      cc: dto.cc,
+      subject: dto.subject,
+      body: dto.body,
+    });
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.MARKETING_ADMIN)
+  @Delete('threads/:id')
+  destroy(@Param('id') id: string) {
+    return this.mailbox.destroy(id);
+  }
+}

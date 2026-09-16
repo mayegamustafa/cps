@@ -23,6 +23,13 @@ export type MailInput = {
   html: string;
   text?: string;
   replyTo?: string;
+  cc?: string[];
+  /** Overrides the configured From, so a reply leaves as the mailbox it was sent to. */
+  from?: string;
+  /** Our own Message-ID, so an inbound reply can be matched back to the thread. */
+  messageId?: string;
+  /** In-Reply-To / References, so mail clients thread the reply correctly. */
+  headers?: Record<string, string>;
 };
 
 /**
@@ -82,7 +89,8 @@ export class MailService {
 
   /** Sends an email; returns {sent:false} (logged) when SMTP is not configured. */
   async send(input: MailInput): Promise<{ sent: boolean; error?: string }> {
-    const { host, port, secure, user, pass, from } = await this.resolveConfig();
+    const { host, port, secure, user, pass, from: configuredFrom } = await this.resolveConfig();
+    const from = input.from ?? configuredFrom;
     if (!host || !user || !pass || !from) {
       this.logger.warn(`Email not sent (SMTP not configured): "${input.subject}" → ${input.to}`);
       return { sent: false, error: 'SMTP not configured' };
@@ -95,6 +103,9 @@ export class MailService {
         text: input.text ?? input.html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
         html: input.html,
         replyTo: input.replyTo,
+        cc: input.cc?.length ? input.cc : undefined,
+        messageId: input.messageId,
+        headers: input.headers,
       });
       return { sent: true };
     } catch (e) {

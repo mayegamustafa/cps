@@ -16,6 +16,7 @@ export const adminNav: { label: string; href: string; icon: IconName }[] = [
   { label: 'Downloads', href: '/admin/downloads', icon: 'download' },
   { label: 'Social Wall', href: '/admin/social', icon: 'instagram' },
   { label: 'Forms', href: '/admin/forms', icon: 'inbox' },
+  { label: 'Mailbox', href: '/admin/mailbox', icon: 'at-sign' },
   { label: 'Messages', href: '/admin/contact', icon: 'mail' },
   { label: 'Integrations', href: '/admin/integrations', icon: 'link' },
   { label: 'Audit Trail', href: '/admin/audit', icon: 'shield-check' },

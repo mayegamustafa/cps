@@ -55,7 +55,14 @@ export type IconName =
   | 'megaphone'
   | 'telegram'
   | 'link'
-  | 'share';
+  | 'share'
+  | 'star'
+  | 'archive'
+  | 'reply'
+  | 'paperclip'
+  | 'refresh'
+  | 'send'
+  | 'at-sign';
 
 type IconProps = SVGProps<SVGSVGElement> & {
   name: IconName;
@@ -255,6 +262,23 @@ const paths: Record<IconName, React.ReactNode> = {
       <circle cx="18" cy="6" r="2.5" />
       <circle cx="18" cy="18" r="2.5" />
       <path d="m8.2 10.8 7.6-3.6M8.2 13.2l7.6 3.6" />
+    </>
+  ),
+  star: <path d="m12 3.6 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />,
+  archive: (
+    <>
+      <rect x="3" y="4" width="18" height="4" rx="1" />
+      <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8M10 12h4" />
+    </>
+  ),
+  reply: <path d="M9 7 4 12l5 5M4 12h8a8 8 0 0 1 8 8v-1" />,
+  paperclip: <path d="M20 11.5 12.2 19.3a4.5 4.5 0 0 1-6.4-6.4l7.8-7.8a3 3 0 0 1 4.3 4.3l-7.8 7.8a1.5 1.5 0 0 1-2.2-2.2l7.2-7.2" />,
+  refresh: <path d="M20 12a8 8 0 1 1-2.6-5.9M20 4v4h-4" />,
+  send: <path d="m21 3-9.5 9.5M21 3l-6.5 18-3.9-8.6L2 8.5z" />,
+  'at-sign': (
+    <>
+      <circle cx="12" cy="12" r="3.6" />
+      <path d="M15.6 8.4v4.7a2.6 2.6 0 0 0 5.2 0V12a8.8 8.8 0 1 0-3.5 7" />
     </>
   ),
 };
