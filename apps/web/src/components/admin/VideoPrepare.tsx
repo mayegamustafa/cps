@@ -62,11 +62,14 @@ export function VideoPrepare({
   maxBytes,
   onReady,
   onCancel,
+  voluntary = false,
 }: {
   file: File;
   maxBytes: number;
   onReady: (file: File) => void;
   onCancel: () => void;
+  /** Opened from the Trim button rather than by a file that is too large. */
+  voluntary?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [url] = useState(() => URL.createObjectURL(file));
@@ -176,12 +179,13 @@ export function VideoPrepare({
   return (
     <div className="mt-3 rounded-xl border border-maroon-700/30 bg-maroon-50/40 p-4">
       <h4 className="flex items-center gap-2 text-sm font-semibold text-maroon-900">
-        <Icon name="video" size={16} /> This video is too large. Trim or shrink it here.
+        <Icon name="video" size={16} />
+        {voluntary ? 'Trim this video' : 'This video is too large. Trim or shrink it here.'}
       </h4>
       <p className="mt-1 text-xs leading-relaxed text-ink-soft">
-        {file.name} is {fmtBytes(file.size)}; the most we can upload is {fmtBytes(maxBytes)}.
-        Choose the section you want and a quality, and it will be re-encoded in your browser
-        before uploading. Nothing is sent until you approve the result.
+        {voluntary
+          ? `${file.name} is ${fmtBytes(file.size)}. Choose the section to keep and a quality, and it is re-encoded in your browser before uploading. Nothing is sent until you approve the result.`
+          : `${file.name} is ${fmtBytes(file.size)}; the most we can upload is ${fmtBytes(maxBytes)}. Choose the section you want and a quality, and it will be re-encoded in your browser before uploading. Nothing is sent until you approve the result.`}
       </p>
 
       <video
@@ -278,10 +282,10 @@ export function VideoPrepare({
           ) : null}
 
           <div className="flex flex-wrap gap-2">
-            <Button onClick={prepare} size="md" icon="arrow-right" disabled={busy || !fits || !supported}>
+            <Button type="button" onClick={prepare} size="md" icon="arrow-right" disabled={busy || !fits || !supported}>
               {busy ? 'Processing…' : 'Prepare and upload'}
             </Button>
-            <Button onClick={onCancel} variant="ghost" size="md" disabled={busy}>Cancel</Button>
+            <Button type="button" onClick={onCancel} variant="ghost" size="md" disabled={busy}>Cancel</Button>
           </div>
         </div>
       ) : null}

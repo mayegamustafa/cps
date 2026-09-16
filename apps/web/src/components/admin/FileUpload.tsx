@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { Icon } from '@/components/Icon';
 import { isVideoUrl } from '@/lib/media';
 import { VideoPrepare } from '@/components/admin/VideoPrepare';
+import { ImagePrepare } from '@/components/admin/ImagePrepare';
 
 const inputCls =
   'w-full rounded-xl border border-line bg-white px-4 py-2.5 text-ink shadow-sm transition-colors placeholder:text-ink-muted focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20';
@@ -212,6 +213,11 @@ export function FileUpload({
   const [pending, setPending] = useState<{ name: string; size: number } | null>(null);
   const [oversize, setOversize] = useState<File | null>(null);
   const [error, setError] = useState('');
+  // Kept so "Crop and edit" works on the file itself. Editing an uploaded URL is
+  // possible too, but only while the host allows it to be read back into a canvas.
+  const [picked, setPicked] = useState<File | null>(null);
+  const [editing, setEditing] = useState<{ source: File | string; reason?: string; maxBytes?: number } | null>(null);
+  const [trimming, setTrimming] = useState(false);
 
   async function upload(file: File) {
     if (file.size > MAX_UPLOAD_BYTES) {
@@ -220,6 +226,16 @@ export function FileUpload({
       if (file.type.startsWith('video/')) {
         setError('');
         setOversize(file);
+        return;
+      }
+      if (file.type.startsWith('image/')) {
+        // A picture can be cropped and re-saved here until it fits.
+        setError('');
+        setEditing({
+          source: file,
+          maxBytes: MAX_UPLOAD_BYTES,
+          reason: `This picture is ${formatBytes(file.size)}, and the most we can upload is ${formatBytes(MAX_UPLOAD_BYTES)}. Crop it here and it will be saved small enough.`,
+        });
         return;
       }
       setError(
@@ -245,6 +261,13 @@ export function FileUpload({
 
   const isVideo = value ? isVideoUrl(value) : false;
   const isImage = !!value && !isVideo && (accept.startsWith('image') || /\.(png|jpe?g|gif|webp|avif|svg)(\?|#|$)/i.test(value));
+  // Animated and vector files come out of a canvas as a single flat frame, so they
+  // are left alone; everything else can be cropped.
+  const editableUrl = isImage && !/\.(gif|svg)(\?|#|$)/i.test(value);
+  const pickedImage = !!picked && picked.type.startsWith('image/') && !/gif|svg/.test(picked.type);
+  const canEdit = !busy && (pickedImage || editableUrl);
+  // Trimming reads the file itself, so it is offered for the video just chosen.
+  const canTrim = !busy && !!picked && picked.type.startsWith('video/');
 
   return (
     <div>
@@ -258,6 +281,24 @@ export function FileUpload({
         >
           <Icon name="download" size={16} className="rotate-180" /> {busy ? `Uploading… ${pct}%` : 'Upload'}
         </button>
+        {canEdit ? (
+          <button
+            type="button"
+            onClick={() => setEditing({ source: pickedImage && picked ? picked : value })}
+            className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-2 text-sm font-medium text-ink-soft transition-colors hover:bg-maroon-50 hover:text-maroon-800"
+          >
+            <Icon name="edit" size={16} /> Crop and edit
+          </button>
+        ) : null}
+        {canTrim ? (
+          <button
+            type="button"
+            onClick={() => { setTrimming(true); setOversize(picked); }}
+            className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-2 text-sm font-medium text-ink-soft transition-colors hover:bg-maroon-50 hover:text-maroon-800"
+          >
+            <Icon name="video" size={16} /> Trim video
+          </button>
+        ) : null}
         {pending ? (
           <span className="min-w-0 truncate text-xs text-ink-muted">
             {pending.name} · {formatBytes(pending.size)}
@@ -270,7 +311,7 @@ export function FileUpload({
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0];
-            if (f) upload(f);
+            if (f) { setPicked(f); void upload(f); }
             e.target.value = '';
           }}
         />
@@ -298,17 +339,19 @@ export function FileUpload({
         <VideoPrepare
           file={oversize}
           maxBytes={MAX_UPLOAD_BYTES}
-          onCancel={() => setOversize(null)}
-          onReady={(prepared) => { setOversize(null); void upload(prepared); }}
+          voluntary={trimming}
+          onCancel={() => { setOversize(null); setTrimming(false); }}
+          onReady={(prepared) => { setOversize(null); setTrimming(false); setPicked(prepared); void upload(prepared); }}
         />
       ) : null}
 
-      {oversize ? (
-        <VideoPrepare
-          file={oversize}
-          maxBytes={MAX_UPLOAD_BYTES}
-          onCancel={() => setOversize(null)}
-          onReady={(prepared) => { setOversize(null); void upload(prepared); }}
+      {editing ? (
+        <ImagePrepare
+          source={editing.source}
+          maxBytes={editing.maxBytes}
+          reason={editing.reason}
+          onCancel={() => setEditing(null)}
+          onReady={(edited) => { setEditing(null); setPicked(edited); void upload(edited); }}
         />
       ) : null}
 
