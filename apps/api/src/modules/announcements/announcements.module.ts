@@ -9,7 +9,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { IsArray, IsBoolean, IsDateString, IsEnum, IsInt, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsArray, IsBoolean, IsDateString, IsEnum, IsInt, IsOptional, IsString } from 'class-validator';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { AlertSeverity, Role } from '@cps/database';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -18,7 +18,7 @@ import { Roles } from '../../auth/roles.decorator';
 
 class CreateAnnouncementDto {
   @IsOptional() @IsString() title?: string;
-  @IsString() @MinLength(2) message: string;
+  @IsOptional() @IsString() message?: string;
   @IsOptional() @IsEnum(AlertSeverity) severity?: AlertSeverity;
   @IsOptional() @IsString() category?: string;
   @IsOptional() @IsString() link?: string;
@@ -34,11 +34,13 @@ class CreateAnnouncementDto {
   @IsOptional() @IsArray() @IsString({ each: true }) pages?: string[];
   @IsOptional() @IsString() device?: string;
   @IsOptional() @IsString() frequency?: string;
+  @IsOptional() @IsString() layout?: string; // card | image
+  @IsOptional() @IsBoolean() showInBanner?: boolean;
 }
 
 class UpdateAnnouncementDto {
   @IsOptional() @IsString() title?: string;
-  @IsOptional() @IsString() @MinLength(2) message?: string;
+  @IsOptional() @IsString() message?: string;
   @IsOptional() @IsEnum(AlertSeverity) severity?: AlertSeverity;
   @IsOptional() @IsString() category?: string;
   @IsOptional() @IsString() link?: string;
@@ -54,6 +56,8 @@ class UpdateAnnouncementDto {
   @IsOptional() @IsArray() @IsString({ each: true }) pages?: string[];
   @IsOptional() @IsString() device?: string;
   @IsOptional() @IsString() frequency?: string;
+  @IsOptional() @IsString() layout?: string; // card | image
+  @IsOptional() @IsBoolean() showInBanner?: boolean;
 }
 
 // Normalises date strings → Date and keeps Prisma happy with the JSON-ish DTO.
@@ -105,7 +109,7 @@ export class AnnouncementsController {
   @Post()
   create(@Body() dto: CreateAnnouncementDto) {
     return this.prisma.emergencyAlert.create({
-      data: { ...toData(dto), message: dto.message, isActive: dto.isActive ?? true },
+      data: { ...toData(dto), message: dto.message ?? '', isActive: dto.isActive ?? true },
     });
   }
 

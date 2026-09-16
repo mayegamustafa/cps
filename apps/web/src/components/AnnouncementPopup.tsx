@@ -19,6 +19,7 @@ type Announcement = {
   pages?: string[];
   device?: string | null; // all | mobile | desktop
   frequency?: string | null; // session | always
+  layout?: string | null; // card | image
 };
 
 const CATEGORY: Record<string, { label: string; icon: IconName }> = {
@@ -98,6 +99,51 @@ export function AnnouncementPopup() {
 
   if (!item) return null;
   const cat = CATEGORY[item.category ?? 'general'] ?? CATEGORY.general;
+  // "image" posts the picture exactly as uploaded: no badge, heading or buttons,
+  // and no crop. A poster is already a finished design, so anything the site adds
+  // around it competes with it.
+  const posterOnly = item.layout === 'image' && !!item.imageUrl;
+
+  const closeButton = (
+    <button
+      onClick={close}
+      aria-label="Close"
+      className="absolute right-3 top-3 z-20 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/85 text-ink-soft shadow-soft backdrop-blur transition-colors hover:bg-white hover:text-maroon-700"
+    >
+      <Icon name="close" size={18} />
+    </button>
+  );
+
+  if (posterOnly) {
+    // eslint-disable-next-line @next/next/no-img-element
+    const poster = <img src={item.imageUrl as string} alt={item.title || item.message || 'Announcement'} className="block max-h-[86vh] w-auto max-w-[92vw] rounded-2xl object-contain" />;
+    return (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={item.title || item.message || cat.label}
+        className="fixed inset-0 z-[80] flex items-center justify-center p-4"
+      >
+        <div
+          aria-hidden
+          onClick={close}
+          className={`absolute inset-0 bg-maroon-950/70 backdrop-blur-sm transition-opacity duration-300 ${shown ? 'opacity-100' : 'opacity-0'}`}
+        />
+        <div
+          className={`relative z-10 transition-all duration-300 ${shown ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-2 scale-95 opacity-0'}`}
+        >
+          {closeButton}
+          {item.link ? (
+            <Link href={item.link} onClick={close} aria-label={item.linkLabel || item.title || 'Open'}>
+              {poster}
+            </Link>
+          ) : (
+            poster
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -112,27 +158,25 @@ export function AnnouncementPopup() {
         className={`absolute inset-0 bg-maroon-950/60 backdrop-blur-sm transition-opacity duration-300 ${shown ? 'opacity-100' : 'opacity-0'}`}
       />
       <div
-        className={`relative z-10 w-full max-w-lg overflow-hidden rounded-2xl bg-paper shadow-2xl ring-1 ring-black/5 transition-all duration-300 ${shown ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-2 scale-95 opacity-0'}`}
+        className={`relative z-10 flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-paper shadow-2xl ring-1 ring-black/5 transition-all duration-300 ${shown ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-2 scale-95 opacity-0'}`}
       >
-        <button
-          onClick={close}
-          aria-label="Close"
-          className="absolute right-3 top-3 z-20 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/85 text-ink-soft shadow-soft backdrop-blur transition-colors hover:bg-white hover:text-maroon-700"
-        >
-          <Icon name="close" size={18} />
-        </button>
+        {closeButton}
 
         {item.imageUrl ? (
+          // Whatever shape it was uploaded in stays whole: a portrait poster cropped
+          // to a 16:9 strip loses its dates and its point.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.imageUrl} alt="" loading="lazy" className="aspect-[16/9] w-full object-cover" />
+          <img src={item.imageUrl} alt="" loading="lazy" className="max-h-[50vh] w-full shrink-0 bg-paper-dark object-contain" />
         ) : null}
 
-        <div className="p-6 sm:p-8">
+        <div className="overflow-y-auto p-6 sm:p-8">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-maroon-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-maroon-700">
             <Icon name={cat.icon} size={13} /> {cat.label}
           </span>
           {item.title ? <h2 className="mt-4 font-display text-2xl leading-tight text-maroon-900">{item.title}</h2> : null}
-          <p className={`${item.title ? 'mt-2' : 'mt-4'} leading-relaxed text-ink-soft`}>{item.message}</p>
+          {item.message ? (
+            <p className={`${item.title ? 'mt-2' : 'mt-4'} leading-relaxed text-ink-soft`}>{item.message}</p>
+          ) : null}
 
           {item.eventDate ? (
             <p className="mt-4 inline-flex items-center gap-2 rounded-xl bg-paper-dark px-3 py-2 text-sm font-medium text-ink">

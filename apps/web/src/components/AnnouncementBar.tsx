@@ -8,6 +8,7 @@ type Announcement = {
   severity: 'INFO' | 'WARNING' | 'CRITICAL' | string;
   link?: string | null;
   linkLabel?: string | null;
+  showInBanner?: boolean;
 };
 
 const styles: Record<string, string> = {
@@ -31,8 +32,11 @@ export async function AnnouncementBar() {
   } catch {
     return null;
   }
-  if (!items.length) return null;
-  const a = items[0];
+  // A pop-up poster has no words to put in a strip, and an announcement can be
+  // set to run as a pop-up only, so the banner takes the first one that has
+  // something to say and is allowed here.
+  const a = items.find((x) => x.showInBanner !== false && x.message?.trim());
+  if (!a) return null;
 
   return (
     <div className={`${styles[a.severity] ?? styles.INFO} text-sm`}>

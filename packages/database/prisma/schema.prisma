@@ -878,7 +878,7 @@ model MagazineIssue {
 model EmergencyAlert {
   id        String        @id @default(cuid())
   title     String?
-  message   String
+  message   String        @default("")
   severity  AlertSeverity @default(INFO)
   category  String        @default("general") // event|emergency|admission|holiday|maintenance|general
   link      String?
@@ -894,6 +894,8 @@ model EmergencyAlert {
   pages     String[]      @default([]) // when audience = specific
   device    String        @default("all") // all | mobile | desktop
   frequency String        @default("session") // session | always
+  layout    String        @default("card") // card = badge + text, image = the picture on its own
+  showInBanner Boolean    @default(true)
   createdAt DateTime      @default(now())
 
   @@map("emergency_alerts")
