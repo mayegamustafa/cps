@@ -26,6 +26,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AuditModule, AuditInterceptor } from './modules/audit/audit.module';
 import { MailboxModule } from './modules/mailbox/mailbox.module';
 import { UsersModule } from './modules/users/users.module';
+import { BadgesModule } from './modules/badges/badges.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { UsersModule } from './modules/users/users.module';
     AuditModule,
     MailboxModule,
     UsersModule,
+    BadgesModule,
     // Further modules (staff, seo) follow the same controller→Prisma pattern.
   ],
   providers: [

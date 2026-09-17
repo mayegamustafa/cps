@@ -1,11 +1,16 @@
 import type { IconName } from '@/components/Icon';
 
+/** Keys of the /api/badges response, for the counts on the sidebar. */
+export type BadgeKey = 'messages' | 'admissions' | 'jobApplications' | 'social' | 'mailbox';
+
 export type AdminNavItem = {
   label: string;
   href: string;
   icon: IconName;
   /** Shown even to staff who hold no admin role, such as a mailbox-only account. */
   everyone?: boolean;
+  /** Which waiting-count to show beside this item, when there is one. */
+  badge?: BadgeKey;
 };
 
 export const adminNav: AdminNavItem[] = [
@@ -16,16 +21,16 @@ export const adminNav: AdminNavItem[] = [
   { label: 'News', href: '/admin/news', icon: 'bell' },
   { label: 'Events', href: '/admin/events', icon: 'calendar' },
   { label: 'Gallery & Media', href: '/admin/media', icon: 'image' },
-  { label: 'Admissions', href: '/admin/admissions', icon: 'inbox' },
+  { label: 'Admissions', href: '/admin/admissions', icon: 'inbox', badge: 'admissions' },
   { label: 'Careers', href: '/admin/careers', icon: 'briefcase' },
-  { label: 'Job Applications', href: '/admin/job-applications', icon: 'users' },
+  { label: 'Job Applications', href: '/admin/job-applications', icon: 'users', badge: 'jobApplications' },
   { label: 'Live Streams', href: '/admin/live', icon: 'video' },
   { label: 'Alumni', href: '/admin/alumni', icon: 'users' },
   { label: 'Downloads', href: '/admin/downloads', icon: 'download' },
-  { label: 'Social Wall', href: '/admin/social', icon: 'instagram' },
+  { label: 'Social Wall', href: '/admin/social', icon: 'instagram', badge: 'social' },
   { label: 'Forms', href: '/admin/forms', icon: 'inbox' },
-  { label: 'Mailbox', href: '/admin/mailbox', icon: 'at-sign', everyone: true },
-  { label: 'Messages', href: '/admin/contact', icon: 'mail' },
+  { label: 'Mailbox', href: '/admin/mailbox', icon: 'at-sign', everyone: true, badge: 'mailbox' },
+  { label: 'Messages', href: '/admin/contact', icon: 'mail', badge: 'messages' },
   { label: 'Integrations', href: '/admin/integrations', icon: 'link' },
   { label: 'Audit Trail', href: '/admin/audit', icon: 'shield-check' },
   { label: 'Staff & Access', href: '/admin/users', icon: 'users' },

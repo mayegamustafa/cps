@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { Icon } from '@/components/Icon';
+import { printDocument, sheetHead, escapeHtml } from '@/lib/print';
+import { refreshBadges } from '@/lib/badges';
 
 type Message = {
   id: string;
@@ -41,7 +43,10 @@ export function ContactInbox() {
 
   async function setHandled(id: string, handled: boolean) {
     const res = await fetch(`/api/contact/${id}`, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify({ handled }) }).catch(() => null);
-    if (res && res.ok) setItems((p) => p.map((m) => (m.id === id ? { ...m, handled } : m)));
+    if (res && res.ok) {
+      setItems((p) => p.map((m) => (m.id === id ? { ...m, handled } : m)));
+      refreshBadges();
+    }
   }
 
   function openReply(id: string) {
@@ -75,7 +80,38 @@ export function ContactInbox() {
   async function remove(id: string) {
     if (!confirm('Delete this message?')) return;
     const res = await fetch(`/api/contact/${id}`, { method: 'DELETE', headers: authHeaders() }).catch(() => null);
-    if (res && res.ok) setItems((p) => p.filter((m) => m.id !== id));
+    if (res && res.ok) {
+      setItems((p) => p.filter((m) => m.id !== id));
+      refreshBadges();
+    }
+  }
+
+  function recordHtml(m: Message): string {
+    return `<div class="record">
+      <h2>${escapeHtml(m.name)}<span class="tag ${m.handled ? 'done' : ''}">${m.handled ? 'Handled' : 'New'}</span></h2>
+      <p class="contact">${escapeHtml(m.email)}${m.phone ? ` &middot; ${escapeHtml(m.phone)}` : ''} &middot; ${escapeHtml(new Date(m.createdAt).toLocaleString())}</p>
+      ${m.subject ? `<p class="subject">${escapeHtml(m.subject)}</p>` : ''}
+      <p class="message">${escapeHtml(m.message)}</p>
+    </div>`;
+  }
+
+  /** Prints every message currently listed. The browser's dialog saves it as PDF. */
+  function printAll() {
+    if (items.length === 0) return;
+    const count = `${items.length} message${items.length === 1 ? '' : 's'}`;
+    printDocument(
+      'Contact messages',
+      sheetHead('Contact messages', count) +
+        items.map(recordHtml).join('') +
+        `<p class="foot">${count}, from the public contact form.</p>`,
+    );
+  }
+
+  function printOne(m: Message) {
+    printDocument(
+      `Message from ${m.name}`,
+      sheetHead('Contact message') + recordHtml(m),
+    );
   }
 
   function exportCsv() {
@@ -104,14 +140,24 @@ export function ContactInbox() {
             Enquiries submitted through the public contact form. {msg}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={exportCsv}
-          disabled={items.length === 0}
-          className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-2 text-sm font-medium text-ink-soft hover:bg-maroon-50 hover:text-maroon-700 disabled:opacity-40"
-        >
-          <Icon name="download" size={16} /> Excel (CSV)
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={printAll}
+            disabled={items.length === 0}
+            className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-2 text-sm font-medium text-ink-soft hover:bg-maroon-50 hover:text-maroon-700 disabled:opacity-40"
+          >
+            <Icon name="download" size={16} /> Print / PDF
+          </button>
+          <button
+            type="button"
+            onClick={exportCsv}
+            disabled={items.length === 0}
+            className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-2 text-sm font-medium text-ink-soft hover:bg-maroon-50 hover:text-maroon-700 disabled:opacity-40"
+          >
+            <Icon name="download" size={16} /> Excel (CSV)
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -141,6 +187,9 @@ export function ContactInbox() {
                 <div className="flex shrink-0 items-center gap-1">
                   <button onClick={() => openReply(m.id)} aria-label="Reply" className="rounded-lg p-2 text-ink-muted hover:bg-maroon-50 hover:text-maroon-700">
                     <Icon name="mail" size={18} />
+                  </button>
+                  <button onClick={() => printOne(m)} aria-label="Print this message" title="Print / PDF" className="rounded-lg p-2 text-ink-muted hover:bg-maroon-50 hover:text-maroon-700">
+                    <Icon name="download" size={18} />
                   </button>
                   <button onClick={() => setHandled(m.id, !m.handled)} aria-label="Toggle handled" className="rounded-lg p-2 text-ink-muted hover:bg-emerald-50 hover:text-emerald-700">
                     <Icon name="shield-check" size={18} />

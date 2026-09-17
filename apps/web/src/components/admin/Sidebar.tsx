@@ -6,6 +6,7 @@ import { Logo } from '@/components/Logo';
 import { Icon } from '@/components/Icon';
 import { navFor } from '@/lib/admin';
 import { useMe } from '@/lib/session';
+import { useBadges } from '@/lib/badges';
 import { clearSession } from '@/lib/admin-auth';
 
 export function Sidebar() {
@@ -13,6 +14,7 @@ export function Sidebar() {
   const router = useRouter();
   const { me } = useMe();
   const nav = navFor(me?.roles);
+  const badges = useBadges();
 
   function signOut() {
     clearSession();
@@ -43,7 +45,18 @@ export function Sidebar() {
               ].join(' ')}
             >
               <Icon name={item.icon} size={19} />
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {item.badge && badges?.[item.badge] ? (
+                <span
+                  aria-label={`${badges[item.badge]} waiting`}
+                  className={[
+                    'min-w-5 rounded-full px-1.5 py-0.5 text-center text-[11px] font-semibold leading-tight',
+                    active ? 'bg-maroon-900 text-gold-300' : 'bg-gold-400 text-maroon-900',
+                  ].join(' ')}
+                >
+                  {badges[item.badge] > 99 ? '99+' : badges[item.badge]}
+                </span>
+              ) : null}
             </Link>
           );
         })}

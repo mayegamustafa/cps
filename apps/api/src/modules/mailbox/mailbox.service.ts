@@ -351,6 +351,33 @@ export class MailboxService {
    * mail client agrees on, and omitted entirely when no picture is set so a
    * plain reply stays plain.
    */
+  /**
+   * The picture to show on an outgoing message: the address's own if one was
+   * uploaded, otherwise the school badge, so mail is recognisable by default
+   * rather than only when somebody remembers to set it.
+   *
+   * Mail clients cannot resolve a relative path, so a site logo stored as
+   * "/cps.png" is only usable once the public web origin is known.
+   */
+  private async resolveBadge(avatarUrl?: string | null): Promise<string | null> {
+    if (avatarUrl) return avatarUrl;
+
+    const row = await this.prisma.siteSetting.findUnique({ where: { key: 'site' } });
+    const brand = (row?.value as { brand?: { logoUrl?: string } } | null)?.brand;
+    const logo = brand?.logoUrl?.trim();
+    if (logo && /^https?:\/\//i.test(logo)) return logo;
+
+    const origin = (
+      process.env.WEB_ORIGIN ??
+      process.env.PUBLIC_WEB_URL ??
+      process.env.WEB_URL ??
+      ''
+    ).replace(/\/+$/, '');
+    if (!origin) return null;
+    const path = logo && logo.startsWith('/') ? logo : '/cps.png';
+    return `${origin}${path}`;
+  }
+
   private senderHeader(mailbox: { address: string; displayName: string; avatarUrl?: string | null }): string {
     if (!mailbox.avatarUrl) return '';
     const escape = (s: string) =>
@@ -414,11 +441,12 @@ export class MailboxService {
       .slice(-20);
 
     const signature = 'signature' in opts.mailbox ? opts.mailbox.signature : null;
+    const badge = await this.resolveBadge(opts.mailbox.avatarUrl);
     const html = this.bodyToHtml(
       opts.bodyText,
       signature,
       opts.quote,
-      this.senderHeader(opts.mailbox),
+      this.senderHeader({ ...opts.mailbox, avatarUrl: badge }),
     );
 
     const headers: Record<string, string> = {};
@@ -605,8 +633,15 @@ export class MailboxService {
       }),
     ]);
 
-    const [starred, archived, spam, trash] = await Promise.all([
+    const [starred, sent, archived, spam, trash] = await Promise.all([
       this.prisma.mailThread.count({ where: { ...mine, isStarred: true, state: { not: MailThreadState.TRASH } } }),
+      this.prisma.mailThread.count({
+        where: {
+          ...mine,
+          state: { not: MailThreadState.TRASH },
+          messages: { some: { direction: MailDirection.OUTBOUND } },
+        },
+      }),
       this.prisma.mailThread.count({ where: { ...mine, state: MailThreadState.ARCHIVED } }),
       this.prisma.mailThread.count({ where: { ...mine, state: MailThreadState.SPAM } }),
       this.prisma.mailThread.count({ where: { ...mine, state: MailThreadState.TRASH } }),
@@ -617,6 +652,7 @@ export class MailboxService {
       totalUnread: byMailbox.reduce((sum, r) => sum + r._count._all, 0),
       unassigned,
       starred,
+      sent,
       archived,
       spam,
       trash,
@@ -628,6 +664,7 @@ export class MailboxService {
     state?: MailThreadState;
     starred?: boolean;
     unread?: boolean;
+    sent?: boolean;
     assignedToId?: string;
     search?: string;
     take?: number;
@@ -644,8 +681,14 @@ export class MailboxService {
       ...(q.starred ? { isStarred: true } : {}),
       ...(q.unread ? { isRead: false } : {}),
       ...(q.assignedToId ? { assignedToId: q.assignedToId } : {}),
-      // Starred is a view across mailboxes, so it must not also filter to OPEN.
-      ...(q.state ? { state: q.state } : q.starred ? { state: { not: MailThreadState.TRASH } } : {}),
+      // A conversation is "sent" once the school has answered in it at least once.
+      ...(q.sent ? { messages: { some: { direction: MailDirection.OUTBOUND } } } : {}),
+      // Starred and Sent are views across folders, so neither may pin state to OPEN.
+      ...(q.state
+        ? { state: q.state }
+        : q.starred || q.sent
+          ? { state: { not: MailThreadState.TRASH } }
+          : {}),
     };
 
     if (q.search) {

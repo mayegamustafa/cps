@@ -8,6 +8,7 @@ import { Logo } from '@/components/Logo';
 import { Icon } from '@/components/Icon';
 import { navFor } from '@/lib/admin';
 import { useMe } from '@/lib/session';
+import { useBadges } from '@/lib/badges';
 import { clearSession } from '@/lib/admin-auth';
 
 /** Hamburger + slide-in drawer giving the admin nav on mobile/tablet
@@ -18,6 +19,7 @@ export function AdminMobileNav() {
   const pathname = usePathname();
   const router = useRouter();
   const { me } = useMe();
+  const badges = useBadges();
 
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => { setOpen(false); }, [pathname]);
@@ -75,7 +77,19 @@ export function AdminMobileNav() {
                       active ? 'bg-gold-400 text-maroon-900' : 'text-paper/70 hover:bg-white/10 hover:text-white',
                     ].join(' ')}
                   >
-                    <Icon name={item.icon} size={19} /> {item.label}
+                    <Icon name={item.icon} size={19} />
+                    <span className="flex-1">{item.label}</span>
+                    {item.badge && badges?.[item.badge] ? (
+                      <span
+                        aria-label={`${badges[item.badge]} waiting`}
+                        className={[
+                          'min-w-5 rounded-full px-1.5 py-0.5 text-center text-[11px] font-semibold leading-tight',
+                          active ? 'bg-maroon-900 text-gold-300' : 'bg-gold-400 text-maroon-900',
+                        ].join(' ')}
+                      >
+                        {badges[item.badge] > 99 ? '99+' : badges[item.badge]}
+                      </span>
+                    ) : null}
                   </Link>
                 );
               })}

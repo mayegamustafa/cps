@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon, type IconName } from '@/components/Icon';
 import { FileUpload } from '@/components/admin/FileUpload';
+import { refreshBadges } from '@/lib/badges';
 
 /** Largest file the mailbox upload route accepts. */
 const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
@@ -96,6 +97,7 @@ type Counts = {
   totalUnread: number;
   unassigned: number;
   starred: number;
+  sent: number;
   archived: number;
   spam: number;
   trash: number;
@@ -113,6 +115,7 @@ type View = { key: string; label: string; icon: IconName };
 
 const VIEWS: View[] = [
   { key: 'inbox', label: 'Inbox', icon: 'inbox' },
+  { key: 'sent', label: 'Sent', icon: 'send' },
   { key: 'starred', label: 'Starred', icon: 'star' },
   { key: 'archived', label: 'Archived', icon: 'archive' },
   { key: 'spam', label: 'Spam', icon: 'shield-check' },
@@ -352,6 +355,9 @@ export function MailboxInbox() {
     else setNotice('Sign in as an administrator to read school mail.');
     if (c) setCounts(c);
     if (s) setStaff(s);
+    // Reading a conversation clears its unread mark, so the sidebar count has
+    // to follow rather than wait out its own refresh.
+    refreshBadges();
   }, []);
 
   useEffect(() => {
@@ -432,6 +438,7 @@ function InboxPane({
     if (mailboxId) p.set('mailboxId', mailboxId);
     if (debounced) p.set('search', debounced);
     if (view === 'starred') p.set('starred', 'true');
+    else if (view === 'sent') p.set('sent', 'true');
     else if (view === 'archived') p.set('state', 'ARCHIVED');
     else if (view === 'spam') p.set('state', 'SPAM');
     else if (view === 'trash') p.set('state', 'TRASH');
@@ -474,13 +481,15 @@ function InboxPane({
             const badge =
               v.key === 'inbox'
                 ? counts?.totalUnread
-                : v.key === 'starred'
-                  ? counts?.starred
-                  : v.key === 'archived'
-                    ? counts?.archived
-                    : v.key === 'spam'
-                      ? counts?.spam
-                      : counts?.trash;
+                : v.key === 'sent'
+                  ? counts?.sent
+                  : v.key === 'starred'
+                    ? counts?.starred
+                    : v.key === 'archived'
+                      ? counts?.archived
+                      : v.key === 'spam'
+                        ? counts?.spam
+                        : counts?.trash;
             return (
               <button
                 key={v.key}
@@ -563,7 +572,11 @@ function InboxPane({
             <p className="p-5 text-sm text-ink-muted">Loading…</p>
           ) : threads.length === 0 ? (
             <p className="p-5 text-sm text-ink-muted">
-              {debounced ? 'Nothing matches that search.' : 'No conversations here yet.'}
+              {debounced
+                ? 'Nothing matches that search.'
+                : view === 'sent'
+                  ? 'Nothing has been sent from these addresses yet.'
+                  : 'No conversations here yet.'}
             </p>
           ) : (
             <ul>
