@@ -4,12 +4,15 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
 import { Icon } from '@/components/Icon';
-import { adminNav } from '@/lib/admin';
+import { navFor } from '@/lib/admin';
+import { useMe } from '@/lib/session';
 import { clearSession } from '@/lib/admin-auth';
 
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { me } = useMe();
+  const nav = navFor(me?.roles);
 
   function signOut() {
     clearSession();
@@ -22,7 +25,7 @@ export function Sidebar() {
         <Logo tone="light" />
       </div>
       <nav className="flex-1 space-y-1 p-4" aria-label="Admin">
-        {adminNav.map((item) => {
+        {nav.map((item) => {
           const active =
             item.href === '/admin'
               ? pathname === '/admin'

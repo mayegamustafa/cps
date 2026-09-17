@@ -131,10 +131,51 @@ unique in the database, and a repeat returns the original message.
 - Auto-replies fire only on the first message of a conversation, so two
   auto-responders can never loop.
 
+## Who can see which address
+
+Access to an address is granted, never assumed. A staff member sees an address
+only if a super admin has ticked them into it under Mailbox, Addresses.
+
+| Who | Sees |
+| --- | --- |
+| Super admin | Every address, always |
+| Staff ticked into an address | That address only |
+| Staff with no addresses | Nothing at all |
+
+Each member is either able to send from the address or limited to reading it.
+Guessing a conversation id from another address returns the same "not found" as
+a conversation that does not exist, so the mailbox list cannot be mapped out
+from the outside.
+
+Staff accounts are created under Staff and Access. An account with no role
+ticked can use nothing but the Mailbox, which is the right shape for someone
+who only answers email: their sidebar shows the Mailbox and their own profile
+and nothing else.
+
+A conversation can only be handed to someone who already has access to that
+address, so it can never be assigned somewhere the assignee cannot open.
+
+## Attachments
+
+Files go out with a reply or a new message. Each one is uploaded to the school's
+own storage first and sent as a URL, so a large file never travels through the
+API as base64 and stays viewable on the conversation afterwards.
+
+Uploads are capped at 20MB, since most receiving servers reject more than 25MB
+for the whole message. A link can be attached instead of a file, which is the
+better option for anything larger.
+
+Attachment URLs must be https. They are handed to nodemailer as a `path`, which
+also accepts local file paths, so without that restriction a crafted
+`file:///etc/passwd` would attach a file off the server.
+
+Outgoing attachments need file storage configured (Cloudinary or R2 under
+Integrations). Without it the upload says so plainly rather than failing quietly.
+
 ## What is not built
 
-- Sending attachments out from the portal. Replies are text plus signature.
-- Per-address staff permissions. Any of SUPER_ADMIN, MARKETING_ADMIN or
-  ADMISSIONS_ADMIN can read every mailbox.
 - Inline images in sender HTML resolve as `cid:` references and will not display
   inside the sandboxed preview; the files are still listed as attachments.
+- Rich text in replies. The body is plain text, wrapped in the school's styling
+  when it goes out.
+- Per-address signatures per staff member. The signature belongs to the address.

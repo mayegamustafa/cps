@@ -180,6 +180,7 @@ model User {
   assignedThreads MailThread[]     @relation("MailAssignee")
   sentMail        MailMessage[]    @relation("MailSender")
 
+  mailboxAccess   MailboxMember[] @relation("MailboxAccess")
   parentProfile ParentProfile?
   alumniProfile AlumniProfile?
   staffProfile  StaffProfile?
@@ -1080,6 +1081,7 @@ model Mailbox {
   autoReplyBody    String? @db.Text
 
   threads   MailThread[]
+  members   MailboxMember[]
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
 
@@ -1162,6 +1164,27 @@ model MailMessage {
 
   @@index([threadId, createdAt])
   @@map("mail_messages")
+}
+
+/// Which staff member may work in which address. A user with no membership and
+/// no SUPER_ADMIN role sees no mail at all, so access is granted, never assumed.
+model MailboxMember {
+  id        String  @id @default(cuid())
+  mailboxId String
+  mailbox   Mailbox @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User    @relation("MailboxAccess", fields: [userId], references: [id], onDelete: Cascade)
+
+  /// May send and reply as this address, rather than only read it.
+  canSend Boolean @default(true)
+  /// May edit the address itself: signature, auto-reply, display name.
+  canManage Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@unique([mailboxId, userId])
+  @@index([userId])
+  @@map("mailbox_members")
 }
 
 model MailAttachment {

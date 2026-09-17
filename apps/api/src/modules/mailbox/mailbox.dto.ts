@@ -7,10 +7,30 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
+  Min,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { MailThreadState } from '@cps/database';
+
+/**
+ * A file already uploaded through /api/media/upload, attached to an outgoing
+ * message by URL.
+ *
+ * The URL is handed to nodemailer as a `path`, which also accepts local file
+ * paths, so the scheme is pinned to https here. Without that, a crafted
+ * "file:///etc/passwd" would attach a file off the server.
+ */
+export class OutgoingAttachmentDto {
+  @IsString() @MinLength(1) @MaxLength(250) fileName: string;
+  @IsString() @MaxLength(1000) @Matches(/^https:\/\//i, { message: 'Attachments must be https URLs.' })
+  url: string;
+  @IsOptional() @IsString() @MaxLength(150) mimeType?: string;
+  @IsOptional() @IsInt() @Min(0) sizeBytes?: number;
+}
 
 export class CreateMailboxDto {
   @IsEmail() address: string;
@@ -51,6 +71,9 @@ export class AssignThreadDto {
 export class ReplyDto {
   @IsString() @MinLength(1) @MaxLength(50_000) body: string;
   @IsOptional() @IsArray() @ArrayMaxSize(20) @IsEmail({}, { each: true }) cc?: string[];
+  @IsOptional() @IsArray() @ArrayMaxSize(10) @ValidateNested({ each: true })
+  @Type(() => OutgoingAttachmentDto)
+  attachments?: OutgoingAttachmentDto[];
 }
 
 export class ComposeDto {
@@ -59,4 +82,19 @@ export class ComposeDto {
   @IsOptional() @IsArray() @ArrayMaxSize(20) @IsEmail({}, { each: true }) cc?: string[];
   @IsString() @MinLength(1) @MaxLength(300) subject: string;
   @IsString() @MinLength(1) @MaxLength(50_000) body: string;
+  @IsOptional() @IsArray() @ArrayMaxSize(10) @ValidateNested({ each: true })
+  @Type(() => OutgoingAttachmentDto)
+  attachments?: OutgoingAttachmentDto[];
+}
+
+export class MailboxMemberDto {
+  @IsString() userId: string;
+  @IsOptional() @IsBoolean() canSend?: boolean;
+  @IsOptional() @IsBoolean() canManage?: boolean;
+}
+
+export class SetMembersDto {
+  @IsArray() @ArrayMaxSize(50) @ValidateNested({ each: true })
+  @Type(() => MailboxMemberDto)
+  members: MailboxMemberDto[];
 }

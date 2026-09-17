@@ -1,6 +1,14 @@
 import type { IconName } from '@/components/Icon';
 
-export const adminNav: { label: string; href: string; icon: IconName }[] = [
+export type AdminNavItem = {
+  label: string;
+  href: string;
+  icon: IconName;
+  /** Shown even to staff who hold no admin role, such as a mailbox-only account. */
+  everyone?: boolean;
+};
+
+export const adminNav: AdminNavItem[] = [
   { label: 'Dashboard', href: '/admin', icon: 'grid' },
   { label: 'Analytics', href: '/admin/analytics', icon: 'eye' },
   { label: 'Announcements', href: '/admin/announcements', icon: 'megaphone' },
@@ -16,12 +24,24 @@ export const adminNav: { label: string; href: string; icon: IconName }[] = [
   { label: 'Downloads', href: '/admin/downloads', icon: 'download' },
   { label: 'Social Wall', href: '/admin/social', icon: 'instagram' },
   { label: 'Forms', href: '/admin/forms', icon: 'inbox' },
-  { label: 'Mailbox', href: '/admin/mailbox', icon: 'at-sign' },
+  { label: 'Mailbox', href: '/admin/mailbox', icon: 'at-sign', everyone: true },
   { label: 'Messages', href: '/admin/contact', icon: 'mail' },
   { label: 'Integrations', href: '/admin/integrations', icon: 'link' },
   { label: 'Audit Trail', href: '/admin/audit', icon: 'shield-check' },
+  { label: 'Staff & Access', href: '/admin/users', icon: 'users' },
   { label: 'Settings & SEO', href: '/admin/settings', icon: 'settings' },
+  { label: 'My Profile', href: '/admin/profile', icon: 'eye', everyone: true },
 ];
+
+/**
+ * A mailbox-only account holds no admin role, so every other screen would answer
+ * 403. Showing them a sidebar of dead ends is worse than showing them the two
+ * pages they can actually use.
+ */
+export function navFor(roles: string[] | undefined): AdminNavItem[] {
+  if (roles && roles.length > 0) return adminNav;
+  return adminNav.filter((item) => item.everyone);
+}
 
 export const dashboardStats = [
   { label: 'New admissions', value: '128', delta: '+12%', icon: 'inbox' as IconName },

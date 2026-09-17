@@ -4,6 +4,7 @@ import { Sidebar } from '@/components/admin/Sidebar';
 import { Icon } from '@/components/Icon';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { AdminMobileNav } from '@/components/admin/AdminMobileNav';
+import { AdminUserChip } from '@/components/admin/AdminUserChip';
 
 export const metadata: Metadata = {
   title: 'Admin',
@@ -40,10 +41,7 @@ export default function AdminPanelLayout({
             <Link href="/" className="hidden text-sm font-medium text-ink-soft hover:text-maroon-700 sm:block">
               View site
             </Link>
-            <div className="flex items-center gap-2.5 rounded-full border border-line bg-paper py-1 pl-1 pr-3">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-maroon-700 text-sm font-semibold text-white">SA</span>
-              <span className="hidden text-sm font-medium text-ink sm:block">Super Admin</span>
-            </div>
+            <AdminUserChip />
           </div>
         </header>
 

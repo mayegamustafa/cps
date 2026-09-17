@@ -30,6 +30,8 @@ export type MailInput = {
   messageId?: string;
   /** In-Reply-To / References, so mail clients thread the reply correctly. */
   headers?: Record<string, string>;
+  /** Files streamed from their storage URL at send time, never buffered here. */
+  attachments?: { filename: string; path: string; contentType?: string }[];
 };
 
 /**
@@ -106,6 +108,7 @@ export class MailService {
         cc: input.cc?.length ? input.cc : undefined,
         messageId: input.messageId,
         headers: input.headers,
+        attachments: input.attachments?.length ? input.attachments : undefined,
       });
       return { sent: true };
     } catch (e) {

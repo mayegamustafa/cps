@@ -6,7 +6,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
 import { Icon } from '@/components/Icon';
-import { adminNav } from '@/lib/admin';
+import { navFor } from '@/lib/admin';
+import { useMe } from '@/lib/session';
 import { clearSession } from '@/lib/admin-auth';
 
 /** Hamburger + slide-in drawer giving the admin nav on mobile/tablet
@@ -16,6 +17,7 @@ export function AdminMobileNav() {
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const { me } = useMe();
 
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => { setOpen(false); }, [pathname]);
@@ -61,7 +63,7 @@ export function AdminMobileNav() {
               </button>
             </div>
             <div className="flex-1 space-y-1 overflow-y-auto p-3">
-              {adminNav.map((item) => {
+              {navFor(me?.roles).map((item) => {
                 const active = isActive(item.href);
                 return (
                   <Link

@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon, type IconName } from '@/components/Icon';
 
+/** Largest file the mailbox upload route accepts. */
+const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
+
 // ── Types mirroring the API responses ────────────────────────────────────────
 
 type Mailbox = {
@@ -17,6 +20,22 @@ type Mailbox = {
   autoReplyEnabled: boolean;
   autoReplySubject?: string | null;
   autoReplyBody?: string | null;
+  members?: MailboxMember[];
+};
+
+type MailboxMember = {
+  userId: string;
+  canSend: boolean;
+  canManage: boolean;
+  user?: { firstName: string; lastName: string; email: string; avatarUrl?: string | null };
+};
+
+/** A file already uploaded, waiting to go out with the next message. */
+type OutgoingAttachment = {
+  fileName: string;
+  url: string;
+  mimeType?: string;
+  sizeBytes?: number;
 };
 
 type ThreadState = 'OPEN' | 'ARCHIVED' | 'SPAM' | 'TRASH';
@@ -34,7 +53,7 @@ type ThreadSummary = {
   hasAttachments: boolean;
   lastMessageAt: string;
   mailbox: { id: string; address: string; displayName: string };
-  assignedTo?: { id: string; firstName: string; lastName: string } | null;
+  assignedTo?: { id: string; firstName: string; lastName: string; avatarUrl?: string | null } | null;
 };
 
 type Attachment = {
@@ -66,6 +85,8 @@ type Message = {
 type ThreadDetail = ThreadSummary & {
   mailbox: Mailbox;
   messages: Message[];
+  /** False for someone given read-only access to this address. */
+  canSend?: boolean;
 };
 
 type Counts = {
@@ -78,7 +99,13 @@ type Counts = {
   trash: number;
 };
 
-type Staff = { id: string; firstName: string; lastName: string; email: string };
+type Staff = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  avatarUrl?: string | null;
+};
 
 type View = { key: string; label: string; icon: IconName };
 
@@ -122,6 +149,186 @@ function initialsOf(name: string, email: string): string {
   const source = (name || email).trim();
   const parts = source.split(/[\s.@]+/).filter(Boolean);
   return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || source.slice(0, 2).toUpperCase();
+}
+
+/**
+ * Files and links to go out with a message.
+ *
+ * The file is uploaded to the school's own storage first and sent as a URL, so
+ * a large attachment never travels through this API as base64, and the same
+ * file stays viewable on the conversation afterwards.
+ */
+function AttachmentPicker({
+  items,
+  onChange,
+  disabled,
+}: {
+  items: OutgoingAttachment[];
+  onChange: (next: OutgoingAttachment[]) => void;
+  disabled?: boolean;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [pct, setPct] = useState(0);
+  const [error, setError] = useState('');
+  const [linking, setLinking] = useState(false);
+  const [link, setLink] = useState('');
+
+  async function pick(files: FileList | null) {
+    if (!files?.length) return;
+    setBusy(true);
+    setError('');
+    const added: OutgoingAttachment[] = [];
+    const chosen = Array.from(files);
+
+    for (let i = 0; i < chosen.length; i++) {
+      const file = chosen[i];
+      setPct(Math.round((i / chosen.length) * 100));
+      if (file.size > MAX_ATTACHMENT_BYTES) {
+        setError(`${file.name} is over 20 MB. Most mail servers reject that, so attach a link instead.`);
+        continue;
+      }
+      const form = new FormData();
+      form.append('file', file);
+      const token = typeof window !== 'undefined' ? sessionStorage.getItem('cps_token') : null;
+      const res = await fetch('/api/mailbox/attachments', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body: form,
+      }).catch(() => null);
+
+      if (res && res.ok) {
+        added.push((await res.json()) as OutgoingAttachment);
+      } else {
+        const data = res ? await res.json().catch(() => null) : null;
+        setError(data?.message ?? `Could not attach ${file.name}.`);
+      }
+    }
+
+    setBusy(false);
+    setPct(0);
+    if (fileRef.current) fileRef.current.value = '';
+    if (added.length) onChange([...items, ...added]);
+  }
+
+  function addLink() {
+    const url = link.trim();
+    if (!/^https:\/\//i.test(url)) {
+      setError('Links must start with https://');
+      return;
+    }
+    const name = decodeURIComponent(url.split('/').pop() || 'link').split('?')[0] || 'link';
+    onChange([...items, { fileName: name.slice(0, 120), url }]);
+    setLink('');
+    setLinking(false);
+    setError('');
+  }
+
+  return (
+    <div className="mt-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={disabled || busy}
+          className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs font-medium text-ink-soft hover:border-maroon-300 hover:text-maroon-700 disabled:opacity-50"
+        >
+          <Icon name="paperclip" size={14} /> {busy ? `Uploading ${pct}%` : 'Attach file'}
+        </button>
+        <button
+          type="button"
+          onClick={() => setLinking((v) => !v)}
+          disabled={disabled}
+          className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs font-medium text-ink-soft hover:border-maroon-300 hover:text-maroon-700 disabled:opacity-50"
+        >
+          <Icon name="link" size={14} /> Attach link
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          multiple
+          hidden
+          onChange={(e) => pick(e.target.files)}
+        />
+      </div>
+
+      {linking ? (
+        <div className="mt-2 flex gap-2">
+          <input
+            value={link}
+            onChange={(e) => setLink(e.target.value)}
+            placeholder="https://..."
+            className="flex-1 rounded-xl border border-line px-3 py-1.5 text-sm focus:border-maroon-500 focus:outline-none"
+          />
+          <button
+            type="button"
+            onClick={addLink}
+            className="rounded-full bg-maroon-700 px-4 py-1.5 text-xs font-medium text-white hover:bg-maroon-800"
+          >
+            Add
+          </button>
+        </div>
+      ) : null}
+
+      {error ? <p className="mt-1.5 text-xs text-rose-600">{error}</p> : null}
+
+      {items.length ? (
+        <ul className="mt-2 flex flex-wrap gap-1.5">
+          {items.map((a, i) => (
+            <li
+              key={`${a.url}-${i}`}
+              className="inline-flex items-center gap-1.5 rounded-full border border-line bg-paper px-3 py-1.5 text-xs text-ink-soft"
+            >
+              <Icon name="paperclip" size={12} />
+              <span className="max-w-[14rem] truncate">{a.fileName}</span>
+              {a.sizeBytes ? <span className="text-ink-muted">{formatBytes(a.sizeBytes)}</span> : null}
+              <button
+                type="button"
+                onClick={() => onChange(items.filter((_, j) => j !== i))}
+                aria-label={`Remove ${a.fileName}`}
+                className="rounded-full p-0.5 text-ink-muted hover:text-rose-600"
+              >
+                <Icon name="close" size={12} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
+/** A small round face, falling back to initials. */
+function Avatar({
+  name,
+  email,
+  url,
+  size = 28,
+}: {
+  name?: string | null;
+  email?: string | null;
+  url?: string | null;
+  size?: number;
+}) {
+  if (url) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return (
+      <img
+        src={url}
+        alt=""
+        style={{ width: size, height: size }}
+        className="shrink-0 rounded-full object-cover"
+      />
+    );
+  }
+  return (
+    <span
+      style={{ width: size, height: size, fontSize: Math.round(size * 0.38) }}
+      className="flex shrink-0 items-center justify-center rounded-full bg-maroon-700 font-semibold text-white"
+    >
+      {initialsOf(name ?? '', email ?? '')}
+    </span>
+  );
 }
 
 // ── Screen ───────────────────────────────────────────────────────────────────
@@ -182,7 +389,7 @@ export function MailboxInbox() {
       {tab === 'inbox' ? (
         <InboxPane mailboxes={mailboxes} counts={counts} staff={staff} onChanged={loadSidebar} />
       ) : tab === 'addresses' ? (
-        <AddressesPane mailboxes={mailboxes} onChanged={loadSidebar} />
+        <AddressesPane mailboxes={mailboxes} staff={staff} onChanged={loadSidebar} />
       ) : (
         <SetupPane mailboxCount={mailboxes.length} />
       )}
@@ -377,6 +584,7 @@ function InboxPane({
                     >
                       {initialsOf(t.participantName ?? '', t.participant)}
                     </span>
+                    <span className="sr-only">{t.isRead ? 'Read' : 'Unread'}</span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-baseline justify-between gap-2">
                         <span className={['truncate text-sm', t.isRead ? 'text-ink-soft' : 'font-semibold text-ink'].join(' ')}>
@@ -398,7 +606,12 @@ function InboxPane({
                         {t.hasAttachments ? <Icon name="paperclip" size={12} className="text-ink-muted" /> : null}
                         {t.isStarred ? <Icon name="star" size={12} className="text-gold-500" /> : null}
                         {t.assignedTo ? (
-                          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 py-0.5 pl-0.5 pr-2 text-[10px] font-medium text-emerald-700">
+                            <Avatar
+                              name={`${t.assignedTo.firstName} ${t.assignedTo.lastName}`}
+                              url={t.assignedTo.avatarUrl}
+                              size={14}
+                            />
                             {t.assignedTo.firstName}
                           </span>
                         ) : null}
@@ -468,6 +681,7 @@ function ThreadView({
   const [thread, setThread] = useState<ThreadDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [reply, setReply] = useState('');
+  const [files, setFiles] = useState<OutgoingAttachment[]>([]);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -513,13 +727,14 @@ function ThreadView({
     const res = await fetch(`/api/mailbox/threads/${threadId}/reply`, {
       method: 'POST',
       headers: authHeaders(),
-      body: JSON.stringify({ body: reply }),
+      body: JSON.stringify({ body: reply, attachments: files.length ? files : undefined }),
     }).catch(() => null);
     const data = res && res.ok ? ((await res.json()) as { sent: boolean; error?: string }) : null;
     setSending(false);
 
     if (data?.sent) {
       setReply('');
+      setFiles([]);
       await load();
       onChanged();
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -621,6 +836,13 @@ function ThreadView({
       </div>
 
       <div className="border-t border-line p-4">
+        {thread.canSend === false ? (
+          <p className="rounded-xl bg-paper-dark/40 px-4 py-3 text-sm text-ink-soft">
+            You have read-only access to {thread.mailbox.address}. Ask a super admin for permission
+            to send if you need to answer from it.
+          </p>
+        ) : (
+        <>
         <label htmlFor="reply" className="mb-1.5 block text-sm font-medium text-ink">
           Reply as {thread.mailbox.address}
         </label>
@@ -632,6 +854,7 @@ function ThreadView({
           placeholder={`Type your reply to ${thread.participantName || thread.participant}…`}
           className="w-full rounded-xl border border-line bg-white px-4 py-2.5 text-sm text-ink shadow-sm focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20"
         />
+        <AttachmentPicker items={files} onChange={setFiles} disabled={sending} />
         {error ? <p className="mt-2 text-sm text-rose-600">{error}</p> : null}
         <div className="mt-3 flex items-center gap-2">
           <button
@@ -646,6 +869,8 @@ function ThreadView({
             <span className="text-xs text-ink-muted">Signature will be added.</span>
           ) : null}
         </div>
+        </>
+        )}
       </div>
     </div>
   );
@@ -791,6 +1016,7 @@ function ComposeDialog({
   const [to, setTo] = useState('');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
+  const [files, setFiles] = useState<OutgoingAttachment[]>([]);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
 
@@ -804,7 +1030,13 @@ function ComposeDialog({
     const res = await fetch('/api/mailbox/compose', {
       method: 'POST',
       headers: authHeaders(),
-      body: JSON.stringify({ mailboxId, to: recipients, subject, body }),
+      body: JSON.stringify({
+        mailboxId,
+        to: recipients,
+        subject,
+        body,
+        attachments: files.length ? files : undefined,
+      }),
     }).catch(() => null);
     const data = res && res.ok ? ((await res.json()) as { sent: boolean; error?: string }) : null;
     setSending(false);
@@ -863,6 +1095,7 @@ function ComposeDialog({
               onChange={(e) => setBody(e.target.value)}
               className="w-full rounded-xl border border-line bg-white px-3 py-2 text-sm focus:border-maroon-500 focus:outline-none"
             />
+            <AttachmentPicker items={files} onChange={setFiles} disabled={sending} />
           </div>
           {error ? <p className="text-sm text-rose-600">{error}</p> : null}
         </div>
@@ -896,10 +1129,37 @@ const EMPTY_MAILBOX = {
   autoReplyBody: '',
 };
 
-function AddressesPane({ mailboxes, onChanged }: { mailboxes: Mailbox[]; onChanged: () => void }) {
+function AddressesPane({
+  mailboxes,
+  staff,
+  onChanged,
+}: {
+  mailboxes: Mailbox[];
+  staff: Staff[];
+  onChanged: () => void;
+}) {
   const [editing, setEditing] = useState<Partial<Mailbox> | null>(null);
+  const [members, setMembers] = useState<MailboxMember[]>([]);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+
+  function open(mailbox: Partial<Mailbox>) {
+    setEditing(mailbox);
+    setMembers(mailbox.members ?? []);
+    setError('');
+  }
+
+  function setAccess(userId: string, on: boolean) {
+    setMembers((prev) =>
+      on
+        ? [...prev, { userId, canSend: true, canManage: false }]
+        : prev.filter((m) => m.userId !== userId),
+    );
+  }
+
+  function setCanSend(userId: string, canSend: boolean) {
+    setMembers((prev) => prev.map((m) => (m.userId === userId ? { ...m, canSend } : m)));
+  }
 
   async function save() {
     if (!editing) return;
@@ -922,14 +1182,36 @@ function AddressesPane({ mailboxes, onChanged }: { mailboxes: Mailbox[]; onChang
       headers: authHeaders(),
       body: JSON.stringify(payload),
     }).catch(() => null);
-    setSaving(false);
-    if (res && res.ok) {
-      setEditing(null);
-      onChanged();
-    } else {
+    if (!res || !res.ok) {
+      setSaving(false);
       const data = res ? await res.json().catch(() => null) : null;
       setError(data?.message ?? 'Could not save this address.');
+      return;
     }
+
+    // A new address has no id until it is saved, so who may use it is written
+    // in a second call once the id exists.
+    const saved = (await res.json()) as Mailbox;
+    const memberRes = await fetch(`/api/mailbox/mailboxes/${saved.id}/members`, {
+      method: 'PUT',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        members: members.map((m) => ({
+          userId: m.userId,
+          canSend: m.canSend,
+          canManage: m.canManage,
+        })),
+      }),
+    }).catch(() => null);
+
+    setSaving(false);
+    if (!memberRes || !memberRes.ok) {
+      setError('The address was saved, but who may use it was not. Try that part again.');
+      onChanged();
+      return;
+    }
+    setEditing(null);
+    onChanged();
   }
 
   async function remove(m: Mailbox) {
@@ -947,7 +1229,7 @@ function AddressesPane({ mailboxes, onChanged }: { mailboxes: Mailbox[]; onChang
         </p>
         <button
           type="button"
-          onClick={() => setEditing({ ...EMPTY_MAILBOX })}
+          onClick={() => open({ ...EMPTY_MAILBOX })}
           className="inline-flex items-center gap-1.5 rounded-full bg-maroon-700 px-4 py-2 text-sm font-medium text-white hover:bg-maroon-800"
         >
           <Icon name="plus" size={16} /> New address
@@ -963,7 +1245,7 @@ function AddressesPane({ mailboxes, onChanged }: { mailboxes: Mailbox[]; onChang
                 <p className="truncate text-xs text-ink-muted">{m.displayName}</p>
               </div>
               <div className="flex shrink-0 gap-1">
-                <IconButton label="Edit" icon="edit" onClick={() => setEditing(m)} />
+                <IconButton label="Edit" icon="edit" onClick={() => open(m)} />
                 <IconButton label="Delete" icon="trash" danger onClick={() => remove(m)} />
               </div>
             </div>
@@ -984,6 +1266,27 @@ function AddressesPane({ mailboxes, onChanged }: { mailboxes: Mailbox[]; onChang
                 {m.isActive ? 'Active' : 'Paused'}
               </span>
             </div>
+            {m.members?.length ? (
+              <div className="mt-3 flex items-center gap-1.5 border-t border-line pt-3">
+                {m.members.slice(0, 5).map((mem) => (
+                  <span key={mem.userId} title={`${mem.user?.firstName ?? ''} ${mem.user?.lastName ?? ''}`.trim()}>
+                    <Avatar
+                      name={`${mem.user?.firstName ?? ''} ${mem.user?.lastName ?? ''}`}
+                      email={mem.user?.email}
+                      url={mem.user?.avatarUrl}
+                      size={24}
+                    />
+                  </span>
+                ))}
+                <span className="ml-1 text-xs text-ink-muted">
+                  {m.members.length === 1 ? '1 person' : `${m.members.length} people`}
+                </span>
+              </div>
+            ) : (
+              <p className="mt-3 border-t border-line pt-3 text-xs text-ink-muted">
+                Only super admins can see this address.
+              </p>
+            )}
           </div>
         ))}
         {mailboxes.length === 0 ? (
@@ -1047,6 +1350,62 @@ function AddressesPane({ mailboxes, onChanged }: { mailboxes: Mailbox[]; onChang
                 checked={Boolean(editing.autoReplyEnabled)}
                 onChange={(v) => setEditing({ ...editing, autoReplyEnabled: v })}
               />
+              <div className="border-t border-line pt-3">
+                <p className="mb-1 text-xs font-medium text-ink-soft">Who works in this address</p>
+                <p className="mb-2 text-xs text-ink-muted">
+                  Super admins always have access. Anyone ticked here sees this address in their own
+                  Mailbox and nothing else.
+                </p>
+                <div className="space-y-1.5">
+                  {staff.length === 0 ? (
+                    <p className="text-xs text-ink-muted">
+                      No staff accounts yet. Create them under Staff and Access.
+                    </p>
+                  ) : (
+                    staff.map((person) => {
+                      const member = members.find((m) => m.userId === person.id);
+                      return (
+                        <div
+                          key={person.id}
+                          className="flex flex-wrap items-center gap-2 rounded-xl border border-line p-2"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={Boolean(member)}
+                            onChange={(e) => setAccess(person.id, e.target.checked)}
+                            aria-label={`Give ${person.firstName} access`}
+                            className="h-4 w-4 rounded border-line text-maroon-700 focus:ring-maroon-500"
+                          />
+                          <Avatar
+                            name={`${person.firstName} ${person.lastName}`}
+                            email={person.email}
+                            url={person.avatarUrl}
+                            size={26}
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm text-ink">
+                              {person.firstName} {person.lastName}
+                            </span>
+                            <span className="block truncate text-xs text-ink-muted">{person.email}</span>
+                          </span>
+                          {member ? (
+                            <label className="flex items-center gap-1.5 text-xs text-ink-soft">
+                              <input
+                                type="checkbox"
+                                checked={member.canSend}
+                                onChange={(e) => setCanSend(person.id, e.target.checked)}
+                                className="h-3.5 w-3.5 rounded border-line text-maroon-700 focus:ring-maroon-500"
+                              />
+                              Can send
+                            </label>
+                          ) : null}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
               {editing.autoReplyEnabled ? (
                 <>
                   <Field label="Auto-reply subject">

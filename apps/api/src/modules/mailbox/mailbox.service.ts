@@ -1,6 +1,12 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { randomBytes, randomUUID } from 'node:crypto';
-import { MailDirection, MailThreadState, Prisma } from '@cps/database';
+import { MailDirection, MailThreadState, Prisma, Role } from '@cps/database';
 import { PrismaService } from '../../prisma/prisma.service';
 import { IntegrationsService } from '../integrations/integrations.module';
 import { MailService } from '../mail/mail.module';
@@ -19,6 +25,23 @@ const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
 /** How far back a subject-plus-sender match may reach when headers are missing. */
 const FALLBACK_THREAD_WINDOW_DAYS = 180;
 
+/** A file already in storage, attached to an outgoing message by URL. */
+export type OutgoingAttachment = {
+  fileName: string;
+  url: string;
+  mimeType?: string;
+  sizeBytes?: number;
+};
+
+/** What one signed-in staff member may do, resolved once per request. */
+export type MailAccess = {
+  /** True for SUPER_ADMIN, who works in every address. */
+  all: boolean;
+  mailboxIds: string[];
+  canSend(mailboxId: string): boolean;
+  canManage(mailboxId: string): boolean;
+};
+
 export type DeliveryResult =
   | { delivered: true; threadId: string; messageId: string; duplicate: false }
   | { delivered: true; threadId: string; messageId: string; duplicate: true }
@@ -33,6 +56,55 @@ export class MailboxService {
     private mail: MailService,
     private integrations: IntegrationsService,
   ) {}
+
+  // ── Access ─────────────────────────────────────────────────────────────────
+
+  /**
+   * Resolves which addresses this person may work in. Everything that reads or
+   * writes mail goes through here first, so a staff member assigned to one
+   * address can never see another one's conversations, not even by guessing an
+   * id.
+   */
+  async accessFor(user?: { id?: string; roles?: Role[] }): Promise<MailAccess> {
+    if (user?.roles?.includes(Role.SUPER_ADMIN)) {
+      return { all: true, mailboxIds: [], canSend: () => true, canManage: () => true };
+    }
+    if (!user?.id) {
+      return { all: false, mailboxIds: [], canSend: () => false, canManage: () => false };
+    }
+    const rows = await this.prisma.mailboxMember.findMany({
+      where: { userId: user.id, mailbox: { isActive: true } },
+      select: { mailboxId: true, canSend: true, canManage: true },
+    });
+    const send = new Set(rows.filter((r) => r.canSend).map((r) => r.mailboxId));
+    const manage = new Set(rows.filter((r) => r.canManage).map((r) => r.mailboxId));
+    return {
+      all: false,
+      mailboxIds: rows.map((r) => r.mailboxId),
+      canSend: (id) => send.has(id),
+      canManage: (id) => manage.has(id),
+    };
+  }
+
+  /** A where-clause fragment limiting threads to what this person may see. */
+  private scope(access: MailAccess): Prisma.MailThreadWhereInput {
+    return access.all ? {} : { mailboxId: { in: access.mailboxIds } };
+  }
+
+  /** Loads a thread only if this person may see it, and says which mailbox it is in. */
+  private async threadInScope(id: string, access: MailAccess) {
+    const thread = await this.prisma.mailThread.findUnique({
+      where: { id },
+      select: { id: true, mailboxId: true },
+    });
+    if (!thread) throw new NotFoundException('Conversation not found.');
+    if (!access.all && !access.mailboxIds.includes(thread.mailboxId)) {
+      // Deliberately the same error as a missing thread, so this cannot be used
+      // to discover which conversations exist in another address.
+      throw new NotFoundException('Conversation not found.');
+    }
+    return thread;
+  }
 
   // ── Inbound ────────────────────────────────────────────────────────────────
 
@@ -296,6 +368,7 @@ export class MailboxService {
     references: string[];
     sentById: string | null;
     quote: string | null;
+    attachments?: OutgoingAttachment[];
   }) {
     const messageId = this.newMessageId(opts.mailbox.address);
     const references = [...opts.references, ...(opts.inReplyTo ? [opts.inReplyTo] : [])]
@@ -319,6 +392,13 @@ export class MailboxService {
       replyTo: opts.mailbox.address,
       messageId,
       headers,
+      // nodemailer streams each file from its URL at send time, so a large
+      // attachment never sits in this process's memory.
+      attachments: opts.attachments?.map((a) => ({
+        filename: a.fileName,
+        path: a.url,
+        contentType: a.mimeType,
+      })),
     });
 
     // Recorded even when SMTP is not configured, so the thread shows what the
@@ -339,7 +419,19 @@ export class MailboxService {
         html,
         sentById: opts.sentById,
         deliveryError: result.sent ? null : result.error ?? 'Unknown send failure',
+        attachments: opts.attachments?.length
+          ? {
+              create: opts.attachments.map((a) => ({
+                fileName: a.fileName.slice(0, 250),
+                mimeType: (a.mimeType ?? 'application/octet-stream').slice(0, 150),
+                sizeBytes: a.sizeBytes ?? 0,
+                url: a.url,
+                isInline: false,
+              })),
+            }
+          : undefined,
       },
+      include: { attachments: true },
     });
 
     await this.prisma.mailThread.update({
@@ -349,6 +441,7 @@ export class MailboxService {
         lastMessageAt: new Date(),
         isRead: true,
         messageCount: { increment: 1 },
+        hasAttachments: opts.attachments?.length ? true : undefined,
       },
     });
 
@@ -356,7 +449,18 @@ export class MailboxService {
   }
 
   /** Replies to an existing conversation as the mailbox that received it. */
-  async reply(threadId: string, userId: string | null, bodyText: string, ccOverride?: string[]) {
+  async reply(
+    threadId: string,
+    userId: string | null,
+    bodyText: string,
+    access: MailAccess,
+    ccOverride?: string[],
+    attachments?: OutgoingAttachment[],
+  ) {
+    const scoped = await this.threadInScope(threadId, access);
+    if (!access.canSend(scoped.mailboxId)) {
+      throw new ForbiddenException('You can read this address but not send from it.');
+    }
     const thread = await this.prisma.mailThread.findUnique({
       where: { id: threadId },
       include: {
@@ -386,6 +490,7 @@ export class MailboxService {
       references: last?.references ?? [],
       sentById: userId,
       quote,
+      attachments,
     });
   }
 
@@ -397,9 +502,17 @@ export class MailboxService {
     cc?: string[];
     subject: string;
     body: string;
+    access: MailAccess;
+    attachments?: OutgoingAttachment[];
   }) {
     const mailbox = await this.prisma.mailbox.findUnique({ where: { id: input.mailboxId } });
     if (!mailbox) throw new NotFoundException('Mailbox not found.');
+    if (!input.access.all && !input.access.mailboxIds.includes(mailbox.id)) {
+      throw new NotFoundException('Mailbox not found.');
+    }
+    if (!input.access.canSend(mailbox.id)) {
+      throw new ForbiddenException('You can read this address but not send from it.');
+    }
     if (!input.to.length) throw new BadRequestException('Add at least one recipient.');
 
     const thread = await this.prisma.mailThread.create({
@@ -427,6 +540,7 @@ export class MailboxService {
       references: [],
       sentById: input.userId,
       quote: null,
+      attachments: input.attachments,
     });
 
     return { ...sent, threadId: thread.id };
@@ -435,23 +549,24 @@ export class MailboxService {
   // ── Reading ────────────────────────────────────────────────────────────────
 
   /** Unread and total counts per mailbox, for the sidebar badges. */
-  async counts() {
+  async counts(access: MailAccess) {
+    const mine = this.scope(access);
     const [byMailbox, unassigned] = await Promise.all([
       this.prisma.mailThread.groupBy({
         by: ['mailboxId'],
-        where: { state: MailThreadState.OPEN, isRead: false },
+        where: { ...mine, state: MailThreadState.OPEN, isRead: false },
         _count: { _all: true },
       }),
       this.prisma.mailThread.count({
-        where: { state: MailThreadState.OPEN, assignedToId: null },
+        where: { ...mine, state: MailThreadState.OPEN, assignedToId: null },
       }),
     ]);
 
     const [starred, archived, spam, trash] = await Promise.all([
-      this.prisma.mailThread.count({ where: { isStarred: true, state: { not: MailThreadState.TRASH } } }),
-      this.prisma.mailThread.count({ where: { state: MailThreadState.ARCHIVED } }),
-      this.prisma.mailThread.count({ where: { state: MailThreadState.SPAM } }),
-      this.prisma.mailThread.count({ where: { state: MailThreadState.TRASH } }),
+      this.prisma.mailThread.count({ where: { ...mine, isStarred: true, state: { not: MailThreadState.TRASH } } }),
+      this.prisma.mailThread.count({ where: { ...mine, state: MailThreadState.ARCHIVED } }),
+      this.prisma.mailThread.count({ where: { ...mine, state: MailThreadState.SPAM } }),
+      this.prisma.mailThread.count({ where: { ...mine, state: MailThreadState.TRASH } }),
     ]);
 
     return {
@@ -474,9 +589,15 @@ export class MailboxService {
     search?: string;
     take?: number;
     skip?: number;
-  }) {
+  }, access: MailAccess) {
+    // A requested mailbox is honoured only when it is one of theirs; otherwise
+    // the query stays pinned to the set they may see.
+    const requested =
+      q.mailboxId && (access.all || access.mailboxIds.includes(q.mailboxId))
+        ? { mailboxId: q.mailboxId }
+        : this.scope(access);
     const where: Prisma.MailThreadWhereInput = {
-      ...(q.mailboxId ? { mailboxId: q.mailboxId } : {}),
+      ...requested,
       ...(q.starred ? { isStarred: true } : {}),
       ...(q.unread ? { isRead: false } : {}),
       ...(q.assignedToId ? { assignedToId: q.assignedToId } : {}),
@@ -504,7 +625,7 @@ export class MailboxService {
         skip: Math.max(q.skip ?? 0, 0),
         include: {
           mailbox: { select: { id: true, address: true, displayName: true } },
-          assignedTo: { select: { id: true, firstName: true, lastName: true } },
+          assignedTo: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
         },
       }),
       this.prisma.mailThread.count({ where }),
@@ -513,15 +634,16 @@ export class MailboxService {
     return { items, total, take };
   }
 
-  async getThread(id: string) {
+  async getThread(id: string, access: MailAccess) {
+    await this.threadInScope(id, access);
     const thread = await this.prisma.mailThread.findUnique({
       where: { id },
       include: {
         mailbox: { select: { id: true, address: true, displayName: true, signature: true } },
-        assignedTo: { select: { id: true, firstName: true, lastName: true } },
+        assignedTo: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
         messages: {
           orderBy: { createdAt: 'asc' },
-          include: { attachments: true, sentBy: { select: { firstName: true, lastName: true } } },
+          include: { attachments: true, sentBy: { select: { firstName: true, lastName: true, avatarUrl: true } } },
         },
       },
     });
@@ -530,28 +652,50 @@ export class MailboxService {
   }
 
   /** Opening a conversation marks it read, the way any mail client behaves. */
-  async markRead(id: string, isRead = true) {
+  async markRead(id: string, isRead: boolean, access: MailAccess) {
+    await this.threadInScope(id, access);
     return this.prisma.mailThread.update({ where: { id }, data: { isRead } });
   }
 
-  async setState(id: string, state: MailThreadState) {
+  async setState(id: string, state: MailThreadState, access: MailAccess) {
+    await this.threadInScope(id, access);
     return this.prisma.mailThread.update({ where: { id }, data: { state } });
   }
 
-  async setStarred(id: string, isStarred: boolean) {
+  async setStarred(id: string, isStarred: boolean, access: MailAccess) {
+    await this.threadInScope(id, access);
     return this.prisma.mailThread.update({ where: { id }, data: { isStarred } });
   }
 
-  async assign(id: string, assignedToId: string | null) {
+  async assign(id: string, assignedToId: string | null, access: MailAccess) {
+    const scoped = await this.threadInScope(id, access);
+    if (assignedToId) {
+      // Handing a conversation to someone with no access to the address would
+      // put it somewhere they cannot open.
+      const member = await this.prisma.mailboxMember.findUnique({
+        where: { mailboxId_userId: { mailboxId: scoped.mailboxId, userId: assignedToId } },
+        select: { id: true },
+      });
+      if (!member) {
+        const isSuper = await this.prisma.user.findFirst({
+          where: { id: assignedToId, roles: { has: Role.SUPER_ADMIN } },
+          select: { id: true },
+        });
+        if (!isSuper) {
+          throw new BadRequestException('That person does not have access to this address.');
+        }
+      }
+    }
     return this.prisma.mailThread.update({
       where: { id },
       data: { assignedToId },
-      include: { assignedTo: { select: { id: true, firstName: true, lastName: true } } },
+      include: { assignedTo: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
     });
   }
 
   /** Permanently removes a conversation and everything hanging off it. */
-  async destroy(id: string) {
+  async destroy(id: string, access: MailAccess) {
+    await this.threadInScope(id, access);
     await this.prisma.mailThread.delete({ where: { id } });
     return { deleted: true };
   }

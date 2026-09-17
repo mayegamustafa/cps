@@ -8,14 +8,17 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   Req,
   UnauthorizedException,
+  ServiceUnavailableException,
   UseGuards,
   UseInterceptors,
+  UploadedFile,
   UploadedFiles,
 } from '@nestjs/common';
-import { AnyFilesInterceptor } from '@nestjs/platform-express';
+import { AnyFilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { timingSafeEqual } from 'node:crypto';
@@ -24,6 +27,8 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { JwtAuthGuard, RolesGuard } from '../../auth/guards';
 import { Roles } from '../../auth/roles.decorator';
 import { MailService } from '../mail/mail.module';
+import { IntegrationsService } from '../integrations/integrations.module';
+import { storeFile } from '../media/media.module';
 import { MailboxService } from './mailbox.service';
 import { IncomingFile, normalizeInbound } from './mail-parse';
 import {
@@ -31,14 +36,12 @@ import {
   ComposeDto,
   CreateMailboxDto,
   ReplyDto,
+  SetMembersDto,
   UpdateMailboxDto,
   UpdateThreadDto,
 } from './mailbox.dto';
 
-/** Staff who may read and answer school mail. */
-const MAIL_ROLES = [Role.SUPER_ADMIN, Role.MARKETING_ADMIN, Role.ADMISSIONS_ADMIN];
-
-type AuthedRequest = { user?: { id?: string; email?: string } };
+type AuthedRequest = { user?: { id?: string; email?: string; roles?: Role[] } };
 
 /** Constant-time compare, so the webhook secret cannot be guessed byte by byte. */
 function secretMatches(provided: string, expected: string): boolean {
@@ -55,6 +58,7 @@ export class MailboxController {
     private mailbox: MailboxService,
     private prisma: PrismaService,
     private mail: MailService,
+    private integrations: IntegrationsService,
   ) {}
 
   // ── Inbound webhook ────────────────────────────────────────────────────────
@@ -144,10 +148,23 @@ export class MailboxController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(...MAIL_ROLES)
   @Get('mailboxes')
-  listMailboxes() {
-    return this.prisma.mailbox.findMany({ orderBy: [{ sortOrder: 'asc' }, { address: 'asc' }] });
+  async listMailboxes(@Req() req: AuthedRequest) {
+    const access = await this.mailbox.accessFor(req.user);
+    return this.prisma.mailbox.findMany({
+      where: access.all ? {} : { id: { in: access.mailboxIds } },
+      include: {
+        members: {
+          select: {
+            userId: true,
+            canSend: true,
+            canManage: true,
+            user: { select: { firstName: true, lastName: true, email: true, avatarUrl: true } },
+          },
+        },
+      },
+      orderBy: [{ sortOrder: 'asc' }, { address: 'asc' }],
+    });
   }
 
   @ApiBearerAuth()
@@ -196,29 +213,33 @@ export class MailboxController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(...MAIL_ROLES)
   @Get('counts')
-  counts() {
-    return this.mailbox.counts();
+  async counts(@Req() req: AuthedRequest) {
+    return this.mailbox.counts(await this.mailbox.accessFor(req.user));
   }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(...MAIL_ROLES)
+  // Who a conversation may be handed to: anyone with access to an address,
+  // plus the super admins who implicitly have access to all of them.
   @Get('staff')
   staff() {
     return this.prisma.user.findMany({
-      where: { isActive: true, deletedAt: null, roles: { hasSome: MAIL_ROLES } },
-      select: { id: true, firstName: true, lastName: true, email: true },
+      where: {
+        isActive: true,
+        deletedAt: null,
+        OR: [{ roles: { has: Role.SUPER_ADMIN } }, { mailboxAccess: { some: {} } }],
+      },
+      select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true },
       orderBy: { firstName: 'asc' },
     });
   }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(...MAIL_ROLES)
   @Get('threads')
-  threads(
+  async threads(
+    @Req() req: AuthedRequest,
     @Query('mailboxId') mailboxId?: string,
     @Query('state') state?: string,
     @Query('search') search?: string,
@@ -232,6 +253,7 @@ export class MailboxController {
       state && (Object.values(MailThreadState) as string[]).includes(state)
         ? (state as MailThreadState)
         : undefined;
+    const access = await this.mailbox.accessFor(req.user);
     return this.mailbox.listThreads({
       mailboxId: mailboxId || undefined,
       state: validState,
@@ -241,51 +263,55 @@ export class MailboxController {
       assignedToId: assignedToId || undefined,
       take: take ? Number(take) : undefined,
       skip: skip ? Number(skip) : undefined,
-    });
+    }, access);
   }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(...MAIL_ROLES)
   @Get('threads/:id')
-  async thread(@Param('id') id: string) {
-    const thread = await this.mailbox.getThread(id);
-    if (!thread.isRead) await this.mailbox.markRead(id, true);
-    return { ...thread, isRead: true };
+  async thread(@Param('id') id: string, @Req() req: AuthedRequest) {
+    const access = await this.mailbox.accessFor(req.user);
+    const thread = await this.mailbox.getThread(id, access);
+    if (!thread.isRead) await this.mailbox.markRead(id, true, access);
+    return { ...thread, isRead: true, canSend: access.canSend(thread.mailboxId) };
   }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(...MAIL_ROLES)
   @Patch('threads/:id')
-  async updateThread(@Param('id') id: string, @Body() dto: UpdateThreadDto) {
-    if (dto.state) return this.mailbox.setState(id, dto.state);
-    if (dto.isStarred !== undefined) return this.mailbox.setStarred(id, dto.isStarred);
-    if (dto.isRead !== undefined) return this.mailbox.markRead(id, dto.isRead);
+  async updateThread(@Param('id') id: string, @Body() dto: UpdateThreadDto, @Req() req: AuthedRequest) {
+    const access = await this.mailbox.accessFor(req.user);
+    if (dto.state) return this.mailbox.setState(id, dto.state, access);
+    if (dto.isStarred !== undefined) return this.mailbox.setStarred(id, dto.isStarred, access);
+    if (dto.isRead !== undefined) return this.mailbox.markRead(id, dto.isRead, access);
     throw new BadRequestException('Nothing to update.');
   }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(...MAIL_ROLES)
   @Patch('threads/:id/assign')
-  assign(@Param('id') id: string, @Body() dto: AssignThreadDto) {
-    return this.mailbox.assign(id, dto.assignedToId ?? null);
+  async assign(@Param('id') id: string, @Body() dto: AssignThreadDto, @Req() req: AuthedRequest) {
+    return this.mailbox.assign(id, dto.assignedToId ?? null, await this.mailbox.accessFor(req.user));
   }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(...MAIL_ROLES)
   @Post('threads/:id/reply')
-  reply(@Param('id') id: string, @Body() dto: ReplyDto, @Req() req: AuthedRequest) {
-    return this.mailbox.reply(id, req.user?.id ?? null, dto.body, dto.cc);
+  async reply(@Param('id') id: string, @Body() dto: ReplyDto, @Req() req: AuthedRequest) {
+    return this.mailbox.reply(
+      id,
+      req.user?.id ?? null,
+      dto.body,
+      await this.mailbox.accessFor(req.user),
+      dto.cc,
+      dto.attachments,
+    );
   }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(...MAIL_ROLES)
   @Post('compose')
-  compose(@Body() dto: ComposeDto, @Req() req: AuthedRequest) {
+  async compose(@Body() dto: ComposeDto, @Req() req: AuthedRequest) {
     return this.mailbox.compose({
       mailboxId: dto.mailboxId,
       userId: req.user?.id ?? null,
@@ -293,14 +319,100 @@ export class MailboxController {
       cc: dto.cc,
       subject: dto.subject,
       body: dto.body,
+      attachments: dto.attachments,
+      access: await this.mailbox.accessFor(req.user),
     });
   }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SUPER_ADMIN, Role.MARKETING_ADMIN)
   @Delete('threads/:id')
-  destroy(@Param('id') id: string) {
-    return this.mailbox.destroy(id);
+  async destroy(@Param('id') id: string, @Req() req: AuthedRequest) {
+    return this.mailbox.destroy(id, await this.mailbox.accessFor(req.user));
+  }
+
+  /**
+   * Stores a file for attaching to an outgoing message.
+   *
+   * The shared media upload is gated on admin roles, which someone who only
+   * answers email deliberately does not have. Permission here is the same one
+   * that governs sending: if you may send from an address, you may attach.
+   */
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 20 * 1024 * 1024 } }))
+  @Post('attachments')
+  async attach(
+    @UploadedFile() file: { originalname: string; mimetype: string; size: number; buffer: Buffer } | undefined,
+    @Req() req: AuthedRequest,
+  ) {
+    const access = await this.mailbox.accessFor(req.user);
+    const maySend = access.all || access.mailboxIds.some((id) => access.canSend(id));
+    if (!maySend) throw new ForbiddenException('You cannot send from any address.');
+    if (!file) throw new BadRequestException('No file received.');
+
+    const stored = await storeFile(
+      this.integrations,
+      {
+        originalname: file.originalname,
+        mimetype: file.mimetype,
+        size: file.size,
+        buffer: file.buffer,
+      },
+      'mail-outgoing',
+    );
+    if (!stored) {
+      throw new ServiceUnavailableException(
+        'File storage is not set up. Add free Cloudinary details under Integrations, or attach a link instead.',
+      );
+    }
+    return {
+      fileName: file.originalname,
+      url: stored.url,
+      mimeType: file.mimetype,
+      sizeBytes: file.size,
+    };
+  }
+
+  // ── Who may work in an address ─────────────────────────────────────────────
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  @Get('mailboxes/:id/members')
+  members(@Param('id') id: string) {
+    return this.prisma.mailboxMember.findMany({
+      where: { mailboxId: id },
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
+      },
+    });
+  }
+
+  /** Replaces the whole member list for an address in one call. */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  @Put('mailboxes/:id/members')
+  async setMembers(@Param('id') id: string, @Body() dto: SetMembersDto) {
+    const mailbox = await this.prisma.mailbox.findUnique({ where: { id }, select: { id: true } });
+    if (!mailbox) throw new BadRequestException('Address not found.');
+
+    const wanted = dto.members.filter((m, i, a) => a.findIndex((x) => x.userId === m.userId) === i);
+    await this.prisma.$transaction([
+      this.prisma.mailboxMember.deleteMany({
+        where: { mailboxId: id, userId: { notIn: wanted.map((m) => m.userId) } },
+      }),
+      ...wanted.map((m) =>
+        this.prisma.mailboxMember.upsert({
+          where: { mailboxId_userId: { mailboxId: id, userId: m.userId } },
+          update: { canSend: m.canSend ?? true, canManage: m.canManage ?? false },
+          create: {
+            mailboxId: id,
+            userId: m.userId,
+            canSend: m.canSend ?? true,
+            canManage: m.canManage ?? false,
+          },
+        }),
+      ),
+    ]);
+    return this.members(id);
   }
 }
