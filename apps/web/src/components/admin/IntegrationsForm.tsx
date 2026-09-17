@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 
 type Integrations = {
   smtp?: {
+    apiKey?: string;
     host?: string;
     port?: number;
     secure?: boolean;
@@ -149,6 +150,23 @@ export function IntegrationsForm() {
           <Field label="Username" id="smtp-user" value={cfg.smtp?.user ?? ''} placeholder="no-reply@yourschool.com" onChange={(e) => patch((d) => { d.smtp!.user = e.target.value; })} />
           <Field label="Password / app password" id="smtp-pass" type="password" value={cfg.smtp?.pass ?? ''} placeholder="leave blank to keep current" onChange={(e) => patch((d) => { d.smtp!.pass = e.target.value; })} />
           <Field label="From address" id="smtp-from" value={cfg.smtp?.from ?? ''} placeholder="City Parents School <no-reply@yourschool.com>" onChange={(e) => patch((d) => { d.smtp!.from = e.target.value; })} />
+
+          <div className="mt-4 rounded-xl border border-gold-300 bg-gold-50 p-3">
+            <Field
+              label="Brevo API key (recommended)"
+              id="smtp-apikey"
+              type="password"
+              value={cfg.smtp?.apiKey ?? ''}
+              placeholder="leave blank to keep current"
+              onChange={(e) => patch((d) => { d.smtp!.apiKey = e.target.value; })}
+            />
+            <p className="mt-1.5 text-xs text-maroon-900">
+              Paste this and mail goes out over HTTPS instead of SMTP, ignoring the host, port,
+              username and password above. Hosting platforms often block outbound SMTP ports, which
+              shows up as &quot;Connection timeout&quot;. Port 443 is never blocked. Get the key from
+              Brevo under SMTP &amp; API, API keys.
+            </p>
+          </div>
           <Button variant="outline" onClick={testEmail} disabled={status === 'loading'}>Send test email</Button>
         </Card>
 

@@ -30,6 +30,9 @@ export type IntegrationsConfig = {
     user?: string;
     pass?: string;
     from?: string; // "City Parents School <no-reply@…>"
+    // Brevo HTTP API key. Preferred over SMTP: hosting platforms often block
+    // outbound 587/465, and port 443 is never blocked.
+    apiKey?: string;
   };
   social?: {
     autoSync?: boolean; // run the periodic pull
@@ -87,7 +90,7 @@ function mask(v?: string): string | undefined {
 function maskConfig(c: IntegrationsConfig): IntegrationsConfig {
   return {
     smtp: c.smtp
-      ? { ...c.smtp, pass: mask(c.smtp.pass) }
+      ? { ...c.smtp, pass: mask(c.smtp.pass), apiKey: mask(c.smtp.apiKey) }
       : undefined,
     social: c.social
       ? {
@@ -128,6 +131,7 @@ function mergeSecrets(stored: IntegrationsConfig, incoming: IntegrationsConfig):
       ...stored.smtp,
       ...incoming.smtp,
       pass: keep(incoming.smtp?.pass, stored.smtp?.pass),
+      apiKey: keep(incoming.smtp?.apiKey, stored.smtp?.apiKey),
     },
     social: {
       autoSync: incoming.social?.autoSync ?? stored.social?.autoSync,

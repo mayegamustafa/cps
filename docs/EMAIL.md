@@ -86,6 +86,32 @@ For replies to reach inboxes rather than spam folders, add the SPF and DKIM TXT
 records your SMTP provider gives you, in the same Cloudflare DNS panel. This is
 the only other DNS work, and it is also one-time.
 
+There is only ever one SPF record on a domain. Cloudflare Email Routing writes
+`v=spf1 include:_spf.mx.cloudflare.net ~all` when it is enabled, so the sending
+provider's include is merged into that record rather than added as a second one.
+Two SPF records make both fail.
+
+### When SMTP times out
+
+Hosting platforms routinely block outbound ports 587 and 465 to stop their
+machines being used as spam relays, and Brevo silently drops connections from an
+IP address that is not on its allow list when SMTP key restriction is on. Both
+surface as "Connection timeout", which reads like a wrong password and sends
+people hunting in the wrong place.
+
+Two ways out, in order:
+
+1. Paste a **Brevo API key** into Integrations. Mail then goes over HTTPS on port
+   443, which is never blocked, and the host, port, username and password above
+   it are ignored. This is the more reliable option on any PaaS.
+2. Try port **2525**, which Brevo also listens on and which is blocked less often
+   than 587.
+
+Either way, IP restriction must be off in Brevo under Security, Authorized IPs.
+Railway does not give a service a fixed outbound address on the default plan, so
+there is nothing stable to authorize. The restriction exists separately for SMTP
+keys and for API keys, so turn off whichever one the chosen route uses.
+
 ## Switching provider later
 
 The webhook normalises Cloudflare (via the Worker), Postmark, SendGrid Inbound
