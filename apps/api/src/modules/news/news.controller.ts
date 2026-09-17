@@ -25,8 +25,18 @@ export class NewsController {
 
   // ── Public ──
   @Get()
-  list(@Query('take') take?: string, @Query('skip') skip?: string) {
-    return this.news.findPublished(Number(take) || 12, Number(skip) || 0);
+  list(
+    @Query('take') take?: string,
+    @Query('skip') skip?: string,
+    @Query('tag') tag?: string,
+  ) {
+    return this.news.findPublished(Number(take) || 12, Number(skip) || 0, tag || undefined);
+  }
+
+  /** The categories in use, for the filter row on the public news page. */
+  @Get('tags')
+  tags() {
+    return this.news.publishedTags();
   }
 
   // ── Admin list (declared before :slug so it isn't captured) ──

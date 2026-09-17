@@ -32,8 +32,9 @@ const FALLBACK_NEWS: NewsCard[] = [
   { slug: 'science-block-opening', title: 'New science and innovation block opens', excerpt: 'State-of-the-art laboratories for hands-on learning.', category: 'Campus', date: 'Mar 15, 2026', image: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=900&q=70' },
 ];
 
-export async function getNews(): Promise<NewsCard[]> {
-  const rows = (await get('/api/news', FALLBACK_NEWS)) as Record<string, unknown>[];
+export async function getNews(tag?: string): Promise<NewsCard[]> {
+  const path = tag ? `/api/news?tag=${encodeURIComponent(tag)}` : '/api/news';
+  const rows = (await get(path, FALLBACK_NEWS)) as Record<string, unknown>[];
   if (rows === FALLBACK_NEWS) return FALLBACK_NEWS;
   return rows.map((r) => ({
     slug: String(r.slug),
@@ -43,6 +44,12 @@ export async function getNews(): Promise<NewsCard[]> {
     date: r.publishedAt ? new Date(String(r.publishedAt)).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
     image: r.coverImage ? String(r.coverImage) : FALLBACK_IMG,
   }));
+}
+
+/** The categories in use, for the filter row above the news grid. */
+export async function getNewsTags(): Promise<string[]> {
+  const rows = (await get('/api/news/tags', [])) as unknown;
+  return Array.isArray(rows) ? rows.map(String) : [];
 }
 
 export type EventCard = { title: string; date: string; time: string; category: string; location: string };

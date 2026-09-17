@@ -4,6 +4,7 @@ import { PageHero } from '@/components/ui/PageHero';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
 import { ShareButtons } from '@/components/ShareButtons';
+import { ArticleBody } from '@/components/ArticleBody';
 import { serverApi } from '@/lib/api-base';
 
 type Article = {
@@ -13,6 +14,8 @@ type Article = {
   body?: string;
   coverImage?: string | null;
   publishedAt?: string | null;
+  tags?: string[];
+  author?: { firstName?: string; lastName?: string; avatarUrl?: string | null } | null;
 };
 
 const API = serverApi();
@@ -62,6 +65,31 @@ export async function generateMetadata({
   };
 }
 
+function initialsOf(author?: { firstName?: string; lastName?: string } | null): string {
+  if (!author) return 'CP';
+  return ((author.firstName?.[0] ?? '') + (author.lastName?.[0] ?? '')).toUpperCase() || 'CP';
+}
+
+/** Categories double as the eyebrow above the headline and as filters on /news. */
+function TagLine({ tags }: { tags?: string[] }) {
+  if (!tags?.length) return null;
+  return (
+    <p className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1">
+      {tags.slice(0, 4).map((tag, i) => (
+        <span key={tag} className="flex items-center gap-2">
+          {i > 0 ? <span className="text-gold-500" aria-hidden>&middot;</span> : null}
+          <Link
+            href={`/news?tag=${encodeURIComponent(tag)}`}
+            className="text-xs font-semibold uppercase tracking-[0.12em] text-maroon-700 hover:text-maroon-900"
+          >
+            {tag}
+          </Link>
+        </span>
+      ))}
+    </p>
+  );
+}
+
 /** True when the stored body came from the editor rather than a plain textarea. */
 function isHtml(body: string): boolean {
   return /<(p|div|h[1-6]|ul|ol|li|blockquote|img|br|strong|em|a)\b/i.test(body);
@@ -89,20 +117,48 @@ export default async function ArticlePage({
 
       <article className="py-20">
         <div className="container-page max-w-3xl">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <p className="flex items-center gap-2 text-sm text-ink-muted">
-              <Icon name="calendar" size={16} /> {published}
+          <TagLine tags={a.tags} />
+
+          {a.excerpt ? (
+            <p className="mb-6 border-l-2 border-gold-400 pl-4 font-display text-xl italic leading-relaxed text-ink sm:text-2xl">
+              {a.excerpt}
             </p>
+          ) : null}
+
+          <div className="flex flex-wrap items-center justify-between gap-4 border-y border-line py-4">
+            <div className="flex items-center gap-3">
+              {a.author?.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={a.author.avatarUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
+              ) : (
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-maroon-700 text-sm font-semibold text-white">
+                  {initialsOf(a.author)}
+                </span>
+              )}
+              <span className="text-sm leading-tight">
+                {a.author ? (
+                  <span className="block font-semibold text-ink">
+                    {a.author.firstName} {a.author.lastName}
+                  </span>
+                ) : (
+                  <span className="block font-semibold text-ink">City Parents School</span>
+                )}
+                <span className="flex items-center gap-1.5 text-ink-muted">
+                  <Icon name="calendar" size={14} /> {published}
+                </span>
+              </span>
+            </div>
             <ShareButtons title={a.title} path={`/news/${slug}`} />
           </div>
 
           <div className="article-body mt-8 max-w-none text-lg leading-relaxed text-ink-soft">
             {a.body ? (
               isHtml(a.body) ? (
-                // Articles are written in the editor and stored as HTML. The API
-                // strips scripts, handlers and unsafe URLs before saving, so what
-                // reaches here is already an allowlisted subset.
-                <div dangerouslySetInnerHTML={{ __html: a.body }} />
+                // Written in the editor and stored as HTML. The API strips
+                // scripts, handlers and unsafe URLs before saving, so what
+                // reaches here is already an allowlisted subset. ArticleBody
+                // additionally swaps embed markers for real social embeds.
+                <ArticleBody html={a.body} />
               ) : (
                 // Anything written before the editor existed is plain text with
                 // blank lines between paragraphs.

@@ -26,17 +26,25 @@ const TOOLS: Tool[] = [
   { kind: 'button', label: 'Underline', text: 'U', command: 'underline' },
   { kind: 'button', label: 'Strikethrough', text: 'S', command: 'strikeThrough' },
   { kind: 'divider' },
+  { kind: 'button', label: 'Superscript', text: 'x²', command: 'superscript' },
+  { kind: 'button', label: 'Subscript', text: 'x₂', command: 'subscript' },
+  { kind: 'divider' },
   { kind: 'button', label: 'Heading', text: 'H2', command: 'formatBlock', arg: 'h2' },
   { kind: 'button', label: 'Subheading', text: 'H3', command: 'formatBlock', arg: 'h3' },
+  { kind: 'button', label: 'Small heading', text: 'H4', command: 'formatBlock', arg: 'h4' },
   { kind: 'button', label: 'Normal text', text: 'P', command: 'formatBlock', arg: 'p' },
   { kind: 'divider' },
   { kind: 'button', label: 'Bulleted list', text: '•—', command: 'insertUnorderedList' },
   { kind: 'button', label: 'Numbered list', text: '1—', command: 'insertOrderedList' },
+  { kind: 'button', label: 'Indent', text: '→', command: 'indent' },
+  { kind: 'button', label: 'Outdent', text: '←', command: 'outdent' },
   { kind: 'button', label: 'Quote', icon: 'quote', command: 'formatBlock', arg: 'blockquote' },
+  { kind: 'button', label: 'Code block', text: '</>', command: 'formatBlock', arg: 'pre' },
   { kind: 'divider' },
   { kind: 'button', label: 'Align left', text: 'L', command: 'justifyLeft' },
   { kind: 'button', label: 'Centre', text: 'C', command: 'justifyCenter' },
   { kind: 'button', label: 'Align right', text: 'R', command: 'justifyRight' },
+  { kind: 'button', label: 'Justify', text: 'J', command: 'justifyFull' },
 ];
 
 export function RichTextEditor({
@@ -109,6 +117,76 @@ export function RichTextEditor({
     } finally {
       setUploading(false);
     }
+  }
+
+  /** A picture with a caption under it, the way an article usually wants one. */
+  async function insertFigure(file: File) {
+    setUploading(true);
+    setNote('');
+    try {
+      const url = await uploadFile(file);
+      const caption = window.prompt('Caption for this picture (leave blank for none)') ?? '';
+      ref.current?.focus();
+      const safeUrl = url.replace(/"/g, '&quot;');
+      const safeCaption = caption
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+      document.execCommand(
+        'insertHTML',
+        false,
+        caption.trim()
+          ? `<figure><img src="${safeUrl}" alt="" /><figcaption>${safeCaption}</figcaption></figure><p><br></p>`
+          : `<img src="${safeUrl}" alt="" /><p><br></p>`,
+      );
+      emit();
+    } catch (e) {
+      setNote((e as Error).message || 'Could not upload that image.');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function insertTable() {
+    const cols = Number(window.prompt('How many columns?', '3'));
+    const rows = Number(window.prompt('How many rows, not counting the header?', '3'));
+    if (!Number.isFinite(cols) || !Number.isFinite(rows) || cols < 1 || rows < 1) return;
+    const c = Math.min(cols, 10);
+    const r = Math.min(rows, 30);
+    const head = `<tr>${'<th>Heading</th>'.repeat(c)}</tr>`;
+    const body = `<tr>${'<td>&nbsp;</td>'.repeat(c)}</tr>`.repeat(r);
+    ref.current?.focus();
+    document.execCommand(
+      'insertHTML',
+      false,
+      `<table><thead>${head}</thead><tbody>${body}</tbody></table><p><br></p>`,
+    );
+    emit();
+  }
+
+  /**
+   * A social post is stored as an empty marker div, not the platform's own
+   * markup, so a saved article never depends on a script tag surviving the
+   * server's sanitising. The article page turns the marker into a real embed.
+   */
+  function insertEmbed() {
+    const url = window.prompt(
+      'Paste the link to the post (YouTube, X, Facebook, Instagram, TikTok, Vimeo)',
+      'https://',
+    );
+    if (!url) return;
+    if (!/^https:\/\//i.test(url.trim())) {
+      setNote('The link must start with https://');
+      return;
+    }
+    setNote('');
+    ref.current?.focus();
+    document.execCommand(
+      'insertHTML',
+      false,
+      `<div data-embed="${url.trim().replace(/"/g, '&quot;')}"></div><p><br></p>`,
+    );
+    emit();
   }
 
   /** Pasted Word and Google Docs markup carries styling that fights the site's own. */
@@ -186,6 +264,47 @@ export function RichTextEditor({
           />
         </label>
 
+        <label
+          title="Picture with a caption"
+          className={[
+            'flex h-8 items-center justify-center rounded-lg px-2 text-xs font-semibold text-ink-soft hover:bg-maroon-50 hover:text-maroon-700',
+            source || uploading ? 'pointer-events-none opacity-40' : 'cursor-pointer',
+          ].join(' ')}
+        >
+          Caption
+          <input
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = '';
+              if (file) void insertFigure(file);
+            }}
+          />
+        </label>
+        <button
+          type="button"
+          title="Embed a social post"
+          aria-label="Embed a social post"
+          disabled={source}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={insertEmbed}
+          className="flex h-8 items-center justify-center rounded-lg px-2 text-xs font-semibold text-ink-soft hover:bg-maroon-50 hover:text-maroon-700 disabled:opacity-40"
+        >
+          Embed
+        </button>
+        <button
+          type="button"
+          title="Table"
+          aria-label="Table"
+          disabled={source}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={insertTable}
+          className="flex h-8 items-center justify-center rounded-lg px-2 text-xs font-semibold text-ink-soft hover:bg-maroon-50 hover:text-maroon-700 disabled:opacity-40"
+        >
+          Table
+        </button>
         <button
           type="button"
           title="Divider"
@@ -220,6 +339,17 @@ export function RichTextEditor({
           className="flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-ink-soft hover:bg-maroon-50 hover:text-maroon-700 disabled:opacity-40"
         >
           <Icon name="refresh" size={15} className="-scale-x-100" />
+        </button>
+        <button
+          type="button"
+          title="Redo"
+          aria-label="Redo"
+          disabled={source}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => run('redo')}
+          className="flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-ink-soft hover:bg-maroon-50 hover:text-maroon-700 disabled:opacity-40"
+        >
+          <Icon name="refresh" size={15} />
         </button>
 
         <button

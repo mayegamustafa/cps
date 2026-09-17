@@ -480,3 +480,37 @@ html[data-theme='noir'] {
   color: var(--color-ink-muted, #8a8a8a);
   pointer-events: none;
 }
+
+/* A picture with its caption, from the editor's Caption button. */
+.article-body figure,
+.cps-editor figure {
+  margin: 1.6em 0;
+}
+.article-body figure img,
+.cps-editor figure img {
+  margin: 0;
+}
+.article-body figcaption,
+.cps-editor figcaption {
+  margin-top: 0.5em;
+  font-size: 0.85em;
+  color: var(--color-ink-muted, #8a8a8a);
+  line-height: 1.4;
+}
+
+/* In the editor a social post is an empty marker, so it needs to be visible
+   and obviously a block rather than an invisible gap. */
+.cps-editor [data-embed] {
+  display: block;
+  margin: 1.2em 0;
+  padding: 0.9em 1em;
+  border: 1px dashed var(--color-maroon-300, #c9a0a3);
+  border-radius: 0.6rem;
+  background: var(--color-paper-dark, #f3eeef);
+  color: var(--color-maroon-800, #5c191d);
+  font-size: 0.85em;
+  word-break: break-all;
+}
+.cps-editor [data-embed]::before {
+  content: 'Embedded post: ' attr(data-embed);
+}

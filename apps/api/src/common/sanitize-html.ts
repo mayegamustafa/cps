@@ -25,6 +25,11 @@ const ALLOWED_TAGS = new Set([
 const ALLOWED_ATTRS: Record<string, Set<string>> = {
   a: new Set(['href', 'title', 'target', 'rel']),
   img: new Set(['src', 'alt', 'title', 'width', 'height']),
+  // The one data- attribute kept: an empty div carrying a social post URL that
+  // the article page turns into a real embed at read time. Storing the marker
+  // rather than the platform's own markup means nothing in a saved article
+  // depends on a third-party script tag surviving this pass.
+  div: new Set(['data-embed']),
   td: new Set(['colspan', 'rowspan']),
   th: new Set(['colspan', 'rowspan', 'scope']),
   '*': new Set(['align']),
@@ -87,6 +92,13 @@ function cleanAttributes(tag: string, raw: string): string {
       const safe = safeUrl(value, true);
       if (!safe) continue;
       out.push(`src="${escapeAttr(safe)}"`);
+      continue;
+    }
+    if (name === 'data-embed') {
+      // Only an absolute https post URL: this value is handed to an iframe or a
+      // platform widget on the public page.
+      if (!/^https:\/\//i.test(value.trim())) continue;
+      out.push(`data-embed="${escapeAttr(value.trim())}"`);
       continue;
     }
     if (name === 'target') {

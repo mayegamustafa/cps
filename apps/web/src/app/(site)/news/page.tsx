@@ -5,7 +5,7 @@ import { ConfigurablePageHero } from '@/components/ui/ConfigurablePageHero';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Icon } from '@/components/Icon';
 import { SocialWall } from '@/components/sections/SocialWall';
-import { getNews, getEvents, getSocialWall } from '@/lib/public-data';
+import { getNews, getNewsTags, getEvents, getSocialWall } from '@/lib/public-data';
 
 export const metadata: Metadata = {
   title: 'News & Events',
@@ -16,9 +16,20 @@ export const metadata: Metadata = {
 const monthName = (iso: string) =>
   new Date(iso).toLocaleDateString('en-GB', { month: 'short' }).toUpperCase();
 
-export default async function NewsPage() {
+export default async function NewsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tag?: string }>;
+}) {
   await assertPageEnabled('news');
-  const [articles, events, social] = await Promise.all([getNews(), getEvents(), getSocialWall()]);
+  const { tag } = await searchParams;
+  const active = tag?.trim() || undefined;
+  const [articles, tags, events, social] = await Promise.all([
+    getNews(active),
+    getNewsTags(),
+    getEvents(),
+    getSocialWall(),
+  ]);
   return (
     <>
       <ConfigurablePageHero page="news"
@@ -33,6 +44,49 @@ export default async function NewsPage() {
       <section className="py-24">
         <div className="container-page">
           <SectionHeading eyebrow="Latest news" title="From our newsroom" />
+
+          {tags.length ? (
+            <nav
+              aria-label="Filter news by category"
+              className="mt-8 flex flex-wrap items-center gap-2 border-y border-line py-4"
+            >
+              <Link
+                href="/news"
+                className={[
+                  'rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] transition-colors',
+                  active
+                    ? 'border border-line text-ink-soft hover:border-maroon-300 hover:text-maroon-700'
+                    : 'bg-maroon-700 text-white',
+                ].join(' ')}
+              >
+                All
+              </Link>
+              {tags.map((t) => (
+                <Link
+                  key={t}
+                  href={`/news?tag=${encodeURIComponent(t)}`}
+                  className={[
+                    'rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] transition-colors',
+                    active === t
+                      ? 'bg-maroon-700 text-white'
+                      : 'border border-line text-ink-soft hover:border-maroon-300 hover:text-maroon-700',
+                  ].join(' ')}
+                >
+                  {t}
+                </Link>
+              ))}
+            </nav>
+          ) : null}
+
+          {articles.length === 0 ? (
+            <p className="mt-10 text-ink-muted">
+              Nothing filed under {active} yet.{' '}
+              <Link href="/news" className="text-maroon-700 underline">
+                See all news
+              </Link>
+            </p>
+          ) : null}
+
           <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {articles.map((a) => (
               <Link
@@ -42,7 +96,7 @@ export default async function NewsPage() {
               >
                 <div className="relative aspect-[16/10] overflow-hidden">
                   <div className="h-full w-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: `url('${a.image}')` }} />
-                  <span className="absolute left-4 top-4 rounded-full bg-maroon-900/85 px-3 py-1 text-xs font-semibold text-gold-300 backdrop-blur">{a.category}</span>
+                  <span className="absolute left-4 top-4 rounded-full bg-maroon-900/85 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-gold-300 backdrop-blur">{a.category}</span>
                 </div>
                 <div className="p-6">
                   <p className="flex items-center gap-1.5 text-xs text-ink-muted"><Icon name="calendar" size={14} /> {a.date}</p>
