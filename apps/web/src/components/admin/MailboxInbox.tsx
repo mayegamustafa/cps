@@ -1140,6 +1140,16 @@ function SetupPane({ mailboxCount }: { mailboxCount: number }) {
 
   // The API's own origin when it knows it, otherwise this site's (which proxies
   // through to the same endpoint and works just as well for normal mail).
+  // "Ready" has to mean mail would actually land somewhere. A secret with no
+  // addresses behind it bounces every message, which looks identical to a
+  // broken webhook from the outside.
+  const receiving = !status?.inboundReady
+    ? 'Not set up'
+    : mailboxCount === 0
+      ? 'No addresses yet'
+      : 'Ready';
+  const receivingOk = Boolean(status?.inboundReady) && mailboxCount > 0;
+
   const webhookUrl =
     status?.webhookUrl ??
     (typeof window !== 'undefined'
@@ -1150,9 +1160,17 @@ function SetupPane({ mailboxCount }: { mailboxCount: number }) {
     <div className="max-w-3xl space-y-4">
       <div className="grid gap-3 sm:grid-cols-3">
         <StatusTile label="Addresses" value={String(mailboxCount)} ok={mailboxCount > 0} />
-        <StatusTile label="Receiving" value={status?.inboundReady ? 'Ready' : 'Not set up'} ok={Boolean(status?.inboundReady)} />
+        <StatusTile label="Receiving" value={receiving} ok={receivingOk} />
         <StatusTile label="Sending" value={status?.sendingReady ? 'Ready' : 'Not connected'} ok={Boolean(status?.sendingReady)} />
       </div>
+
+      {status && status.inboundReady && mailboxCount === 0 ? (
+        <p className="rounded-2xl border border-gold-300 bg-gold-50 p-4 text-sm text-maroon-900">
+          The webhook is connected, but no addresses exist yet, so there is nothing to deliver
+          mail to. Anything sent to the school right now is bounced back to the sender. Open the
+          Addresses tab and create the addresses you routed in Cloudflare.
+        </p>
+      ) : null}
 
       <section className="rounded-2xl border border-line bg-white p-5">
         <h2 className="font-display text-lg text-maroon-900">Connect incoming mail</h2>
