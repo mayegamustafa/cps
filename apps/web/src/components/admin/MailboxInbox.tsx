@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon, type IconName } from '@/components/Icon';
+import { FileUpload } from '@/components/admin/FileUpload';
 
 /** Largest file the mailbox upload route accepts. */
 const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
@@ -13,6 +14,7 @@ type Mailbox = {
   address: string;
   displayName: string;
   description?: string | null;
+  avatarUrl?: string | null;
   isCatchAll: boolean;
   isActive: boolean;
   sortOrder: number;
@@ -1121,6 +1123,7 @@ const EMPTY_MAILBOX = {
   address: '',
   displayName: 'City Parents School',
   description: '',
+  avatarUrl: '',
   isCatchAll: false,
   isActive: true,
   signature: '',
@@ -1170,6 +1173,7 @@ function AddressesPane({
       address: editing.address?.trim().toLowerCase(),
       displayName: editing.displayName?.trim(),
       description: editing.description || undefined,
+      avatarUrl: editing.avatarUrl || undefined,
       isCatchAll: Boolean(editing.isCatchAll),
       isActive: editing.isActive !== false,
       signature: editing.signature || undefined,
@@ -1326,6 +1330,29 @@ function AddressesPane({
                   onChange={(e) => setEditing({ ...editing, description: e.target.value })}
                   className="w-full rounded-xl border border-line px-3 py-2 text-sm focus:border-maroon-500 focus:outline-none"
                 />
+              </Field>
+              <Field
+                label="Sender picture"
+                hint="Shown at the top of every message sent from this address. Most mail apps only display it once the reader allows images."
+              >
+                <div className="flex items-start gap-3">
+                  {editing.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={editing.avatarUrl}
+                      alt=""
+                      className="mt-1 h-12 w-12 shrink-0 rounded-full object-cover"
+                    />
+                  ) : null}
+                  <div className="min-w-0 flex-1">
+                    <FileUpload
+                      label=""
+                      value={editing.avatarUrl ?? ''}
+                      onChange={(url) => setEditing({ ...editing, avatarUrl: url })}
+                      accept="image/*"
+                    />
+                  </div>
+                </div>
               </Field>
               <Field label="Signature" hint="Added to the bottom of every reply sent from here">
                 <textarea

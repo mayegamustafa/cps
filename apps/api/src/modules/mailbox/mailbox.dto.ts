@@ -36,6 +36,7 @@ export class CreateMailboxDto {
   @IsEmail() address: string;
   @IsString() @MinLength(2) @MaxLength(120) displayName: string;
   @IsOptional() @IsString() @MaxLength(300) description?: string;
+  @IsOptional() @IsString() @MaxLength(600) avatarUrl?: string;
   @IsOptional() @IsBoolean() isCatchAll?: boolean;
   @IsOptional() @IsBoolean() isActive?: boolean;
   @IsOptional() @IsInt() sortOrder?: number;
@@ -49,6 +50,7 @@ export class UpdateMailboxDto {
   @IsOptional() @IsEmail() address?: string;
   @IsOptional() @IsString() @MinLength(2) @MaxLength(120) displayName?: string;
   @IsOptional() @IsString() @MaxLength(300) description?: string;
+  @IsOptional() @IsString() @MaxLength(600) avatarUrl?: string;
   @IsOptional() @IsBoolean() isCatchAll?: boolean;
   @IsOptional() @IsBoolean() isActive?: boolean;
   @IsOptional() @IsInt() sortOrder?: number;

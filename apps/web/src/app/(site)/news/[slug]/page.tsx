@@ -62,6 +62,11 @@ export async function generateMetadata({
   };
 }
 
+/** True when the stored body came from the editor rather than a plain textarea. */
+function isHtml(body: string): boolean {
+  return /<(p|div|h[1-6]|ul|ol|li|blockquote|img|br|strong|em|a)\b/i.test(body);
+}
+
 export default async function ArticlePage({
   params,
 }: {
@@ -91,9 +96,18 @@ export default async function ArticlePage({
             <ShareButtons title={a.title} path={`/news/${slug}`} />
           </div>
 
-          <div className="prose mt-8 max-w-none text-lg leading-relaxed text-ink-soft">
+          <div className="article-body mt-8 max-w-none text-lg leading-relaxed text-ink-soft">
             {a.body ? (
-              a.body.split('\n').filter(Boolean).map((p, i) => <p key={i}>{p}</p>)
+              isHtml(a.body) ? (
+                // Articles are written in the editor and stored as HTML. The API
+                // strips scripts, handlers and unsafe URLs before saving, so what
+                // reaches here is already an allowlisted subset.
+                <div dangerouslySetInnerHTML={{ __html: a.body }} />
+              ) : (
+                // Anything written before the editor existed is plain text with
+                // blank lines between paragraphs.
+                a.body.split('\n').filter(Boolean).map((p, i) => <p key={i}>{p}</p>)
+              )
             ) : (
               <>
                 <p>

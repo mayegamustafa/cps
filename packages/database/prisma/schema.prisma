@@ -1069,6 +1069,9 @@ model Mailbox {
   address     String  @unique // info@cityparentsschool.co.ug
   displayName String // "City Parents School" — the From name on replies
   description String?
+  /// Shown at the top of every message this address sends, so the school is
+  /// recognisable in the recipient's inbox.
+  avatarUrl   String?
   /// Receives mail addressed to any unmatched address on the domain.
   isCatchAll  Boolean @default(false)
   isActive    Boolean @default(true)

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PublishStatus } from '@cps/database';
 import { uniqueSlug } from '../../common/slug';
+import { sanitizeHtml } from '../../common/sanitize-html';
 import type { CreateNewsDto, UpdateNewsDto } from './news.dto';
 
 @Injectable()
@@ -43,6 +44,9 @@ export class NewsService {
     return this.prisma.newsArticle.create({
       data: {
         ...dto,
+        // The body is HTML from the editor and ends up in a public page, so it
+        // is cleaned here rather than trusted because an admin typed it.
+        ...(dto.body !== undefined ? { body: sanitizeHtml(dto.body) } : {}),
         slug: dto.slug || uniqueSlug(dto.title),
         status,
         publishedAt: status === PublishStatus.PUBLISHED ? new Date() : null,
@@ -60,7 +64,11 @@ export class NewsService {
         : undefined;
     return this.prisma.newsArticle.update({
       where: { id },
-      data: { ...dto, ...(publishedAt ? { publishedAt } : {}) },
+      data: {
+        ...dto,
+        ...(dto.body !== undefined ? { body: sanitizeHtml(dto.body) } : {}),
+        ...(publishedAt ? { publishedAt } : {}),
+      },
     });
   }
 

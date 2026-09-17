@@ -19,7 +19,7 @@ const config: ResourceConfig = {
     { key: 'excerpt', label: 'Excerpt', placeholder: 'Short summary' },
     { key: 'coverImage', label: 'Cover image URL', type: 'image' },
     { key: 'tags', label: 'Tags', type: 'tags' },
-    { key: 'body', label: 'Body', type: 'textarea', required: true },
+    { key: 'body', label: 'Body', type: 'richtext', required: true, placeholder: 'Write the article…' },
   ],
 };
 

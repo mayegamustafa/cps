@@ -309,7 +309,13 @@ export class MailboxService {
   }
 
   private async sendAutoReply(
-    mailbox: { address: string; displayName: string; autoReplySubject: string | null; autoReplyBody: string | null },
+    mailbox: {
+      address: string;
+      displayName: string;
+      avatarUrl: string | null;
+      autoReplySubject: string | null;
+      autoReplyBody: string | null;
+    },
     mail: NormalizedMail,
     threadId: string,
     parentMessageId: string | null,
@@ -338,7 +344,39 @@ export class MailboxService {
     return `<${randomUUID()}@${domain}>`;
   }
 
-  private bodyToHtml(text: string, signature?: string | null, quote?: string | null): string {
+  /**
+   * The sender's picture and name across the top of an outgoing message.
+   *
+   * Built as a table with inline styles because that is the only layout every
+   * mail client agrees on, and omitted entirely when no picture is set so a
+   * plain reply stays plain.
+   */
+  private senderHeader(mailbox: { address: string; displayName: string; avatarUrl?: string | null }): string {
+    if (!mailbox.avatarUrl) return '';
+    const escape = (s: string) =>
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    return (
+      `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;border-collapse:collapse;">` +
+      `<tr>` +
+      `<td style="padding-right:12px;vertical-align:middle;">` +
+      `<img src="${escape(mailbox.avatarUrl)}" width="46" height="46" alt="" ` +
+      `style="width:46px;height:46px;border-radius:23px;display:block;border:0;outline:none;text-decoration:none;" />` +
+      `</td>` +
+      `<td style="vertical-align:middle;">` +
+      `<div style="font-size:15px;font-weight:bold;color:#6e1f23;line-height:1.3;">${escape(mailbox.displayName)}</div>` +
+      `<div style="font-size:12px;color:#8a8a8a;line-height:1.3;">${escape(mailbox.address)}</div>` +
+      `</td>` +
+      `</tr>` +
+      `</table>`
+    );
+  }
+
+  private bodyToHtml(
+    text: string,
+    signature?: string | null,
+    quote?: string | null,
+    header = '',
+  ): string {
     const escape = (s: string) =>
       s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const paragraphs = text
@@ -353,13 +391,13 @@ export class MailboxService {
           quote,
         ).replace(/\n/g, '<br>')}</blockquote>`
       : '';
-    return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#2b2b2b;">${paragraphs}${sig}${quoted}</div>`;
+    return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#2b2b2b;">${header}${paragraphs}${sig}${quoted}</div>`;
   }
 
   /** Sends a message as a mailbox and records it on the thread either way. */
   private async sendOutbound(opts: {
     threadId: string;
-    mailbox: { address: string; displayName: string; signature?: string | null };
+    mailbox: { address: string; displayName: string; signature?: string | null; avatarUrl?: string | null };
     to: string[];
     cc: string[];
     subject: string;
@@ -376,7 +414,12 @@ export class MailboxService {
       .slice(-20);
 
     const signature = 'signature' in opts.mailbox ? opts.mailbox.signature : null;
-    const html = this.bodyToHtml(opts.bodyText, signature, opts.quote);
+    const html = this.bodyToHtml(
+      opts.bodyText,
+      signature,
+      opts.quote,
+      this.senderHeader(opts.mailbox),
+    );
 
     const headers: Record<string, string> = {};
     if (opts.inReplyTo) headers['In-Reply-To'] = opts.inReplyTo;

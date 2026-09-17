@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
 import { FileUpload } from '@/components/admin/FileUpload';
+import { RichTextEditor } from '@/components/admin/RichTextEditor';
 import { uploadFile } from '@/components/admin/FileUpload';
 import { FieldDesigner, type FormField as DesignerField } from '@/components/admin/FieldDesigner';
 import { siteDefaults } from '@/lib/site';
@@ -14,6 +15,7 @@ const API = ''; // same-origin; proxied to the backend
 export type FieldType =
   | 'text'
   | 'textarea'
+  | 'richtext'
   | 'select'
   | 'category'
   | 'number'
@@ -454,7 +456,7 @@ export function ResourceManager({ config }: { config: ResourceConfig }) {
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             {config.fields.filter((field) => !field.readonly).map((field) => (
-              <div key={field.key} className={field.type === 'textarea' || field.type === 'formBuilder' || field.type === 'multiImage' ? 'sm:col-span-2' : ''}>
+              <div key={field.key} className={field.type === 'textarea' || field.type === 'richtext' || field.type === 'formBuilder' || field.type === 'multiImage' ? 'sm:col-span-2' : ''}>
                 <FieldInput field={field} value={form[field.key]} onChange={(v) => setForm((f) => ({ ...f, [field.key]: v }))} />
               </div>
             ))}
@@ -636,6 +638,18 @@ function FieldInput({
         <input type="checkbox" checked={Boolean(value)} onChange={(e) => onChange(e.target.checked)} className="h-4 w-4 rounded border-line" />
         {field.label}
       </label>
+    );
+  }
+  if (field.type === 'richtext') {
+    return (
+      <div>
+        {label}
+        <RichTextEditor
+          value={String(value)}
+          onChange={(html) => onChange(html)}
+          placeholder={field.placeholder}
+        />
+      </div>
     );
   }
   if (field.type === 'textarea') {
