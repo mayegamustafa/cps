@@ -73,6 +73,7 @@ export class AssignThreadDto {
 export class ReplyDto {
   @IsString() @MinLength(1) @MaxLength(50_000) body: string;
   @IsOptional() @IsArray() @ArrayMaxSize(20) @IsEmail({}, { each: true }) cc?: string[];
+  @IsOptional() @IsArray() @ArrayMaxSize(20) @IsEmail({}, { each: true }) bcc?: string[];
   @IsOptional() @IsArray() @ArrayMaxSize(10) @ValidateNested({ each: true })
   @Type(() => OutgoingAttachmentDto)
   attachments?: OutgoingAttachmentDto[];
@@ -82,6 +83,7 @@ export class ComposeDto {
   @IsString() mailboxId: string;
   @IsArray() @ArrayMaxSize(20) @IsEmail({}, { each: true }) to: string[];
   @IsOptional() @IsArray() @ArrayMaxSize(20) @IsEmail({}, { each: true }) cc?: string[];
+  @IsOptional() @IsArray() @ArrayMaxSize(20) @IsEmail({}, { each: true }) bcc?: string[];
   @IsString() @MinLength(1) @MaxLength(300) subject: string;
   @IsString() @MinLength(1) @MaxLength(50_000) body: string;
   @IsOptional() @IsArray() @ArrayMaxSize(10) @ValidateNested({ each: true })

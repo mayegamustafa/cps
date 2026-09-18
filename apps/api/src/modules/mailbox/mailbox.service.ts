@@ -327,6 +327,7 @@ export class MailboxService {
       mailbox,
       to: [mail.from.email],
       cc: [],
+      bcc: [],
       subject: mailbox.autoReplySubject?.trim() || `Re: ${mail.subject}`,
       bodyText: body,
       inReplyTo: parentMessageId,
@@ -427,6 +428,7 @@ export class MailboxService {
     mailbox: { address: string; displayName: string; signature?: string | null; avatarUrl?: string | null };
     to: string[];
     cc: string[];
+    bcc: string[];
     subject: string;
     bodyText: string;
     inReplyTo: string | null;
@@ -456,6 +458,7 @@ export class MailboxService {
     const result = await this.mail.send({
       to: opts.to.join(', '),
       cc: opts.cc,
+      bcc: opts.bcc,
       subject: opts.subject,
       html,
       text: opts.bodyText + (signature ? `\n\n${signature}` : ''),
@@ -485,6 +488,7 @@ export class MailboxService {
         fromEmail: opts.mailbox.address,
         toEmails: opts.to,
         ccEmails: opts.cc,
+        bccEmails: opts.bcc,
         subject: opts.subject.slice(0, 500),
         text: opts.bodyText,
         html,
@@ -527,6 +531,7 @@ export class MailboxService {
     access: MailAccess,
     ccOverride?: string[],
     attachments?: OutgoingAttachment[],
+    bccOverride?: string[],
   ) {
     const scoped = await this.threadInScope(threadId, access);
     if (!access.canSend(scoped.mailboxId)) {
@@ -555,6 +560,7 @@ export class MailboxService {
       mailbox: thread.mailbox,
       to: [thread.participant],
       cc: ccOverride ?? [],
+      bcc: bccOverride ?? [],
       subject,
       bodyText,
       inReplyTo: last?.messageId ?? null,
@@ -571,6 +577,7 @@ export class MailboxService {
     userId: string | null;
     to: string[];
     cc?: string[];
+    bcc?: string[];
     subject: string;
     body: string;
     access: MailAccess;
@@ -605,6 +612,7 @@ export class MailboxService {
       mailbox,
       to: input.to,
       cc: input.cc ?? [],
+      bcc: input.bcc ?? [],
       subject: input.subject,
       bodyText: input.body,
       inReplyTo: null,

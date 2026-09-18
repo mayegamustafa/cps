@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon, type IconName } from '@/components/Icon';
 import { FileUpload } from '@/components/admin/FileUpload';
 import { refreshBadges } from '@/lib/badges';
+import { useLive } from '@/lib/live';
 
 /** Largest file the mailbox upload route accepts. */
 const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
@@ -75,6 +76,7 @@ type Message = {
   fromEmail: string;
   toEmails: string[];
   ccEmails: string[];
+  bccEmails?: string[];
   subject: string;
   text?: string | null;
   html?: string | null;
@@ -111,11 +113,13 @@ type Staff = {
   avatarUrl?: string | null;
 };
 
-type View = { key: string; label: string; icon: IconName };
+type View = { key: string; label: string; icon: IconName; noCount?: boolean };
 
 const VIEWS: View[] = [
   { key: 'inbox', label: 'Inbox', icon: 'inbox' },
-  { key: 'sent', label: 'Sent', icon: 'send' },
+  // Sent always shows, never counts: it is a record of what has gone out, not a
+  // queue of things waiting, so a number on it only ever grows and means nothing.
+  { key: 'sent', label: 'Sent', icon: 'send', noCount: true },
   { key: 'starred', label: 'Starred', icon: 'star' },
   { key: 'archived', label: 'Archived', icon: 'archive' },
   { key: 'spam', label: 'Spam', icon: 'shield-check' },
@@ -123,6 +127,15 @@ const VIEWS: View[] = [
 ];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+
+/** The API takes an array; people type a comma-separated line. */
+function splitAddresses(value: string): string[] | undefined {
+  const list = value
+    .split(/[,;\s]+/)
+    .map((v) => v.trim())
+    .filter(Boolean);
+  return list.length ? list : undefined;
+}
 
 function authHeaders(): Record<string, string> {
   const t = typeof window !== 'undefined' ? sessionStorage.getItem('cps_token') : null;
@@ -463,6 +476,22 @@ function InboxPane({
     onChanged();
   }, [loadThreads, onChanged]);
 
+  /**
+   * New mail appears on its own. The list refreshes; an open conversation is
+   * deliberately left alone, since replacing what somebody is reading
+   * mid-sentence is worse than showing it a few seconds late.
+   */
+  const refreshQuietly = useCallback(async () => {
+    const data = await api<{ items: ThreadSummary[]; total: number }>(`/threads?${query}`);
+    if (data) {
+      setThreads(data.items);
+      setTotal(data.total);
+    }
+    onChanged();
+  }, [query, onChanged]);
+
+  useLive(refreshQuietly);
+
   return (
     <div className="grid gap-4 lg:grid-cols-[210px_minmax(0,340px)_minmax(0,1fr)]">
       {/* Folders */}
@@ -478,8 +507,9 @@ function InboxPane({
 
         <nav className="space-y-0.5" aria-label="Folders">
           {VIEWS.map((v) => {
-            const badge =
-              v.key === 'inbox'
+            const badge = v.noCount
+              ? undefined
+              : v.key === 'inbox'
                 ? counts?.totalUnread
                 : v.key === 'sent'
                   ? counts?.sent
@@ -696,6 +726,10 @@ function ThreadView({
   const [thread, setThread] = useState<ThreadDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [reply, setReply] = useState('');
+  const [cc, setCc] = useState('');
+  const [bcc, setBcc] = useState('');
+  // Hidden until wanted: most replies go to one person.
+  const [showCopies, setShowCopies] = useState(false);
   const [files, setFiles] = useState<OutgoingAttachment[]>([]);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
@@ -742,13 +776,21 @@ function ThreadView({
     const res = await fetch(`/api/mailbox/threads/${threadId}/reply`, {
       method: 'POST',
       headers: authHeaders(),
-      body: JSON.stringify({ body: reply, attachments: files.length ? files : undefined }),
+      body: JSON.stringify({
+        body: reply,
+        cc: splitAddresses(cc),
+        bcc: splitAddresses(bcc),
+        attachments: files.length ? files : undefined,
+      }),
     }).catch(() => null);
     const data = res && res.ok ? ((await res.json()) as { sent: boolean; error?: string }) : null;
     setSending(false);
 
     if (data?.sent) {
       setReply('');
+      setCc('');
+      setBcc('');
+      setShowCopies(false);
       setFiles([]);
       await load();
       onChanged();
@@ -858,9 +900,36 @@ function ThreadView({
           </p>
         ) : (
         <>
-        <label htmlFor="reply" className="mb-1.5 block text-sm font-medium text-ink">
-          Reply as {thread.mailbox.address}
-        </label>
+        <div className="mb-1.5 flex items-baseline justify-between gap-2">
+          <label htmlFor="reply" className="text-sm font-medium text-ink">
+            Reply as {thread.mailbox.address}
+          </label>
+          <button
+            type="button"
+            onClick={() => setShowCopies((v) => !v)}
+            className="text-xs font-medium text-maroon-700 hover:underline"
+          >
+            {showCopies ? 'Hide Cc and Bcc' : 'Cc and Bcc'}
+          </button>
+        </div>
+        {showCopies ? (
+          <div className="mb-2 grid gap-2 sm:grid-cols-2">
+            <input
+              value={cc}
+              onChange={(e) => setCc(e.target.value)}
+              placeholder="Cc, separated by commas"
+              aria-label="Cc"
+              className="w-full rounded-xl border border-line bg-white px-3 py-2 text-sm focus:border-maroon-500 focus:outline-none"
+            />
+            <input
+              value={bcc}
+              onChange={(e) => setBcc(e.target.value)}
+              placeholder="Bcc, hidden from everyone"
+              aria-label="Bcc"
+              className="w-full rounded-xl border border-line bg-white px-3 py-2 text-sm focus:border-maroon-500 focus:outline-none"
+            />
+          </div>
+        ) : null}
         <textarea
           id="reply"
           rows={4}
@@ -915,6 +984,7 @@ function MessageCard({ message }: { message: Message }) {
           <p className="truncate text-xs text-ink-muted">
             {message.fromEmail} to {message.toEmails.join(', ')}
             {message.ccEmails.length ? ` (cc ${message.ccEmails.join(', ')})` : ''}
+            {outbound && message.bccEmails?.length ? ` (bcc ${message.bccEmails.join(', ')})` : ''}
           </p>
         </div>
         <time className="shrink-0 text-xs text-ink-muted" dateTime={message.createdAt}>
@@ -1029,6 +1099,9 @@ function ComposeDialog({
 }) {
   const [mailboxId, setMailboxId] = useState(mailboxes[0]?.id ?? '');
   const [to, setTo] = useState('');
+  const [cc, setCc] = useState('');
+  const [bcc, setBcc] = useState('');
+  const [showCopies, setShowCopies] = useState(false);
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [files, setFiles] = useState<OutgoingAttachment[]>([]);
@@ -1048,6 +1121,8 @@ function ComposeDialog({
       body: JSON.stringify({
         mailboxId,
         to: recipients,
+        cc: splitAddresses(cc),
+        bcc: splitAddresses(bcc),
         subject,
         body,
         attachments: files.length ? files : undefined,
@@ -1083,7 +1158,16 @@ function ComposeDialog({
             </select>
           </div>
           <div>
-            <label htmlFor="c-to" className="mb-1 block text-xs font-medium text-ink-soft">To</label>
+            <div className="mb-1 flex items-baseline justify-between gap-2">
+              <label htmlFor="c-to" className="text-xs font-medium text-ink-soft">To</label>
+              <button
+                type="button"
+                onClick={() => setShowCopies((v) => !v)}
+                className="text-xs font-medium text-maroon-700 hover:underline"
+              >
+                {showCopies ? 'Hide Cc and Bcc' : 'Cc and Bcc'}
+              </button>
+            </div>
             <input
               id="c-to"
               value={to}
@@ -1092,6 +1176,34 @@ function ComposeDialog({
               className="w-full rounded-xl border border-line bg-white px-3 py-2 text-sm focus:border-maroon-500 focus:outline-none"
             />
           </div>
+          {showCopies ? (
+            <>
+              <div>
+                <label htmlFor="c-cc" className="mb-1 block text-xs font-medium text-ink-soft">
+                  Cc
+                </label>
+                <input
+                  id="c-cc"
+                  value={cc}
+                  onChange={(e) => setCc(e.target.value)}
+                  placeholder="Everyone can see these"
+                  className="w-full rounded-xl border border-line bg-white px-3 py-2 text-sm focus:border-maroon-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label htmlFor="c-bcc" className="mb-1 block text-xs font-medium text-ink-soft">
+                  Bcc
+                </label>
+                <input
+                  id="c-bcc"
+                  value={bcc}
+                  onChange={(e) => setBcc(e.target.value)}
+                  placeholder="Hidden from everyone, including each other"
+                  className="w-full rounded-xl border border-line bg-white px-3 py-2 text-sm focus:border-maroon-500 focus:outline-none"
+                />
+              </div>
+            </>
+          ) : null}
           <div>
             <label htmlFor="c-subject" className="mb-1 block text-xs font-medium text-ink-soft">Subject</label>
             <input

@@ -307,6 +307,7 @@ export class MailboxController {
       await this.mailbox.accessFor(req.user),
       dto.cc,
       dto.attachments,
+      dto.bcc,
     );
   }
 
@@ -319,6 +320,7 @@ export class MailboxController {
       userId: req.user?.id ?? null,
       to: dto.to,
       cc: dto.cc,
+      bcc: dto.bcc,
       subject: dto.subject,
       body: dto.body,
       attachments: dto.attachments,

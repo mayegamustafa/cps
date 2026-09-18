@@ -24,6 +24,7 @@ export type MailInput = {
   text?: string;
   replyTo?: string;
   cc?: string[];
+  bcc?: string[];
   /** Overrides the configured From, so a reply leaves as the mailbox it was sent to. */
   from?: string;
   /** Our own Message-ID, so an inbound reply can be matched back to the thread. */
@@ -94,6 +95,7 @@ export class MailService {
       sender,
       to: splitAddresses(input.to),
       cc: input.cc?.length ? splitAddresses(input.cc.join(',')) : undefined,
+      bcc: input.bcc?.length ? splitAddresses(input.bcc.join(',')) : undefined,
       subject: input.subject,
       htmlContent: input.html,
       textContent: input.text,
@@ -186,6 +188,7 @@ export class MailService {
         html: input.html,
         replyTo: input.replyTo,
         cc: input.cc?.length ? input.cc : undefined,
+        bcc: input.bcc?.length ? input.bcc : undefined,
         messageId: input.messageId,
         headers: input.headers,
         attachments: input.attachments?.length ? input.attachments : undefined,
