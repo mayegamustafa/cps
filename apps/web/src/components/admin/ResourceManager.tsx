@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/Icon';
 import { FileUpload } from '@/components/admin/FileUpload';
 import { RichTextEditor } from '@/components/admin/RichTextEditor';
+import { ArticlePreview } from '@/components/admin/ArticlePreview';
 import { uploadFile } from '@/components/admin/FileUpload';
 import { FieldDesigner, type FormField as DesignerField } from '@/components/admin/FieldDesigner';
 import { siteDefaults } from '@/lib/site';
@@ -59,6 +60,12 @@ export type ResourceConfig = {
   updateMethod?: 'PUT' | 'PATCH';
   /** Hide the Add button (e.g. review-only resources). */
   readOnlyCreate?: boolean;
+  /**
+   * Adds a Preview button to the form, showing the record laid out the way a
+   * reader will see it. Only 'article' so far, which reuses the live article
+   * styles rather than approximating them.
+   */
+  preview?: 'article';
   /**
    * Adds a per-row "View" action opening a read-only panel with EVERY field —
    * including the ones hidden from the table and the edit form — plus a
@@ -337,6 +344,7 @@ export function ResourceManager({ config }: { config: ResourceConfig }) {
   const [viewing, setViewing] = useState<Record<string, unknown> | null>(null);
   const [form, setForm] = useState<Record<string, string | boolean>>(emptyForm(config.fields));
   const [open, setOpen] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -461,11 +469,20 @@ export function ResourceManager({ config }: { config: ResourceConfig }) {
               </div>
             ))}
           </div>
-          <div className="mt-5 flex gap-3">
+          <div className="mt-5 flex flex-wrap gap-3">
             <Button type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save'}</Button>
+            {config.preview ? (
+              <Button type="button" variant="outline" onClick={() => setPreviewing(true)}>
+                Preview
+              </Button>
+            ) : null}
             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
           </div>
         </form>
+      ) : null}
+
+      {previewing && config.preview === 'article' ? (
+        <ArticlePreview values={form} onClose={() => setPreviewing(false)} />
       ) : null}
 
       <div className="overflow-hidden rounded-2xl border border-line bg-white">
