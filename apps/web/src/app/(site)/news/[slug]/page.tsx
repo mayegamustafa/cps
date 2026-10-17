@@ -108,24 +108,53 @@ export default async function ArticlePage({
 
   return (
     <>
-      <PageHero
-        eyebrow="News"
-        title={a.title}
-        crumbs={[{ label: 'News & Events', href: '/news' }, { label: a.title }]}
-        image={a.coverImage ?? 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=2000&q=70'}
-      />
+      {/*
+        The headline sits on paper and the photograph runs full width beneath it,
+        rather than the photograph being buried under a dark panel so the type
+        can sit on top. A cover photo of pupils collecting a trophy is worth
+        showing; dimming it to 20% to make white text legible wastes the picture
+        and makes every article look identical.
+      */}
+      <article>
+        <header className="border-b border-line bg-paper">
+          <div className="container-page max-w-3xl pb-10 pt-12 sm:pt-16">
+            <nav aria-label="Breadcrumb" className="mb-6 text-xs text-ink-muted">
+              <Link href="/" className="hover:text-maroon-700">
+                Home
+              </Link>
+              <span className="mx-1.5">/</span>
+              <Link href="/news" className="hover:text-maroon-700">
+                News &amp; Events
+              </Link>
+            </nav>
 
-      <article className="py-20">
-        <div className="container-page max-w-3xl">
-          <TagLine tags={a.tags} />
+            <TagLine tags={a.tags} />
 
-          {a.excerpt ? (
-            <p className="mb-6 border-l-2 border-gold-400 pl-4 font-display text-xl italic leading-relaxed text-ink sm:text-2xl">
-              {a.excerpt}
-            </p>
+            <h1 className="font-display text-3xl leading-[1.12] text-maroon-900 sm:text-4xl md:text-5xl">
+              {a.title}
+            </h1>
+
+            {a.excerpt ? (
+              <p className="mt-5 font-display text-xl leading-relaxed text-ink-soft sm:text-2xl">
+                {a.excerpt}
+              </p>
+            ) : null}
+          </div>
+
+          {a.coverImage ? (
+            <figure className="container-page max-w-5xl pb-10">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={a.coverImage}
+                alt=""
+                className="w-full rounded-2xl object-cover shadow-soft"
+              />
+            </figure>
           ) : null}
+        </header>
 
-          <div className="flex flex-wrap items-center justify-between gap-4 border-y border-line py-4">
+        <div className="container-page max-w-3xl py-12">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-4">
             <div className="flex items-center gap-3">
               {a.author?.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element

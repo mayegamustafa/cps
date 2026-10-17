@@ -24,12 +24,20 @@ const ALLOWED_TAGS = new Set([
 /** Attributes kept per tag. Everything else, including every on* handler, goes. */
 const ALLOWED_ATTRS: Record<string, Set<string>> = {
   a: new Set(['href', 'title', 'target', 'rel']),
-  img: new Set(['src', 'alt', 'title', 'width', 'height']),
   // The one data- attribute kept: an empty div carrying a social post URL that
   // the article page turns into a real embed at read time. Storing the marker
   // rather than the platform's own markup means nothing in a saved article
   // depends on a third-party script tag surviving this pass.
-  div: new Set(['data-embed']),
+  div: new Set(['data-embed', 'data-layout']),
+  // data-width lets a picture break out of the text column: normal, wide or
+  // full. A fixed set of names rather than free CSS, so an author can choose a
+  // layout without being able to style the page arbitrarily.
+  figure: new Set(['data-width']),
+  img: new Set(['src', 'alt', 'title', 'width', 'height', 'data-width']),
+  // A fixed set of class names for emphasis, size and the display face. Named
+  // styles rather than free CSS, so a writer can set a tone without being able
+  // to restyle the page or hide text on it.
+  span: new Set(['class']),
   td: new Set(['colspan', 'rowspan']),
   th: new Set(['colspan', 'rowspan', 'scope']),
   '*': new Set(['align']),
@@ -92,6 +100,27 @@ function cleanAttributes(tag: string, raw: string): string {
       const safe = safeUrl(value, true);
       if (!safe) continue;
       out.push(`src="${escapeAttr(safe)}"`);
+      continue;
+    }
+    if (name === 'class') {
+      const allowed = [
+        'a-maroon', 'a-gold', 'a-muted',
+        'a-small', 'a-large',
+        'a-display', 'a-mark',
+      ];
+      const kept = value
+        .split(/\s+/)
+        .map((c) => c.trim())
+        .filter((c) => allowed.includes(c));
+      if (!kept.length) continue;
+      out.push(`class="${kept.join(' ')}"`);
+      continue;
+    }
+    if (name === 'data-width' || name === 'data-layout') {
+      // An allowlist of layout names, so this can never become a styling hole.
+      const allowed = ['normal', 'wide', 'full', 'two', 'three'];
+      if (!allowed.includes(value.trim().toLowerCase())) continue;
+      out.push(`${name}="${value.trim().toLowerCase()}"`);
       continue;
     }
     if (name === 'data-embed') {

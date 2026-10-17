@@ -514,3 +514,113 @@ html[data-theme='noir'] {
 .cps-editor [data-embed]::before {
   content: 'Embedded post: ' attr(data-embed);
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Article layout: pictures that break out of the text column,
+   galleries, and the named text styles the editor applies.
+   The editor uses the same rules, so what a writer arranges is
+   what the page shows.
+   ───────────────────────────────────────────────────────────── */
+
+/* A wide picture reaches past the reading column; a full one goes as far as the
+   viewport allows. Both fall back to the column width on a phone, where there is
+   no room to break out of anything. */
+.article-body [data-width='wide'],
+.cps-editor [data-width='wide'] {
+  margin-left: 0;
+  margin-right: 0;
+}
+.article-body [data-width='full'],
+.cps-editor [data-width='full'] {
+  margin-left: 0;
+  margin-right: 0;
+}
+.article-body [data-width='wide'] img,
+.article-body [data-width='full'] img,
+.cps-editor [data-width='wide'] img,
+.cps-editor [data-width='full'] img {
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .article-body [data-width='wide'],
+  .cps-editor [data-width='wide'] {
+    margin-left: -6rem;
+    margin-right: -6rem;
+  }
+  .article-body [data-width='full'],
+  .cps-editor [data-width='full'] {
+    margin-left: -12rem;
+    margin-right: -12rem;
+  }
+}
+
+/* Pictures side by side. One column on a phone, because two photographs at
+   160px wide each show nothing. */
+.article-body [data-layout],
+.cps-editor [data-layout] {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1.6em 0;
+  grid-template-columns: 1fr;
+}
+.article-body [data-layout] img,
+.cps-editor [data-layout] img {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  aspect-ratio: 4 / 3;
+}
+@media (min-width: 640px) {
+  .article-body [data-layout='two'],
+  .cps-editor [data-layout='two'] {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .article-body [data-layout='three'],
+  .cps-editor [data-layout='three'] {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* The named text styles. Deliberately few: a writer picks a tone, and the page
+   still looks like the rest of the site. */
+.article-body .a-display,
+.cps-editor .a-display {
+  font-family: var(--font-display, inherit);
+}
+.article-body .a-large,
+.cps-editor .a-large {
+  font-size: 1.22em;
+  line-height: 1.45;
+}
+.article-body .a-small,
+.cps-editor .a-small {
+  font-size: 0.86em;
+}
+.article-body .a-maroon,
+.cps-editor .a-maroon {
+  color: var(--color-maroon-700, #6e1f23);
+}
+.article-body .a-gold,
+.cps-editor .a-gold {
+  color: var(--color-gold-600, #a87b22);
+}
+.article-body .a-muted,
+.cps-editor .a-muted {
+  color: var(--color-ink-muted, #8a8a8a);
+}
+.article-body .a-mark,
+.cps-editor .a-mark {
+  background: var(--color-gold-100, #fbf0d5);
+  padding: 0.05em 0.25em;
+  border-radius: 0.2rem;
+}
+
+/* The lead paragraph carries a little more weight, so an article opens rather
+   than simply starting. */
+.article-body > div > p:first-of-type,
+.article-body > p:first-of-type {
+  font-size: 1.08em;
+  color: var(--color-ink, #2b2b2b);
+}

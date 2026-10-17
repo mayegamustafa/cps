@@ -213,6 +213,125 @@ export function RichTextEditor({
     }
   }
 
+  /**
+   * Widens the selected picture, or the one the cursor sits in.
+   *
+   * Three named sizes rather than free resizing: a writer picking from normal,
+   * wide and full gets a page that still looks like the rest of the site, and
+   * cannot leave an image at 437 pixels because they dragged a handle.
+   */
+  function setImageWidth(width: 'normal' | 'wide' | 'full') {
+    const root = ref.current;
+    const sel = window.getSelection();
+    if (!root || !sel || sel.rangeCount === 0) {
+      setNote('Click the picture you want to resize first.');
+      return;
+    }
+
+    let node: Node | null = sel.anchorNode;
+    // A click on an image puts the selection on its parent, so look inside too.
+    let target: HTMLElement | null = null;
+    while (node && node !== root) {
+      const el = node as HTMLElement;
+      if (el.tagName === 'IMG' || el.tagName === 'FIGURE') {
+        target = el;
+        break;
+      }
+      node = node.parentNode;
+    }
+    if (!target) {
+      const range = sel.getRangeAt(0);
+      const inside = range.cloneContents().querySelector('img');
+      if (inside) {
+        target = (range.startContainer as HTMLElement).querySelector?.('img') ?? null;
+      }
+    }
+    if (!target) {
+      setNote('Click the picture you want to resize first.');
+      return;
+    }
+
+    // Set it on the figure when there is one, so the caption travels with it.
+    const block = (target.closest('figure') as HTMLElement | null) ?? target;
+    if (width === 'normal') block.removeAttribute('data-width');
+    else block.setAttribute('data-width', width);
+    setNote('');
+    emit();
+  }
+
+  /**
+   * Wraps the selected words in a named style.
+   *
+   * Named classes rather than colours and sizes chosen freely. A writer picks a
+   * tone and the page still looks like the rest of the site, and nobody can set
+   * eleven-pixel grey text on a white background by accident. Applying the same
+   * style twice removes it, so a button is also its own undo.
+   */
+  function styleSelection(className: string) {
+    const root = ref.current;
+    const sel = window.getSelection();
+    if (!root || !sel || sel.rangeCount === 0 || sel.isCollapsed) {
+      setNote('Select the words you want to change first.');
+      return;
+    }
+
+    const range = sel.getRangeAt(0);
+    const existing = (sel.anchorNode?.parentElement as HTMLElement | null)?.closest(
+      `span.${className}`,
+    );
+
+    // Already styled: unwrap, so the same button turns it back off.
+    if (existing && root.contains(existing)) {
+      const parent = existing.parentNode;
+      while (existing.firstChild) parent?.insertBefore(existing.firstChild, existing);
+      parent?.removeChild(existing);
+      setNote('');
+      emit();
+      return;
+    }
+
+    const span = document.createElement('span');
+    span.className = className;
+    try {
+      // Fails across element boundaries, so fall back to replacing the contents.
+      range.surroundContents(span);
+    } catch {
+      span.appendChild(range.extractContents());
+      range.insertNode(span);
+    }
+    setNote('');
+    emit();
+  }
+
+  /** Several pictures side by side, which is what a match report usually wants. */
+  async function insertGallery(files: FileList) {
+    const chosen = Array.from(files).slice(0, 3);
+    if (!chosen.length) return;
+
+    setUploading(true);
+    setNote('');
+    try {
+      const urls: string[] = [];
+      for (const file of chosen) urls.push(await uploadFile(file));
+
+      const layout = urls.length >= 3 ? 'three' : 'two';
+      const imgs = urls
+        .map((u) => `<img src="${u.replace(/"/g, '&quot;')}" alt="" />`)
+        .join('');
+      ref.current?.focus();
+      document.execCommand(
+        'insertHTML',
+        false,
+        `<div data-layout="${layout}">${imgs}</div><p><br></p>`,
+      );
+      emit();
+    } catch (e) {
+      setNote((e as Error).message || 'Could not upload those images.');
+    } finally {
+      setUploading(false);
+    }
+  }
+
   function insertTable() {
     const cols = Number(window.prompt('How many columns?', '3'));
     const rows = Number(window.prompt('How many rows, not counting the header?', '3'));
@@ -353,6 +472,79 @@ export function RichTextEditor({
             }}
           />
         </label>
+        <label
+          title="Several pictures side by side"
+          className={[
+            'flex h-8 items-center justify-center rounded-lg px-2 text-xs font-semibold text-ink-soft hover:bg-maroon-50 hover:text-maroon-700',
+            source || uploading ? 'pointer-events-none opacity-40' : 'cursor-pointer',
+          ].join(' ')}
+        >
+          Gallery
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            hidden
+            onChange={(e) => {
+              const files = e.target.files;
+              e.target.value = '';
+              if (files?.length) void insertGallery(files);
+            }}
+          />
+        </label>
+
+        <span className="mx-1 h-5 w-px bg-line" />
+        <span className="flex items-center gap-0.5" title="Style the selected words">
+          {(
+            [
+              ['a-display', 'Aa', 'Display face'],
+              ['a-large', 'A+', 'Larger'],
+              ['a-small', 'A-', 'Smaller'],
+              ['a-maroon', 'Maroon', 'Maroon text'],
+              ['a-gold', 'Gold', 'Gold text'],
+              ['a-muted', 'Muted', 'Muted text'],
+              ['a-mark', 'Mark', 'Highlight'],
+            ] as const
+          ).map(([cls, label, title]) => (
+            <button
+              key={cls}
+              type="button"
+              title={title}
+              aria-label={title}
+              disabled={source}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => styleSelection(cls)}
+              className="flex h-8 items-center justify-center rounded-lg px-2 text-xs font-semibold text-ink-soft hover:bg-maroon-50 hover:text-maroon-700 disabled:opacity-40"
+            >
+              {label}
+            </button>
+          ))}
+        </span>
+
+        <span className="mx-1 h-5 w-px bg-line" />
+        <span className="flex items-center gap-0.5" title="Width of the selected picture">
+          {(
+            [
+              ['normal', 'Normal'],
+              ['wide', 'Wide'],
+              ['full', 'Full'],
+            ] as const
+          ).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              title={`Picture width: ${label.toLowerCase()}`}
+              disabled={source}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => setImageWidth(key)}
+              className="flex h-8 items-center justify-center rounded-lg px-2 text-xs font-semibold text-ink-soft hover:bg-maroon-50 hover:text-maroon-700 disabled:opacity-40"
+            >
+              {label}
+            </button>
+          ))}
+        </span>
+        <span className="mx-1 h-5 w-px bg-line" />
+
         <button
           type="button"
           title="Embed a social post"
