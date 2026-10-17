@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { Icon } from '@/components/Icon';
-import { resolveSocialEmbed, type SocialEmbed } from '@/lib/social-embed';
+import { resolveSocialEmbed, isEmbeddable, extractEmbedUrl, type SocialEmbed } from '@/lib/social-embed';
 
 /**
  * Renders an article written in the admin editor.
@@ -13,6 +13,14 @@ import { resolveSocialEmbed, type SocialEmbed } from '@/lib/social-embed';
  * depends on a third party's script tag surviving sanitising. The markers are
  * swapped for real embeds here, at read time.
  */
+/**
+ * A paragraph whose entire content is one link, which is what pasting a link on
+ * its own line produces. Matched so it can be shown as the post itself rather
+ * than as a bare address the reader has to decide whether to trust.
+ */
+const LONE_LINK =
+  /(<p[^>]*>\s*(?:<br\s*\/?>\s*)*<a\s[^>]*href="([^"]+)"[^>]*>.*?<\/a>\s*(?:<br\s*\/?>\s*)*<\/p>)/gi;
+
 export function ArticleBody({ html }: { html: string }) {
   // Splitting on the marker keeps the surrounding prose as single HTML chunks,
   // so the article still renders as one flow rather than a list of paragraphs.
@@ -24,10 +32,44 @@ export function ArticleBody({ html }: { html: string }) {
         const marker = part.match(/data-embed="([^"]*)"/i);
         if (marker) return <EmbeddedPost key={i} url={decodeEntities(marker[1])} />;
         if (!part.trim()) return null;
-        return <div key={i} dangerouslySetInnerHTML={{ __html: part }} />;
+        return <Prose key={i} html={part} />;
       })}
     </>
   );
+}
+
+/**
+ * Prose, with any lone social link turned into the post it points at.
+ *
+ * Somebody pasting a link straight into the body means "show this post" just as
+ * much as using the Embed button does, and expecting them to know the difference
+ * is the sort of thing that makes a tool feel hostile. Articles written before
+ * the button existed fix themselves this way too, with nobody re-editing them.
+ */
+function Prose({ html }: { html: string }) {
+  const pieces = html.split(LONE_LINK);
+
+  // split() with two capture groups yields [text, wholeParagraph, href, text, …].
+  const out: React.ReactNode[] = [];
+  for (let i = 0; i < pieces.length; i += 3) {
+    const text = pieces[i];
+    const paragraph = pieces[i + 1];
+    const href = pieces[i + 2];
+
+    if (text && text.trim()) {
+      out.push(<div key={`t${i}`} dangerouslySetInnerHTML={{ __html: text }} />);
+    }
+    if (paragraph === undefined) continue;
+
+    const url = extractEmbedUrl(decodeEntities(href ?? ''));
+    if (url && isEmbeddable(url)) {
+      out.push(<EmbeddedPost key={`e${i}`} url={url} />);
+    } else {
+      // Not a platform we can show: leave the link exactly as written.
+      out.push(<div key={`p${i}`} dangerouslySetInnerHTML={{ __html: paragraph }} />);
+    }
+  }
+  return <>{out}</>;
 }
 
 function decodeEntities(value: string): string {

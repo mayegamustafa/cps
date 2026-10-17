@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon, type IconName } from '@/components/Icon';
 import { uploadFile } from '@/components/admin/FileUpload';
+import { extractEmbedUrl, isEmbeddable } from '@/lib/social-embed';
 
 /**
  * A formatting editor for article bodies, with no editor dependency.
@@ -359,16 +360,25 @@ export function RichTextEditor({
     // up with "https://https://x.com/...", which matches no platform and quietly
     // renders as a plain link instead of an embed.
     const raw = window.prompt(
-      'Paste the link to the post (YouTube, X, Facebook, Instagram, TikTok, Vimeo)',
+      'Paste the post: a link, the share text around it, or the embed code. Any of them work.',
       '',
     );
     if (!raw) return;
-    const url = normalizeEmbedUrl(raw);
-    if (!/^https:\/\//i.test(url)) {
-      setNote('That does not look like a link. Copy the address from the post and paste it here.');
+
+    // Takes whatever was pasted: share text, embed code, a mobile link, a link
+    // with tracking parameters, a link with a full stop stuck to the end.
+    const url = extractEmbedUrl(raw);
+    if (!url) {
+      setNote('No link found in that. Copy the address of the post and paste it here.');
       return;
     }
-    setNote('');
+    if (!isEmbeddable(url)) {
+      setNote(
+        `That link is not from a platform we can show (${url.slice(0, 48)}). It has been added as a link instead.`,
+      );
+    } else {
+      setNote('');
+    }
     ref.current?.focus();
     document.execCommand(
       'insertHTML',
@@ -383,6 +393,25 @@ export function RichTextEditor({
     const html = e.clipboardData.getData('text/html');
     const text = e.clipboardData.getData('text/plain');
     e.preventDefault();
+
+    // Pasting nothing but a social link means "show this post". Doing it for
+    // them beats leaving a bare address and expecting them to know there was a
+    // button for it.
+    const pasted = (text || '').trim();
+    if (pasted && !pasted.includes('\n')) {
+      const url = extractEmbedUrl(pasted);
+      if (url && isEmbeddable(url)) {
+        document.execCommand(
+          'insertHTML',
+          false,
+          `<div data-embed="${url.replace(/"/g, '&quot;')}"></div><p><br></p>`,
+        );
+        setNote('That post was embedded. Use Unlink on it if you wanted a plain link.');
+        emit();
+        return;
+      }
+    }
+
     document.execCommand('insertHTML', false, html ? cleanPastedHtml(html) : escapeText(text));
     emit();
   }
@@ -684,20 +713,6 @@ export function RichTextEditor({
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-/**
- * Same cleanup the article page does, applied as the link is pasted so a bad one
- * never reaches the saved article.
- */
-function normalizeEmbedUrl(input: string): string {
-  let url = (input ?? '').trim();
-  for (let i = 0; i < 4; i++) {
-    const doubled = url.match(/^https?:\/\/(https?:\/\/.*)$/i);
-    if (!doubled) break;
-    url = doubled[1];
-  }
-  if (url && !/^https?:\/\//i.test(url)) url = `https://${url}`;
-  return url.replace(/^http:\/\//i, 'https://');
-}
 
 function escapeText(text: string): string {
   return text

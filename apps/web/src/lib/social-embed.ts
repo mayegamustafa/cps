@@ -53,6 +53,60 @@ export function normalizeUrl(input: string): string {
   return url;
 }
 
+/**
+ * Pulls a usable link out of whatever somebody actually pasted.
+ *
+ * People do not paste clean URLs. They paste the share text around a link, the
+ * embed code the platform offered them, a mobile link, a link with tracking
+ * parameters on the end, or a link with a full stop stuck to it because it came
+ * at the end of a sentence. All of those mean "embed this post", and the editor
+ * should work that out rather than refuse and leave the writer guessing.
+ */
+export function extractEmbedUrl(input: string): string {
+  const text = (input ?? '').trim();
+  if (!text) return '';
+
+  // Embed code copied from the platform: take the link out of it.
+  const fromIframe = text.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+  const fromCite = text.match(/<blockquote[^>]+cite=["']([^"']+)["']/i);
+  const fromAnchor = text.match(/<a[^>]+href=["']([^"']+)["']/i);
+  const candidate = fromIframe?.[1] ?? fromCite?.[1] ?? fromAnchor?.[1] ?? text;
+
+  // The first thing in it that looks like a link, so surrounding share text,
+  // quotation marks and stray words do not matter.
+  const found = candidate.match(/(https?:\/\/[^\s<>"']+|(?:www\.)?[a-z0-9-]+\.[a-z]{2,}\/[^\s<>"']*)/i);
+  let url = normalizeUrl(found ? found[0] : candidate);
+
+  // A link at the end of a sentence arrives with the punctuation attached.
+  url = url.replace(/[.,;:!?)\]]+$/, '');
+  return stripTracking(url);
+}
+
+/**
+ * Removes the parameters a share button adds.
+ *
+ * X appends ?t=&s=20, Instagram adds igshid, Facebook adds fbclid. They carry no
+ * meaning for an embed and some platforms refuse to resolve a post when they are
+ * present, so a link that works in a browser silently fails to embed.
+ */
+function stripTracking(url: string): string {
+  try {
+    const u = new URL(url);
+    const junk = ['t', 's', 'si', 'igshid', 'fbclid', 'feature', 'ref', 'ref_src', 'ref_url'];
+    for (const key of [...u.searchParams.keys()]) {
+      if (junk.includes(key) || key.toLowerCase().startsWith('utm_')) u.searchParams.delete(key);
+    }
+    return u.toString().replace(/\?$/, '');
+  } catch {
+    return url;
+  }
+}
+
+/** True when a link is one this page knows how to turn into a real embed. */
+export function isEmbeddable(url: string): boolean {
+  return resolveSocialEmbed(url).kind !== 'link';
+}
+
 /** The hostname, or an empty string when the link cannot be parsed at all. */
 function hostOfUrl(url: string): string {
   try {
@@ -63,7 +117,7 @@ function hostOfUrl(url: string): string {
 }
 
 export function resolveSocialEmbed(input: string): SocialEmbed {
-  const url = normalizeUrl(input);
+  const url = stripTracking(normalizeUrl(input));
   if (!/^https?:\/\//i.test(url)) return { kind: 'link', provider: 'Link', url };
 
   // Matched on the parsed hostname rather than by searching the whole string,
@@ -96,7 +150,7 @@ export function resolveSocialEmbed(input: string): SocialEmbed {
     };
   }
 
-  if (isHost('tiktok.com')) {
+  if (isHost('tiktok.com', 'vt.tiktok.com', 'vm.tiktok.com')) {
     const id = url.match(/\/video\/(\d+)/)?.[1];
     return { kind: 'script', provider: 'tiktok', url, id };
   }
@@ -105,7 +159,7 @@ export function resolveSocialEmbed(input: string): SocialEmbed {
     return { kind: 'script', provider: 'twitter', url };
   }
 
-  if (isHost('instagram.com')) {
+  if (isHost('instagram.com', 'instagr.am')) {
     return { kind: 'script', provider: 'instagram', url };
   }
 
