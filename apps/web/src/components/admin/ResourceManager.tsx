@@ -69,6 +69,14 @@ export type ResourceConfig = {
    */
   preview?: 'article';
   /**
+   * How the list is shown. 'cards' gives a grid with the cover picture, which
+   * is how anyone recognises an article: a column of truncated headlines all
+   * reading "City Parents' School..." tells you nothing.
+   */
+  layout?: 'table' | 'cards';
+  /** For 'cards': which field holds the picture, and which the date. */
+  card?: { image: string; status?: string; date?: string; tags?: string };
+  /**
    * Adds a per-row "View" action opening a read-only panel with EVERY field —
    * including the ones hidden from the table and the edit form — plus a
    * printable one-page record sheet.
@@ -487,6 +495,16 @@ export function ResourceManager({ config }: { config: ResourceConfig }) {
         <ArticlePreview values={form} onClose={() => setPreviewing(false)} />
       ) : null}
 
+      {config.layout === 'cards' ? (
+        <CardGrid
+          config={config}
+          rows={rows}
+          loading={loading}
+          onEdit={startEdit}
+          onDelete={remove}
+          onView={config.detail ? (row) => { setOpen(false); setViewing(row); } : undefined}
+        />
+      ) : (
       <div className="overflow-hidden rounded-2xl border border-line bg-white">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
@@ -531,7 +549,138 @@ export function ResourceManager({ config }: { config: ResourceConfig }) {
           </table>
         </div>
       </div>
+      )}
     </>
+  );
+}
+
+/**
+ * The list as a grid of cards.
+ *
+ * A table of truncated titles is unusable for articles, where every headline
+ * starts with the school's name and the thing that actually identifies a piece
+ * is its photograph. Status sits on the picture so a draft is obvious at a
+ * glance rather than needing a column to be read.
+ */
+function CardGrid({
+  config,
+  rows,
+  loading,
+  onEdit,
+  onDelete,
+  onView,
+}: {
+  config: ResourceConfig;
+  rows: Record<string, unknown>[];
+  loading: boolean;
+  onEdit: (row: Record<string, unknown>) => void;
+  onDelete: (row: Record<string, unknown>) => void;
+  onView?: (row: Record<string, unknown>) => void;
+}) {
+  const card = config.card ?? { image: 'coverImage' };
+  const titleKey = config.fields.find((f) => f.key === 'title')?.key ?? 'title';
+
+  if (loading) return <p className="py-10 text-center text-ink-muted">Loading…</p>;
+  if (rows.length === 0) return <p className="py-10 text-center text-ink-muted">No items yet.</p>;
+
+  return (
+    <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+      {rows.map((row, i) => {
+        const image = card.image ? String(row[card.image] ?? '') : '';
+        const status = card.status ? String(row[card.status] ?? '') : '';
+        const dateRaw = card.date ? row[card.date] : null;
+        const date = dateRaw
+          ? new Date(String(dateRaw)).toLocaleDateString('en-GB', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+            })
+          : '';
+        const tags = Array.isArray(row[card.tags ?? 'tags'])
+          ? (row[card.tags ?? 'tags'] as string[])
+          : [];
+
+        return (
+          <article
+            key={i}
+            className="group overflow-hidden rounded-2xl border border-line bg-white transition-shadow hover:shadow-lift"
+          >
+            <div className="relative aspect-[16/10] bg-paper-dark">
+              {image ? (
+                <div
+                  className="h-full w-full bg-cover bg-center transition-transform duration-500 group-hover:scale-[1.03]"
+                  style={{ backgroundImage: `url('${image}')` }}
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-ink-muted">
+                  <Icon name="image" size={28} />
+                </div>
+              )}
+
+              {status ? (
+                <span
+                  className={[
+                    'absolute left-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider backdrop-blur',
+                    status === 'PUBLISHED'
+                      ? 'bg-emerald-600/90 text-white'
+                      : status === 'DRAFT'
+                        ? 'bg-ink/70 text-white'
+                        : 'bg-gold-400/90 text-maroon-900',
+                  ].join(' ')}
+                >
+                  {status.toLowerCase()}
+                </span>
+              ) : null}
+            </div>
+
+            <div className="p-4">
+              <h3 className="line-clamp-2 font-display text-base leading-snug text-maroon-900">
+                {String(row[titleKey] ?? 'Untitled')}
+              </h3>
+
+              <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-ink-muted">
+                {date ? (
+                  <span className="flex items-center gap-1">
+                    <Icon name="calendar" size={13} /> {date}
+                  </span>
+                ) : null}
+                {tags.slice(0, 2).map((t) => (
+                  <span key={t} className="rounded bg-paper-dark px-1.5 py-0.5 font-medium text-ink-soft">
+                    {t}
+                  </span>
+                ))}
+              </p>
+
+              <div className="mt-3 flex items-center justify-end gap-1 border-t border-line pt-3 text-ink-muted">
+                {onView ? (
+                  <button
+                    onClick={() => onView(row)}
+                    aria-label="View full details"
+                    className="rounded-lg p-1.5 hover:bg-maroon-50 hover:text-maroon-700"
+                  >
+                    <Icon name="eye" size={17} />
+                  </button>
+                ) : null}
+                <button
+                  onClick={() => onEdit(row)}
+                  aria-label="Edit"
+                  className="rounded-lg p-1.5 hover:bg-maroon-50 hover:text-maroon-700"
+                >
+                  <Icon name="edit" size={17} />
+                </button>
+                <button
+                  onClick={() => onDelete(row)}
+                  aria-label="Delete"
+                  className="rounded-lg p-1.5 hover:bg-rose-50 hover:text-rose-600"
+                >
+                  <Icon name="trash" size={17} />
+                </button>
+              </div>
+            </div>
+          </article>
+        );
+      })}
+    </div>
   );
 }
 

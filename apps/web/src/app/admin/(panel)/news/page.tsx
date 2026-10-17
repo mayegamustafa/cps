@@ -6,6 +6,8 @@ const config: ResourceConfig = {
   title: 'News & Articles',
   description: 'Create, edit and publish news. Published items appear on the public site.',
   preview: 'article',
+  layout: 'cards',
+  card: { image: 'coverImage', status: 'status', date: 'publishedAt', tags: 'tags' },
   listUrl: '/api/news/admin/list',
   createUrl: '/api/news',
   itemUrl: (row) => `/api/news/${row.id}`,
