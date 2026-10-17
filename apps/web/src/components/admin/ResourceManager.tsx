@@ -44,6 +44,8 @@ export type Field = {
   readonly?: boolean;
   /** Heading this field sits under in the detail panel and printed record. */
   group?: string;
+  /** A line under the input explaining what it does or what leaving it empty means. */
+  hint?: string;
 };
 
 export type ResourceConfig = {
@@ -634,7 +636,23 @@ function DetailPanel({
 const inputCls =
   'w-full rounded-xl border border-line bg-white px-4 py-2.5 text-ink shadow-sm transition-colors placeholder:text-ink-muted focus:border-maroon-500 focus:outline-none focus:ring-2 focus:ring-maroon-500/20';
 
-function FieldInput({
+/** Wraps every input so a hint can be shown without touching each branch below. */
+function FieldInput(props: {
+  field: Field;
+  value: string | boolean;
+  onChange: (v: string | boolean) => void;
+}) {
+  return (
+    <>
+      <FieldInputInner {...props} />
+      {props.field.hint ? (
+        <p className="mt-1 text-xs text-ink-muted">{props.field.hint}</p>
+      ) : null}
+    </>
+  );
+}
+
+function FieldInputInner({
   field,
   value,
   onChange,

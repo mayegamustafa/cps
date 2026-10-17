@@ -17,6 +17,13 @@ const config: ResourceConfig = {
       { value: 'SCHEDULED', label: 'Scheduled' },
       { value: 'ARCHIVED', label: 'Archived' },
     ] },
+    {
+      key: 'publishedAt',
+      label: 'Publication date',
+      type: 'datetime',
+      table: true,
+      hint: 'Leave empty to use the moment you publish. Set it to backdate a story.',
+    },
     { key: 'excerpt', label: 'Excerpt', placeholder: 'Short summary' },
     { key: 'coverImage', label: 'Cover image URL', type: 'image' },
     { key: 'tags', label: 'Tags', type: 'tags' },

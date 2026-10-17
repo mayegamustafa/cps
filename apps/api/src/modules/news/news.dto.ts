@@ -1,4 +1,5 @@
 import {
+  IsDateString,
   IsArray,
   IsEnum,
   IsOptional,
@@ -27,6 +28,10 @@ export class CreateNewsDto {
   @IsOptional() @IsEnum(PublishStatus)
   status?: PublishStatus;
 
+  /** Set explicitly to backdate a piece, or left out to use the moment it was published. */
+  @IsOptional() @IsDateString()
+  publishedAt?: string;
+
   @IsOptional() @IsArray() @IsString({ each: true })
   tags?: string[];
 }
@@ -37,5 +42,6 @@ export class UpdateNewsDto {
   @IsOptional() @IsString() body?: string;
   @IsOptional() @IsString() coverImage?: string;
   @IsOptional() @IsEnum(PublishStatus) status?: PublishStatus;
+  @IsOptional() @IsDateString() publishedAt?: string;
   @IsOptional() @IsArray() @IsString({ each: true }) tags?: string[];
 }

@@ -79,6 +79,72 @@ export function RichTextEditor({
     if (el) onChange(el.innerHTML);
   }, [onChange]);
 
+  /**
+   * The top-level block the cursor sits in: a paragraph, a heading, a picture,
+   * an embed. Walking up to a direct child of the editor is what makes "move
+   * this" mean the whole block rather than the word under the cursor.
+   */
+  function currentBlock(): HTMLElement | null {
+    const root = ref.current;
+    const sel = window.getSelection();
+    if (!root || !sel || sel.rangeCount === 0) return null;
+
+    let node: Node | null = sel.anchorNode;
+    while (node && node.parentNode !== root) node = node.parentNode;
+    return node && node !== root ? (node as HTMLElement) : null;
+  }
+
+  /** Moves the block the cursor is in above or below its neighbour. */
+  function moveBlock(direction: -1 | 1) {
+    const root = ref.current;
+    const block = currentBlock();
+    if (!root || !block) {
+      setNote('Click inside the paragraph or picture you want to move first.');
+      return;
+    }
+
+    const neighbour =
+      direction === -1
+        ? (block.previousElementSibling as HTMLElement | null)
+        : (block.nextElementSibling as HTMLElement | null);
+    if (!neighbour) {
+      setNote(direction === -1 ? 'That is already at the top.' : 'That is already at the bottom.');
+      return;
+    }
+
+    setNote('');
+    if (direction === -1) root.insertBefore(block, neighbour);
+    else root.insertBefore(neighbour, block);
+
+    // Keep the caret on what was moved, so pressing the button again moves the
+    // same block rather than whatever has slid under the cursor.
+    const range = document.createRange();
+    range.selectNodeContents(block);
+    range.collapse(true);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+    block.scrollIntoView({ block: 'nearest' });
+    emit();
+  }
+
+  /**
+   * Clicking a picture selects it, so the move buttons act on the picture rather
+   * than on nothing. Without this a picture is not text, there is no caret in
+   * it, and the buttons appear to do nothing.
+   */
+  function onClick(e: React.MouseEvent<HTMLDivElement>) {
+    const target = e.target as HTMLElement;
+    if (target.tagName !== 'IMG' && !target.closest('[data-embed]')) return;
+
+    const block = (target.closest('figure, [data-embed]') ?? target) as HTMLElement;
+    const range = document.createRange();
+    range.selectNode(block);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+  }
+
   function run(command: string, arg?: string) {
     ref.current?.focus();
     try {
@@ -170,13 +236,17 @@ export function RichTextEditor({
    * server's sanitising. The article page turns the marker into a real embed.
    */
   function insertEmbed() {
-    const url = window.prompt(
+    // No pre-filled "https://": people paste a whole link on top of it and end
+    // up with "https://https://x.com/...", which matches no platform and quietly
+    // renders as a plain link instead of an embed.
+    const raw = window.prompt(
       'Paste the link to the post (YouTube, X, Facebook, Instagram, TikTok, Vimeo)',
-      'https://',
+      '',
     );
-    if (!url) return;
-    if (!/^https:\/\//i.test(url.trim())) {
-      setNote('The link must start with https://');
+    if (!raw) return;
+    const url = normalizeEmbedUrl(raw);
+    if (!/^https:\/\//i.test(url)) {
+      setNote('That does not look like a link. Copy the address from the post and paste it here.');
       return;
     }
     setNote('');
@@ -184,7 +254,7 @@ export function RichTextEditor({
     document.execCommand(
       'insertHTML',
       false,
-      `<div data-embed="${url.trim().replace(/"/g, '&quot;')}"></div><p><br></p>`,
+      `<div data-embed="${url.replace(/"/g, '&quot;')}"></div><p><br></p>`,
     );
     emit();
   }
@@ -307,6 +377,29 @@ export function RichTextEditor({
         </button>
         <button
           type="button"
+          title="Move this block up"
+          aria-label="Move this block up"
+          disabled={source}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => moveBlock(-1)}
+          className="flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-sm font-semibold text-ink-soft hover:bg-maroon-50 hover:text-maroon-700 disabled:opacity-40"
+        >
+          &#8593;
+        </button>
+        <button
+          type="button"
+          title="Move this block down"
+          aria-label="Move this block down"
+          disabled={source}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => moveBlock(1)}
+          className="flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-sm font-semibold text-ink-soft hover:bg-maroon-50 hover:text-maroon-700 disabled:opacity-40"
+        >
+          &#8595;
+        </button>
+
+        <button
+          type="button"
           title="Divider"
           aria-label="Divider"
           disabled={source}
@@ -384,6 +477,7 @@ export function RichTextEditor({
           onInput={emit}
           onBlur={emit}
           onPaste={onPaste}
+          onClick={onClick}
           className="cps-editor min-h-[22rem] w-full rounded-b-xl px-4 py-3 text-[15px] leading-relaxed text-ink focus:outline-none"
         />
       )}
@@ -397,6 +491,21 @@ export function RichTextEditor({
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Same cleanup the article page does, applied as the link is pasted so a bad one
+ * never reaches the saved article.
+ */
+function normalizeEmbedUrl(input: string): string {
+  let url = (input ?? '').trim();
+  for (let i = 0; i < 4; i++) {
+    const doubled = url.match(/^https?:\/\/(https?:\/\/.*)$/i);
+    if (!doubled) break;
+    url = doubled[1];
+  }
+  if (url && !/^https?:\/\//i.test(url)) url = `https://${url}`;
+  return url.replace(/^http:\/\//i, 'https://');
+}
 
 function escapeText(text: string): string {
   return text

@@ -77,7 +77,13 @@ export class NewsService {
         authorId,
         slug: dto.slug || uniqueSlug(dto.title),
         status,
-        publishedAt: status === PublishStatus.PUBLISHED ? new Date() : null,
+        // An explicit date wins, so a piece covering last week's match can carry
+        // last week's date rather than the moment somebody got round to typing it.
+        publishedAt: dto.publishedAt
+          ? new Date(dto.publishedAt)
+          : status === PublishStatus.PUBLISHED
+            ? new Date()
+            : null,
       },
     });
   }
@@ -85,9 +91,12 @@ export class NewsService {
   async update(id: string, dto: UpdateNewsDto) {
     const current = await this.prisma.newsArticle.findUnique({ where: { id } });
     if (!current) throw new NotFoundException('Article not found');
-    // Set publishedAt the first time it becomes published.
-    const publishedAt =
-      dto.status === PublishStatus.PUBLISHED && !current.publishedAt
+    // An explicit date always wins. Otherwise it is stamped the first time the
+    // piece becomes published, and never touched again, so editing an old
+    // article does not quietly move it to the top of the news page.
+    const publishedAt = dto.publishedAt
+      ? new Date(dto.publishedAt)
+      : dto.status === PublishStatus.PUBLISHED && !current.publishedAt
         ? new Date()
         : undefined;
     return this.prisma.newsArticle.update({
@@ -95,7 +104,9 @@ export class NewsService {
       data: {
         ...dto,
         ...(dto.body !== undefined ? { body: sanitizeHtml(dto.body) } : {}),
-        ...(publishedAt ? { publishedAt } : {}),
+        // Spread first, then overwrite: the DTO carries publishedAt as a string
+        // and Prisma needs a Date.
+        ...(publishedAt ? { publishedAt } : { publishedAt: undefined }),
       },
     });
   }

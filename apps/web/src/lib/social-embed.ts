@@ -33,9 +33,45 @@ function youtubeId(url: string): string | null {
   return null;
 }
 
+/**
+ * Cleans up a pasted link before anything tries to recognise it.
+ *
+ * The editor used to pre-fill the box with "https://", so pasting a full link on
+ * top of it produced "https://https://x.com/...". That still looks like a URL to
+ * a naive prefix check, so it sailed past and then matched no provider, and the
+ * post silently rendered as a plain link instead of an embed.
+ */
+export function normalizeUrl(input: string): string {
+  let url = (input ?? '').trim();
+  // Strip any number of repeated schemes, however they were doubled up.
+  for (let i = 0; i < 4; i++) {
+    const doubled = url.match(/^https?:\/\/(https?:\/\/.*)$/i);
+    if (!doubled) break;
+    url = doubled[1];
+  }
+  if (url && !/^https?:\/\//i.test(url)) url = `https://${url}`;
+  return url;
+}
+
+/** The hostname, or an empty string when the link cannot be parsed at all. */
+function hostOfUrl(url: string): string {
+  try {
+    return new URL(url).hostname.toLowerCase().replace(/^www\./, '');
+  } catch {
+    return '';
+  }
+}
+
 export function resolveSocialEmbed(input: string): SocialEmbed {
-  const url = (input ?? '').trim();
+  const url = normalizeUrl(input);
   if (!/^https?:\/\//i.test(url)) return { kind: 'link', provider: 'Link', url };
+
+  // Matched on the parsed hostname rather than by searching the whole string,
+  // so a link that merely mentions x.com somewhere in its path is not mistaken
+  // for an X post.
+  const host = hostOfUrl(url);
+  const isHost = (...names: string[]) =>
+    names.some((n) => host === n || host.endsWith(`.${n}`));
 
   const yt = youtubeId(url);
   if (yt) {
@@ -60,20 +96,20 @@ export function resolveSocialEmbed(input: string): SocialEmbed {
     };
   }
 
-  if (/(^|\.)tiktok\.com\//i.test(url)) {
+  if (isHost('tiktok.com')) {
     const id = url.match(/\/video\/(\d+)/)?.[1];
     return { kind: 'script', provider: 'tiktok', url, id };
   }
 
-  if (/(^|\.)(twitter\.com|x\.com)\//i.test(url)) {
+  if (isHost('twitter.com', 'x.com')) {
     return { kind: 'script', provider: 'twitter', url };
   }
 
-  if (/(^|\.)instagram\.com\//i.test(url)) {
+  if (isHost('instagram.com')) {
     return { kind: 'script', provider: 'instagram', url };
   }
 
-  if (/(^|\.)(facebook\.com|fb\.watch)\//i.test(url)) {
+  if (isHost('facebook.com', 'fb.watch')) {
     const isVideo = /\/videos?\//i.test(url) || /fb\.watch/i.test(url);
     const endpoint = isVideo ? 'video.php' : 'post.php';
     return {
@@ -85,13 +121,6 @@ export function resolveSocialEmbed(input: string): SocialEmbed {
     };
   }
 
-  return { kind: 'link', provider: hostOf(url), url };
+  return { kind: 'link', provider: host || 'Link', url };
 }
 
-function hostOf(url: string): string {
-  try {
-    return new URL(url).hostname.replace(/^www\./, '');
-  } catch {
-    return 'Link';
-  }
-}
